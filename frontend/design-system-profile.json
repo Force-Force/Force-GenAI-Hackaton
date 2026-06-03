@@ -1,0 +1,557 @@
+{
+  "profileName": "Light Data Workspace Design System",
+  "version": "1.0.0",
+  "purpose": "A frontend-agnostic visual profile for recreating a polished, technical, data-workbench interface with consistent layout, color, typography, component, and interaction patterns. This profile intentionally excludes product-specific labels, business data, page copy, and feature content.",
+  "styleSummary": {
+    "personality": [
+      "clean",
+      "technical",
+      "analytical",
+      "structured",
+      "responsive",
+      "polished",
+      "AI-assisted"
+    ],
+    "visualMetaphor": "A command-center workspace for inspecting, generating, validating, and linking structured data objects.",
+    "coreLook": "Light neutral surfaces, crisp slate borders, indigo primary actions, small mono metadata labels, rounded cards, raised pill buttons, and subtle motion that suggests live system activity.",
+    "avoid": [
+      "dark-first layouts except for isolated code preview blocks",
+      "large decorative gradients",
+      "heavy glassmorphism",
+      "flat controls with no tactile feedback",
+      "large-radius playful consumer-app styling",
+      "marketing-page spacing or hero-section composition",
+      "including domain-specific frontend content or exact page labels"
+    ]
+  },
+  "designTokens": {
+    "color": {
+      "background": {
+        "app": "#F8FAFC",
+        "workspace": "#F1F5F9",
+        "canvas": "#FFFFFF",
+        "panel": "#FFFFFF",
+        "subtle": "#F8FAFC",
+        "muted": "#F1F5F9",
+        "overlay": "rgba(15, 23, 42, 0.60)"
+      },
+      "text": {
+        "primary": "#0F172A",
+        "secondary": "#334155",
+        "muted": "#64748B",
+        "subtle": "#94A3B8",
+        "inverse": "#FFFFFF",
+        "codeOnDark": "#67E8F9"
+      },
+      "border": {
+        "default": "#E2E8F0",
+        "soft": "#F1F5F9",
+        "strong": "#CBD5E1",
+        "focus": "#4F46E5"
+      },
+      "brand": {
+        "primary": "#4F46E5",
+        "primaryHover": "rgba(79, 70, 229, 0.90)",
+        "primaryDark": "#3730A3",
+        "primarySoft": "rgba(79, 70, 229, 0.10)",
+        "primaryRing": "rgba(79, 70, 229, 0.40)"
+      },
+      "semantic": {
+        "success": "#10B981",
+        "successDark": "#059669",
+        "successSoft": "#ECFDF5",
+        "info": "#06B6D4",
+        "infoDark": "#0369A1",
+        "infoSoft": "#F0F9FF",
+        "warning": "#F59E0B",
+        "warningDark": "#B45309",
+        "warningSoft": "#FFFBEB",
+        "danger": "#EF4444",
+        "dangerDark": "#DC2626",
+        "dangerSoft": "#FFF1F2",
+        "generated": "#A855F7",
+        "generatedSoft": "#FAF5FF"
+      },
+      "canvas": {
+        "gridDot": "#CBD5E1",
+        "connectionLine": "#4F46E5",
+        "connectionLineOpacity": 0.45,
+        "connectionDashOpacity": 0.95
+      }
+    },
+    "typography": {
+      "fontFamilies": {
+        "sans": "Inter, ui-sans-serif, system-ui, sans-serif",
+        "mono": "JetBrains Mono, ui-monospace, SFMono-Regular, monospace"
+      },
+      "scale": {
+        "micro": "9px",
+        "caption": "10px",
+        "metadata": "10.5px",
+        "bodySmall": "11px",
+        "body": "12px",
+        "bodyLarge": "14px",
+        "sectionTitle": "16px",
+        "appTitle": "18px",
+        "metric": "20px"
+      },
+      "weights": {
+        "regular": 400,
+        "medium": 500,
+        "semibold": 600,
+        "bold": 700,
+        "black": 900
+      },
+      "usage": {
+        "sans": "Use for readable body copy, labels, panel titles, card titles, buttons, and form fields.",
+        "mono": "Use for technical metadata, status labels, counters, column names, data types, compact pills, timestamps, and code.",
+        "uppercaseMetadata": "Small uppercase mono labels with tracking are a recurring signature. Use them for status, categories, panel subtitles, and system hints.",
+        "headings": "Keep headings compact and semibold or bold. Avoid oversized marketing headings."
+      }
+    },
+    "spacing": {
+      "baseUnit": 4,
+      "density": "compact but breathable",
+      "values": {
+        "xs": "4px",
+        "sm": "6px",
+        "md": "8px",
+        "lg": "12px",
+        "xl": "16px",
+        "2xl": "20px",
+        "3xl": "24px",
+        "4xl": "32px"
+      },
+      "patterns": {
+        "panelPadding": "16px to 20px",
+        "headerPaddingX": "24px",
+        "buttonPadding": "6px 14px",
+        "pillPadding": "4px 10px",
+        "cardPadding": "12px to 16px",
+        "denseListGap": "4px to 6px",
+        "sectionGap": "16px to 20px"
+      }
+    },
+    "radius": {
+      "small": "4px",
+      "medium": "6px",
+      "large": "8px",
+      "xl": "12px",
+      "pill": "9999px"
+    },
+    "shadow": {
+      "subtle": "0 1px 2px rgba(15, 23, 42, 0.05)",
+      "panel": "0 4px 6px -1px rgba(15, 23, 42, 0.10), 0 2px 4px -2px rgba(15, 23, 42, 0.10)",
+      "elevatedCard": "0 10px 15px -3px rgba(15, 23, 42, 0.10), 0 4px 6px -4px rgba(15, 23, 42, 0.10)",
+      "primaryGlow": "0 4px 8px rgba(79, 70, 229, 0.10)"
+    },
+    "border": {
+      "width": "1px",
+      "buttonBottomWidth": "3px",
+      "buttonHoverBottomWidth": "4px",
+      "buttonActiveBottomWidth": "1px",
+      "style": "solid",
+      "dashedDropzone": "1px dashed"
+    },
+    "motion": {
+      "durationFast": "150ms",
+      "durationBase": "200ms",
+      "durationPanel": "300ms",
+      "easing": "ease-in-out",
+      "fadeIn": {
+        "duration": "200ms",
+        "from": {
+          "opacity": 0,
+          "translateY": "4px"
+        },
+        "to": {
+          "opacity": 1,
+          "translateY": "0px"
+        }
+      },
+      "tactilePress": {
+        "hover": {
+          "translateY": "-1px",
+          "bottomBorder": "4px"
+        },
+        "active": {
+          "translateY": "2px",
+          "bottomBorder": "1px"
+        }
+      },
+      "liveIndicators": [
+        "pulse for active status dots",
+        "spin for processing icons",
+        "bounce for upload/drop hints",
+        "animated dashed lines for connected graph relationships",
+        "skeleton shimmer for pending AI responses"
+      ]
+    }
+  },
+  "layoutSystem": {
+    "appShell": {
+      "structure": "Full-height workspace with fixed top navigation and a three-column body.",
+      "height": "100vh",
+      "overflow": "hidden at shell level, scroll only within panels and canvas",
+      "topNav": {
+        "height": "64px",
+        "surface": "white",
+        "border": "bottom slate border",
+        "content": "brand area, centered status capsule, right-aligned action group"
+      },
+      "columns": {
+        "leftPanel": {
+          "defaultWidth": "25%",
+          "minWidth": "285px",
+          "role": "assistant/chat/command input or guidance panel"
+        },
+        "centerWorkspace": {
+          "width": "flex remaining",
+          "role": "primary tabbed canvas or active work area",
+          "surface": "slate muted background with white inner canvases"
+        },
+        "rightPanel": {
+          "defaultWidth": "20%",
+          "minWidth": "240px",
+          "role": "context inspector, metrics, object details, generated output"
+        }
+      },
+      "collapsiblePanels": {
+        "behavior": "Collapse side panels to zero width with opacity transition; provide slim floating handles to reopen.",
+        "transition": "300ms ease-in-out"
+      }
+    },
+    "canvas": {
+      "purpose": "A large scrollable technical design area for node cards, diagrams, relationships, or spatial objects.",
+      "size": {
+        "recommendedMinWidth": "2400px",
+        "recommendedMinHeight": "1600px"
+      },
+      "grid": {
+        "type": "radial dot grid",
+        "dotColor": "#CBD5E1",
+        "dotSize": "1.5px",
+        "spacing": "24px",
+        "background": "#FFFFFF"
+      },
+      "overlays": [
+        "top-left tool cluster",
+        "top-right live status chips",
+        "absolute SVG layer for relationship lines",
+        "absolute object layer above lines"
+      ],
+      "spatialRules": [
+        "Use draggable cards with fixed compact widths around 220px.",
+        "Snap drag movement to 10px increments.",
+        "Use bezier connection lines between related objects.",
+        "Put connection lines behind cards and use dashed animation to imply live flow."
+      ]
+    },
+    "tabs": {
+      "placement": "Thin strip above the main center content.",
+      "style": "Rounded pill tabs with bold small labels, icons, colored active state, and tactile bottom border.",
+      "activeColorRule": "Assign one accent color per major workflow area while preserving indigo as the primary default."
+    }
+  },
+  "componentPatterns": {
+    "topNavigation": {
+      "surface": "white",
+      "height": "64px",
+      "border": "bottom slate border",
+      "shadow": "subtle",
+      "brandLockup": {
+        "iconTile": "Primary indigo rounded square with white icon and small shadow.",
+        "title": "18px bold sans, slate near-black.",
+        "subtitleOrEditableContext": "12px muted sans, no visible border, hover darkens."
+      },
+      "statusCapsule": {
+        "shape": "pill",
+        "surface": "slate-50",
+        "border": "slate-200",
+        "contents": "active dot, mono uppercase label, mono value, semantic badge",
+        "recommendedUse": "Summarize live system or object status."
+      },
+      "actions": "Right-aligned compact pill buttons with icons and tactile bottom border."
+    },
+    "button": {
+      "base": {
+        "shape": "pill for primary actions, rounded-md for icon-only micro actions",
+        "font": "12px semibold or bold sans",
+        "height": "32px to 36px",
+        "border": "1px solid plus 3px bottom border",
+        "transition": "150ms",
+        "iconSize": "12px to 16px"
+      },
+      "primary": {
+        "background": "#4F46E5",
+        "text": "#FFFFFF",
+        "bottomBorder": "#3730A3",
+        "shadow": "primaryGlow"
+      },
+      "secondary": {
+        "background": "#FFFFFF",
+        "text": "#334155",
+        "border": "#E2E8F0",
+        "bottomBorder": "#CBD5E1"
+      },
+      "semantic": {
+        "success": "Use emerald background for confirmations or mapping actions.",
+        "info": "Use sky/cyan accents for informational objects.",
+        "warning": "Use amber for link mode, warnings, or pending compliance.",
+        "danger": "Use rose/red only for destructive actions or critical validation."
+      },
+      "interaction": "On hover, raise by 1px and increase bottom border; on active, lower by 2px and reduce bottom border."
+    },
+    "panel": {
+      "base": {
+        "surface": "#FFFFFF",
+        "border": "#E2E8F0",
+        "shadow": "panel",
+        "padding": "16px to 20px",
+        "layout": "flex column",
+        "overflow": "auto inside the panel, not on body"
+      },
+      "header": {
+        "title": "14px to 18px semibold sans",
+        "metadata": "10px mono uppercase muted or accent",
+        "divider": "bottom border with 12px to 16px spacing"
+      },
+      "emptyState": {
+        "surface": "slate-50",
+        "border": "dashed slate border",
+        "text": "muted slate",
+        "action": "small primary or link button"
+      }
+    },
+    "card": {
+      "base": {
+        "surface": "#FFFFFF or #F8FAFC",
+        "border": "#E2E8F0",
+        "radius": "8px to 12px",
+        "padding": "12px to 16px",
+        "shadow": "subtle to panel",
+        "hover": "slight background shift, optional shadow increase"
+      },
+      "technicalCard": {
+        "header": "mono or uppercase metadata label with accent icon",
+        "body": "small sans copy with tight leading",
+        "footer": "thin top border with mono metadata or actions"
+      },
+      "metricCard": {
+        "layout": "compact 2-column or 3-column grid",
+        "label": "10px uppercase mono muted",
+        "value": "20px bold mono",
+        "surface": "slate-50"
+      }
+    },
+    "nodeCard": {
+      "purpose": "Reusable compact object card for graph, schema, workflow, or data-model nodes.",
+      "width": "220px",
+      "radius": "8px",
+      "surface": "#FFFFFF",
+      "shadow": "medium with hover elevation",
+      "header": {
+        "height": "approximately 46px",
+        "padding": "10px 12px",
+        "text": "12px uppercase, heavy sans, white on colored background",
+        "icon": "13px white",
+        "rightControls": "small disclosure control plus status dot"
+      },
+      "typeColors": {
+        "primaryEntity": {
+          "header": "#4F46E5",
+          "selectedBorder": "#4F46E5",
+          "selectedRing": "rgba(79, 70, 229, 0.40)"
+        },
+        "secondaryEntity": {
+          "header": "#0284C7",
+          "selectedBorder": "#06B6D4",
+          "selectedRing": "rgba(6, 182, 212, 0.40)"
+        },
+        "sourceEntity": {
+          "header": "#059669",
+          "selectedBorder": "#10B981",
+          "selectedRing": "rgba(16, 185, 129, 0.40)"
+        },
+        "generatedEntity": {
+          "header": "#A855F7",
+          "selectedBorder": "#A855F7",
+          "selectedRing": "rgba(168, 85, 247, 0.40)"
+        }
+      },
+      "rows": {
+        "surface": "slate-50 with white row pills",
+        "height": "about 30px per row",
+        "font": "10.5px mono",
+        "label": "left aligned, truncate",
+        "typeOrValue": "right aligned, 9px uppercase muted",
+        "statusPrefix": "small PK/FK/state marker in accent color"
+      },
+      "collapsedState": {
+        "height": "compact",
+        "message": "10px uppercase mono muted count/status"
+      }
+    },
+    "messageBubble": {
+      "layout": "Narrow stacked cards aligned left for assistant/system and right for user/operator.",
+      "metadata": "10px mono uppercase row with icon and timestamp.",
+      "assistant": {
+        "surface": "#F8FAFC",
+        "border": "#E2E8F0",
+        "text": "#334155"
+      },
+      "user": {
+        "surface": "#4F46E5",
+        "border": "#4338CA",
+        "text": "#FFFFFF"
+      },
+      "recommendedActionCard": {
+        "surface": "#FFFFFF",
+        "border": "#E2E8F0",
+        "nestedSurface": "#F8FAFC",
+        "accent": "#4F46E5",
+        "actions": "primary and secondary pill buttons"
+      }
+    },
+    "formControls": {
+      "input": {
+        "height": "32px to 40px",
+        "surface": "#FFFFFF",
+        "border": "#E2E8F0",
+        "focusBorder": "#4F46E5",
+        "focusRing": "subtle indigo",
+        "radius": "6px to 8px",
+        "font": "12px sans or 11px mono for technical fields"
+      },
+      "textarea": {
+        "surface": "#F8FAFC",
+        "border": "#E2E8F0",
+        "focusBorder": "#4F46E5",
+        "text": "12px sans, relaxed leading"
+      },
+      "select": {
+        "font": "11px mono",
+        "surface": "#FFFFFF",
+        "border": "#E2E8F0",
+        "focusBorder": "#4F46E5"
+      },
+      "checkbox": {
+        "accent": "#4F46E5"
+      }
+    },
+    "dropzone": {
+      "surface": "#F8FAFC",
+      "border": "dashed slate",
+      "radius": "8px",
+      "padding": "20px",
+      "activeState": "indigo border with very soft indigo background",
+      "iconMotion": "subtle bounce",
+      "actions": "small secondary pill buttons"
+    },
+    "validationOrStatusList": {
+      "aggregateCards": "Three-column semantic cards for success, warning, and error states.",
+      "itemCards": {
+        "padding": "16px",
+        "radius": "8px",
+        "border": "semantic-tinted",
+        "background": "very soft semantic tint",
+        "iconTile": "small semantic tile",
+        "category": "12px uppercase mono bold",
+        "badge": "10px mono capsule",
+        "body": "14px medium sans"
+      }
+    },
+    "codeBlock": {
+      "surface": "#0F172A",
+      "border": "#1E293B",
+      "radius": "8px",
+      "padding": "12px to 16px",
+      "font": "10px to 11px JetBrains Mono",
+      "text": "#67E8F9",
+      "selection": "#4F46E5",
+      "usage": "Use dark blocks sparingly for generated code or technical previews."
+    },
+    "modal": {
+      "overlay": "slate-900 at 60% opacity with light blur",
+      "container": {
+        "surface": "#FFFFFF",
+        "radius": "12px",
+        "border": "#E2E8F0",
+        "shadow": "large",
+        "maxWidth": "672px",
+        "padding": "24px"
+      },
+      "animation": "fadeIn 200ms"
+    }
+  },
+  "iconography": {
+    "style": "Thin line icons with consistent stroke, typically 12px to 20px.",
+    "placement": "Icons appear before labels in buttons, titles, metadata rows, status chips, and cards.",
+    "colorRules": [
+      "Use primary indigo for system or AI controls.",
+      "Use emerald for connected, valid, successful, or mapped states.",
+      "Use sky/cyan for secondary object types and inspect/info states.",
+      "Use amber for warning, pending, or active linking states.",
+      "Use rose/red for destructive actions and failed checks."
+    ],
+    "motionRules": [
+      "Pulse only active/live indicators.",
+      "Spin only processing or orbiting states.",
+      "Avoid animating every icon; reserve motion for state meaning."
+    ]
+  },
+  "interactionModel": {
+    "tactileControls": "Buttons feel pressable through bottom-border depth, small hover lift, and active downward translation.",
+    "selection": "Selected graph objects receive an accent border plus a low-opacity ring. Avoid changing the whole card background.",
+    "hover": "Hover states are subtle: slightly brighter surface, stronger shadow, darker text, or 1px upward movement.",
+    "focus": "Inputs and key actions use indigo border or ring.",
+    "loading": "Use compact skeleton rows, pulsing dots, spinning icons, or temporary disabled states.",
+    "progressiveDisclosure": "Complex cards should support expanded/collapsed modes. Collapsed mode shows a compact count or summary.",
+    "dragging": "Canvas objects can be dragged. Cursor switches to grab/grabbing and positions snap to a 10px grid.",
+    "relationshipCreation": "Use a temporary warning/amber mode for link creation, then render persistent animated indigo connection paths."
+  },
+  "compositionRules": {
+    "density": "Keep interfaces compact enough for expert workflows while preserving white space between panels and groups.",
+    "surfaceHierarchy": [
+      "App shell: very light slate",
+      "Panels: white",
+      "Nested sections: slate-50",
+      "Rows and controls: white",
+      "Primary active objects: accent-colored headers or badges"
+    ],
+    "borders": "Use borders more often than heavy shadows. Shadows should clarify layering, not decorate.",
+    "accentUse": "Indigo is the default action and system color. Semantic accents should be localized to object type or state.",
+    "metadataLanguage": "Use small uppercase mono labels for technical context, statuses, counts, and categories.",
+    "contentAgnosticism": "When replicating the design, substitute generic object names and workflows. Preserve layout, rhythm, states, and visual grammar, not the original frontend's domain copy.",
+    "responsiveness": "For narrow screens, collapse side panels first, keep top actions compact, and let the center workspace remain scrollable.",
+    "accessibility": [
+      "Maintain high contrast for text on accent backgrounds.",
+      "Do not rely on color alone; pair semantic colors with icons, badges, or labels.",
+      "Keep interactive targets at least 32px tall where possible.",
+      "Use focus outlines or rings for keyboard-accessible controls."
+    ]
+  },
+  "aiReplicationPrompt": {
+    "instruction": "Use this profile to generate a light technical data-workspace UI. Recreate the visual grammar: white/slate panels, indigo primary controls, compact mono metadata, tactile pill buttons, card-based inspectors, graph/canvas affordances, semantic status colors, and subtle live motion. Do not reuse any product-specific names, labels, datasets, table names, business copy, or exact frontend content from the source project.",
+    "mustInclude": [
+      "full-height app shell",
+      "fixed 64px top navigation",
+      "collapsible left and right panels",
+      "central tabbed workspace",
+      "large scrollable canvas or work area",
+      "raised pill action buttons",
+      "small uppercase mono labels",
+      "semantic badges and status cards",
+      "compact cards with slate borders",
+      "subtle animations for live, loading, and relationship states"
+    ],
+    "mustAvoid": [
+      "copying original frontend text or domain entities",
+      "introducing unrelated brand colors",
+      "using large hero sections",
+      "making the design feel like a generic SaaS landing page",
+      "overusing animation",
+      "flattening all controls into borderless buttons"
+    ]
+  }
+}
