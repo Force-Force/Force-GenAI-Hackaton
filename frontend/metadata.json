@@ -1,0 +1,6 @@
+{
+  "name": "AuraBI",
+  "description": "A modern AI-powered Data Engineering Workspace to visually design warehouses, converse with an AI Data Architect, and automatically build ETL pipelines.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
