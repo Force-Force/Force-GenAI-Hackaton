@@ -1,20 +1,48 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+/* Class-based dark mode: toggled by adding `.dark` on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 @layer base {
+  :root {
+    color-scheme: light;
+    --app-bg: #f8fafc;
+    --app-fg: #0f172a;
+  }
+
+  .dark {
+    color-scheme: dark;
+    --app-bg: #0b1120;
+    --app-fg: #e2e8f0;
+  }
+
   body {
-    background-color: #F8FAFC;
-    color: #0F172A;
+    background-color: var(--app-bg);
+    color: var(--app-fg);
     font-family: var(--font-sans);
+  }
+
+  /*
+   * Global, GPU-cheap color transition so theme switches glide instead of snap.
+   * Only color-related properties transition — transforms (node dragging,
+   * button press) are intentionally excluded so interactions stay instant.
+   */
+  *,
+  *::before,
+  *::after {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 200ms;
+    transition-timing-function: ease;
   }
 }
 
-/* Custom fade-in and animated dashes classes */
+/* Fade-in for chat bubbles / popovers. */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
@@ -24,9 +52,55 @@
   animation: fadeIn 0.2s ease-out forwards;
 }
 
-@keyframes dash {
-  to {
-    stroke-dashoffset: -100;
+/* ---------------------------------------------------------------------------
+ * Pipeline data-flow edge animations (Section 2).
+ * `.aura-edge-flow` draws a dashed overlay that streams from source -> target;
+ * `.aura-edge-particle` is a glowing dot that travels the same path.
+ * ------------------------------------------------------------------------- */
+@keyframes auraDashFlow {
+  to { stroke-dashoffset: -24; }
+}
+
+.aura-edge-flow {
+  stroke-dasharray: 6 8;
+  animation: auraDashFlow 0.6s linear infinite;
+}
+
+.aura-edge-particle {
+  offset-rotate: 0deg;
+  animation: auraParticleMove 1.8s linear infinite;
+}
+
+@keyframes auraParticleMove {
+  from { offset-distance: 0%; }
+  to { offset-distance: 100%; }
+}
+
+/* Respect reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  .aura-edge-flow,
+  .aura-edge-particle {
+    animation: none;
   }
 }
 
+/* React Flow surface theming so the canvas chrome follows the active theme. */
+.react-flow__controls button {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+}
+.dark .react-flow__controls button {
+  background-color: #1e293b;
+  border-bottom: 1px solid #334155;
+  color: #cbd5e1;
+}
+.dark .react-flow__controls button:hover {
+  background-color: #334155;
+}
+.dark .react-flow__controls button svg {
+  fill: currentColor;
+}
+.dark .react-flow__attribution {
+  background: transparent;
+}

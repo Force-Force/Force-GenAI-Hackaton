@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { ValidationItem } from '../../../types/pipeline';
 import { runValidations } from '../../../utils/validationRules';
+import { flattenGraph } from '../../../utils/graph';
 import { persistStateStorage } from '../../../store/persistStorage';
 import { usePipelineStore } from './pipelineStore';
 
@@ -71,7 +72,8 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
       runValidation: () => {
         set({ isValidating: true });
-        const { nodes, edges } = usePipelineStore.getState();
+        const state = usePipelineStore.getState();
+        const { nodes, edges } = flattenGraph(state.nodes, state.edges);
         const items = runValidations(nodes, edges);
         set({
           validations: items,

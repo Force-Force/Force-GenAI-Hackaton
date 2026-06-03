@@ -54,7 +54,7 @@ export function CanvasToolbar({ isFullscreen, onToggleFullscreen }: CanvasToolba
   };
 
   return (
-    <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-white/95 border border-slate-200 p-2 rounded-lg shadow-md">
+    <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 p-2 rounded-lg shadow-md">
       <Button variant="primary" onClick={addResource} aria-label="Add resource node">
         <PlusCircle size={12} /> Resource
       </Button>

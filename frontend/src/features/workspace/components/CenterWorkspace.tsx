@@ -20,8 +20,8 @@ export function CenterWorkspace() {
   const { ref, isFullscreen, toggle } = useFullscreen<HTMLDivElement>();
 
   return (
-    <div ref={ref} className="h-full flex flex-col bg-slate-50 min-w-0">
-      <div className="flex items-center gap-1 px-3 pt-2 bg-white border-b border-slate-200" role="tablist">
+    <div ref={ref} className="h-full flex flex-col bg-slate-50 dark:bg-slate-950 min-w-0">
+      <div className="flex items-center gap-1 px-3 pt-2 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800" role="tablist">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -31,8 +31,8 @@ export function CenterWorkspace() {
             className={cn(
               'flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-colors cursor-pointer',
               activeTab === id
-                ? 'text-[#4F46E5] border-[#4F46E5] bg-indigo-50/50'
-                : 'text-slate-500 border-transparent hover:text-slate-700',
+                ? 'text-[#4F46E5] dark:text-indigo-300 border-[#4F46E5] dark:border-indigo-400 bg-indigo-50/50 dark:bg-indigo-500/10'
+                : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200',
             )}
           >
             <Icon size={14} />

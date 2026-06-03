@@ -16,7 +16,7 @@ import type {
 import { isDatamartNode } from '../../../types/pipeline';
 import { applyAiAction, type ApplyActionResult } from '../../../utils/applyAiAction';
 import { exportSchemaToSql } from '../../../utils/ddlExport';
-import { genId } from '../../../utils/graph';
+import { flattenGraph, genId } from '../../../utils/graph';
 import { persistStateStorage } from '../../../store/persistStorage';
 import { createInitialPipeline } from '../data/initialPipeline';
 import * as pipelineService from '../../../services/pipeline/pipelineService';
@@ -46,6 +46,8 @@ interface PipelineState {
   onConnect: (connection: Connection) => void;
 
   selectNode: (id: string | null) => void;
+  /** Toggle (or set) a container node's in-place expansion. Local only. */
+  toggleNodeExpanded: (id: string, expanded?: boolean) => void;
   addNode: (node: PipelineNode) => void;
   updateNodeData: (id: string, data: Partial<PipelineNodeData>) => void;
   updateProcessingCode: (id: string, code: string) => void;
@@ -193,7 +195,7 @@ export const usePipelineStore = create<PipelineState>()(
       return {
         nodes: initial.nodes,
         edges: initial.edges,
-        selectedNodeId: 'FactSales',
+        selectedNodeId: 'dw_core',
         viewStack: [],
         pipelineId: null,
         syncStatus: 'idle',
@@ -236,6 +238,21 @@ export const usePipelineStore = create<PipelineState>()(
         },
 
         selectNode: (id) => set({ selectedNodeId: id }),
+
+        toggleNodeExpanded: (id, expanded) =>
+          set((s) => ({
+            nodes: s.nodes.map((n) =>
+              n.id === id && n.data.category === 'datamart'
+                ? ({
+                    ...n,
+                    data: {
+                      ...n.data,
+                      expanded: expanded ?? !(n.data as { expanded?: boolean }).expanded,
+                    },
+                  } as PipelineNode)
+                : n,
+            ),
+          })),
 
         addNode: (node) => {
           set((s) => ({ nodes: [...s.nodes, node], selectedNodeId: node.id }));
@@ -335,7 +352,7 @@ FROM staging;`,
         },
 
         exportSql: (projectName) => {
-          const { nodes, edges } = get();
+          const { nodes, edges } = flattenGraph(get().nodes, get().edges);
           return exportSchemaToSql(projectName, nodes, edges);
         },
 
@@ -433,7 +450,7 @@ FROM staging;`,
       };
     },
     {
-      name: 'aura-bi.pipeline.v1',
+      name: 'aura-bi.pipeline.v2',
       storage: createJSONStorage(() => persistStateStorage),
       partialize: (s) => ({
         nodes: s.nodes,

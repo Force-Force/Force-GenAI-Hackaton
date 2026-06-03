@@ -12,22 +12,24 @@ Documentation interactive : `http://localhost:8000/docs`
 
 ## Sommaire
 
-| # | Méthode | Route | IA | Tag |
-|---|---------|-------|----|-----|
-| 1 | GET | `/health` | Non | Santé |
-| 2 | POST | `/api/v1/pipelines` | Non | Pipelines |
-| 3 | GET | `/api/v1/pipelines` | Non | Pipelines |
-| 4 | GET | `/api/v1/pipelines/{pipeline_id}` | Non | Pipelines |
-| 5 | PATCH | `/api/v1/pipelines/{pipeline_id}` | Non | Pipelines |
-| 6 | DELETE | `/api/v1/pipelines/{pipeline_id}` | Non | Pipelines |
-| 7 | POST | `/api/v1/pipelines/{pipeline_id}/nodes` | Non | Nœuds |
-| 8 | PATCH | `/api/v1/pipelines/{pipeline_id}/nodes/{node_id}` | Non | Nœuds |
-| 9 | DELETE | `/api/v1/pipelines/{pipeline_id}/nodes/{node_id}` | Non | Nœuds |
-| 10 | POST | `/api/v1/pipelines/{pipeline_id}/edges` | Non | Liaisons |
-| 11 | DELETE | `/api/v1/pipelines/{pipeline_id}/edges/{edge_id}` | Non | Liaisons |
-| 12 | GET | `/api/v1/pipelines/{pipeline_id}/chat` | Non | Chat |
-| 13 | POST | `/api/v1/pipelines/{pipeline_id}/chat` | **Oui** | Chat |
-| 14 | WS | `/api/v1/ws/pipelines/{pipeline_id}` | Non | WebSocket |
+
+| #   | Méthode | Route                                             | IA      | Tag       |
+| --- | ------- | ------------------------------------------------- | ------- | --------- |
+| 1   | GET     | `/health`                                         | Non     | Santé     |
+| 2   | POST    | `/api/v1/pipelines`                               | Non     | Pipelines |
+| 3   | GET     | `/api/v1/pipelines`                               | Non     | Pipelines |
+| 4   | GET     | `/api/v1/pipelines/{pipeline_id}`                 | Non     | Pipelines |
+| 5   | PATCH   | `/api/v1/pipelines/{pipeline_id}`                 | Non     | Pipelines |
+| 6   | DELETE  | `/api/v1/pipelines/{pipeline_id}`                 | Non     | Pipelines |
+| 7   | POST    | `/api/v1/pipelines/{pipeline_id}/nodes`           | Non     | Nœuds     |
+| 8   | PATCH   | `/api/v1/pipelines/{pipeline_id}/nodes/{node_id}` | Non     | Nœuds     |
+| 9   | DELETE  | `/api/v1/pipelines/{pipeline_id}/nodes/{node_id}` | Non     | Nœuds     |
+| 10  | POST    | `/api/v1/pipelines/{pipeline_id}/edges`           | Non     | Liaisons  |
+| 11  | DELETE  | `/api/v1/pipelines/{pipeline_id}/edges/{edge_id}` | Non     | Liaisons  |
+| 12  | GET     | `/api/v1/pipelines/{pipeline_id}/chat`            | Non     | Chat      |
+| 13  | POST    | `/api/v1/pipelines/{pipeline_id}/chat`            | **Oui** | Chat      |
+| 14  | WS      | `/api/v1/ws/pipelines/{pipeline_id}`              | Non     | WebSocket |
+
 
 ---
 
@@ -35,14 +37,16 @@ Documentation interactive : `http://localhost:8000/docs`
 
 ### `GET /health`
 
-| | |
-|---|---|
-| **Utilité** | Vérifier que l’API est démarrée (load balancer, monitoring, CI). |
-| **Usage typique** | Ping avant les tests ou au démarrage du frontend. |
-| **Corps requête** | Aucun |
-| **Réponse** | `200` — `{"status": "ok"}` |
-| **IA** | Non |
-| **WebSocket** | Non |
+
+|                   |                                                                  |
+| ----------------- | ---------------------------------------------------------------- |
+| **Utilité**       | Vérifier que l’API est démarrée (load balancer, monitoring, CI). |
+| **Usage typique** | Ping avant les tests ou au démarrage du frontend.                |
+| **Corps requête** | Aucun                                                            |
+| **Réponse**       | `200` — `{"status": "ok"}`                                       |
+| **IA**            | Non                                                              |
+| **WebSocket**     | Non                                                              |
+
 
 **Exemple**
 
@@ -58,14 +62,16 @@ Un **pipeline** est l’enveloppe du projet : nom, statut, design d’architectu
 
 ### `POST /api/v1/pipelines`
 
-| | |
-|---|---|
-| **Utilité** | Créer un nouveau projet ETL vide sur le canvas. |
-| **Usage typique** | Bouton « Nouveau pipeline » dans le frontend ReactFlow. |
-| **Corps requête** | `PipelineCreate` |
-| **Réponse** | `201` — `PipelineRead` (graphe vide : `nodes: []`, `edges: []`) |
-| **IA** | Non |
-| **WebSocket** | Émet `pipeline.updated` |
+
+|                   |                                                                 |
+| ----------------- | --------------------------------------------------------------- |
+| **Utilité**       | Créer un nouveau projet ETL vide sur le canvas.                 |
+| **Usage typique** | Bouton « Nouveau pipeline » dans le frontend ReactFlow.         |
+| **Corps requête** | `PipelineCreate`                                                |
+| **Réponse**       | `201` — `PipelineRead` (graphe vide : `nodes: []`, `edges: []`) |
+| **IA**            | Non                                                             |
+| **WebSocket**     | Émet `pipeline.updated`                                         |
+
 
 **Corps (JSON)**
 
@@ -75,42 +81,50 @@ Un **pipeline** est l’enveloppe du projet : nom, statut, design d’architectu
 }
 ```
 
-| Champ | Type | Obligatoire | Description |
-|-------|------|-------------|-------------|
-| `name` | string (1–255) | Oui | Nom affiché du projet |
+
+| Champ  | Type           | Obligatoire | Description           |
+| ------ | -------------- | ----------- | --------------------- |
+| `name` | string (1–255) | Oui         | Nom affiché du projet |
+
 
 ---
 
 ### `GET /api/v1/pipelines`
 
-| | |
-|---|---|
-| **Utilité** | Lister tous les projets (écran d’accueil, sélecteur de pipeline). |
-| **Usage typique** | Dashboard listant les pipelines récents. |
-| **Query params** | `skip` (défaut 0), `limit` (défaut 50, max 100) |
-| **Réponse** | `200` — liste de `PipelineListItem` |
-| **IA** | Non |
+
+|                   |                                                                   |
+| ----------------- | ----------------------------------------------------------------- |
+| **Utilité**       | Lister tous les projets (écran d’accueil, sélecteur de pipeline). |
+| **Usage typique** | Dashboard listant les pipelines récents.                          |
+| **Query params**  | `skip` (défaut 0), `limit` (défaut 50, max 100)                   |
+| **Réponse**       | `200` — liste de `PipelineListItem`                               |
+| **IA**            | Non                                                               |
+
 
 **Champs réponse**
 
-| Champ | Description |
-|-------|-------------|
-| `id` | UUID du pipeline |
-| `name` | Nom |
-| `status` | `DRAFT`, `ACTIVE`, `ARCHIVED` |
-| `updated_at` | Dernière modification |
+
+| Champ        | Description                   |
+| ------------ | ----------------------------- |
+| `id`         | UUID du pipeline              |
+| `name`       | Nom                           |
+| `status`     | `DRAFT`, `ACTIVE`, `ARCHIVED` |
+| `updated_at` | Dernière modification         |
+
 
 ---
 
 ### `GET /api/v1/pipelines/{pipeline_id}`
 
-| | |
-|---|---|
-| **Utilité** | Charger le **graphe complet** pour ReactFlow (nœuds, positions, liaisons). |
+
+|                   |                                                                             |
+| ----------------- | --------------------------------------------------------------------------- |
+| **Utilité**       | Charger le **graphe complet** pour ReactFlow (nœuds, positions, liaisons).  |
 | **Usage typique** | Ouverture d’un pipeline dans l’éditeur visuel ; source de vérité du canvas. |
-| **Réponse** | `200` — `PipelineRead` |
-| **Erreurs** | `404` si pipeline inconnu |
-| **IA** | Non |
+| **Réponse**       | `200` — `PipelineRead`                                                      |
+| **Erreurs**       | `404` si pipeline inconnu                                                   |
+| **IA**            | Non                                                                         |
+
 
 **Structure réponse (extrait)**
 
@@ -148,14 +162,16 @@ Un **pipeline** est l’enveloppe du projet : nom, statut, design d’architectu
 
 ### `PATCH /api/v1/pipelines/{pipeline_id}`
 
-| | |
-|---|---|
-| **Utilité** | Mettre à jour les métadonnées du projet (nom, statut, cible décisionnelle). |
+
+|                   |                                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------------- |
+| **Utilité**       | Mettre à jour les métadonnées du projet (nom, statut, cible décisionnelle).                     |
 | **Usage typique** | Renommer le projet ; passer en `ACTIVE` ; enregistrer le design star/snowflake choisi par l’IA. |
-| **Corps requête** | `PipelineUpdate` (tous les champs optionnels) |
-| **Réponse** | `200` — `PipelineRead` |
-| **IA** | Non |
-| **WebSocket** | Émet `pipeline.updated` |
+| **Corps requête** | `PipelineUpdate` (tous les champs optionnels)                                                   |
+| **Réponse**       | `200` — `PipelineRead`                                                                          |
+| **IA**            | Non                                                                                             |
+| **WebSocket**     | Émet `pipeline.updated`                                                                         |
+
 
 **Corps (JSON) — exemple**
 
@@ -171,20 +187,24 @@ Un **pipeline** est l’enveloppe du projet : nom, statut, design d’architectu
 }
 ```
 
-| Champ | Valeurs possibles |
-|-------|-------------------|
+
+| Champ    | Valeurs possibles             |
+| -------- | ----------------------------- |
 | `status` | `DRAFT`, `ACTIVE`, `ARCHIVED` |
+
 
 ---
 
 ### `DELETE /api/v1/pipelines/{pipeline_id}`
 
-| | |
-|---|---|
-| **Utilité** | Supprimer définitivement un projet et tout ce qui est lié (nœuds, edges, chat, tâches agents). |
-| **Usage typique** | Suppression depuis la liste des projets. |
-| **Réponse** | `204` (sans corps) |
-| **IA** | Non |
+
+|                   |                                                                                                |
+| ----------------- | ---------------------------------------------------------------------------------------------- |
+| **Utilité**       | Supprimer définitivement un projet et tout ce qui est lié (nœuds, edges, chat, tâches agents). |
+| **Usage typique** | Suppression depuis la liste des projets.                                                       |
+| **Réponse**       | `204` (sans corps)                                                                             |
+| **IA**            | Non                                                                                            |
+
 
 ---
 
@@ -194,14 +214,16 @@ Un **nœud** représente une étape du flux : source de données, transformation
 
 ### `POST /api/v1/pipelines/{pipeline_id}/nodes`
 
-| | |
-|---|---|
-| **Utilité** | Ajouter un bloc sur le canvas (CSV, JSON, script Python, requête SQL, sink Postgres, etc.). |
-| **Usage typique** | Glisser-déposer ou « Ajouter une source » dans ReactFlow. |
-| **Corps requête** | `NodeCreate` |
-| **Réponse** | `201` — `NodeRead` |
-| **IA** | Non |
-| **WebSocket** | Émet `node.created` |
+
+|                   |                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------- |
+| **Utilité**       | Ajouter un bloc sur le canvas (CSV, JSON, script Python, requête SQL, sink Postgres, etc.). |
+| **Usage typique** | Glisser-déposer ou « Ajouter une source » dans ReactFlow.                                   |
+| **Corps requête** | `NodeCreate`                                                                                |
+| **Réponse**       | `201` — `NodeRead`                                                                          |
+| **IA**            | Non                                                                                         |
+| **WebSocket**     | Émet `node.created`                                                                         |
+
 
 **Corps (JSON) — exemple source CSV**
 
@@ -216,25 +238,29 @@ Un **nœud** représente une étape du flux : source de données, transformation
 }
 ```
 
-| Champ | Valeurs / notes |
-|-------|-----------------|
-| `type` | `SOURCE`, `TRANSFORM`, `SINK` |
+
+| Champ     | Valeurs / notes                                                                   |
+| --------- | --------------------------------------------------------------------------------- |
+| `type`    | `SOURCE`, `TRANSFORM`, `SINK`                                                     |
 | `subtype` | `csv`, `json`, `python_script`, `sql_query`, `postgres_sink`, `sqlite`, `generic` |
-| `data` | JSON libre : schéma, code généré, config connexion |
-| `status` | `IDLE`, `PENDING`, `VALID`, `ERROR` |
+| `data`    | JSON libre : schéma, code généré, config connexion                                |
+| `status`  | `IDLE`, `PENDING`, `VALID`, `ERROR`                                               |
+
 
 ---
 
 ### `PATCH /api/v1/pipelines/{pipeline_id}/nodes/{node_id}`
 
-| | |
-|---|---|
-| **Utilité** | Modifier un nœud existant (position, label, données internes, statut d’exécution). |
+
+|                   |                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------ |
+| **Utilité**       | Modifier un nœud existant (position, label, données internes, statut d’exécution).                     |
 | **Usage typique** | Déplacer un nœud sur la grille ; mettre à jour le code de transformation ; marquer `VALID` ou `ERROR`. |
-| **Corps requête** | `NodeUpdate` (champs partiels) |
-| **Réponse** | `200` — `NodeRead` |
-| **IA** | Non |
-| **WebSocket** | Émet `node.updated` |
+| **Corps requête** | `NodeUpdate` (champs partiels)                                                                         |
+| **Réponse**       | `200` — `NodeRead`                                                                                     |
+| **IA**            | Non                                                                                                    |
+| **WebSocket**     | Émet `node.updated`                                                                                    |
+
 
 **Exemple — déplacement**
 
@@ -248,13 +274,15 @@ Un **nœud** représente une étape du flux : source de données, transformation
 
 ### `DELETE /api/v1/pipelines/{pipeline_id}/nodes/{node_id}`
 
-| | |
-|---|---|
-| **Utilité** | Retirer un bloc du graphe ; supprime aussi les **liaisons** connectées à ce nœud. |
-| **Usage typique** | Suppression d’un nœud depuis le canvas. |
-| **Réponse** | `204` |
-| **IA** | Non |
-| **WebSocket** | Émet `node.deleted` |
+
+|                   |                                                                                   |
+| ----------------- | --------------------------------------------------------------------------------- |
+| **Utilité**       | Retirer un bloc du graphe ; supprime aussi les **liaisons** connectées à ce nœud. |
+| **Usage typique** | Suppression d’un nœud depuis le canvas.                                           |
+| **Réponse**       | `204`                                                                             |
+| **IA**            | Non                                                                               |
+| **WebSocket**     | Émet `node.deleted`                                                               |
+
 
 ---
 
@@ -264,15 +292,17 @@ Une **liaison** relie deux nœuds et symbolise le flux de données entre eux.
 
 ### `POST /api/v1/pipelines/{pipeline_id}/edges`
 
-| | |
-|---|---|
-| **Utilité** | Connecter deux nœuds (câble visuel source → cible). |
+
+|                   |                                                                                    |
+| ----------------- | ---------------------------------------------------------------------------------- |
+| **Utilité**       | Connecter deux nœuds (câble visuel source → cible).                                |
 | **Usage typique** | L’utilisateur relie la sortie d’une source vers une transformation dans ReactFlow. |
-| **Corps requête** | `EdgeCreate` |
-| **Réponse** | `201` — `EdgeRead` |
-| **Erreurs** | `400` si source = cible ; `404` si nœud hors pipeline |
-| **IA** | Non |
-| **WebSocket** | Émet `edge.created` |
+| **Corps requête** | `EdgeCreate`                                                                       |
+| **Réponse**       | `201` — `EdgeRead`                                                                 |
+| **Erreurs**       | `400` si source = cible ; `404` si nœud hors pipeline                              |
+| **IA**            | Non                                                                                |
+| **WebSocket**     | Émet `edge.created`                                                                |
+
 
 **Corps (JSON)**
 
@@ -297,13 +327,15 @@ Une **liaison** relie deux nœuds et symbolise le flux de données entre eux.
 
 ### `DELETE /api/v1/pipelines/{pipeline_id}/edges/{edge_id}`
 
-| | |
-|---|---|
-| **Utilité** | Supprimer une connexion entre deux nœuds sans supprimer les nœuds. |
-| **Usage typique** | L’utilisateur déconnecte deux blocs sur le canvas. |
-| **Réponse** | `204` |
-| **IA** | Non |
-| **WebSocket** | Émet `edge.deleted` |
+
+|                   |                                                                    |
+| ----------------- | ------------------------------------------------------------------ |
+| **Utilité**       | Supprimer une connexion entre deux nœuds sans supprimer les nœuds. |
+| **Usage typique** | L’utilisateur déconnecte deux blocs sur le canvas.                 |
+| **Réponse**       | `204`                                                              |
+| **IA**            | Non                                                                |
+| **WebSocket**     | Émet `edge.deleted`                                                |
+
 
 ---
 
@@ -311,34 +343,40 @@ Une **liaison** relie deux nœuds et symbolise le flux de données entre eux.
 
 ### `GET /api/v1/pipelines/{pipeline_id}/chat`
 
-| | |
-|---|---|
-| **Utilité** | Récupérer l’**historique** des messages utilisateur / Agent Maître. |
-| **Usage typique** | Afficher le fil de discussion au chargement du panneau chat. |
-| **Réponse** | `200` — liste de `ChatMessageRead` (ordre chronologique) |
-| **IA** | Non (lecture base de données uniquement) |
+
+|                   |                                                                     |
+| ----------------- | ------------------------------------------------------------------- |
+| **Utilité**       | Récupérer l’**historique** des messages utilisateur / Agent Maître. |
+| **Usage typique** | Afficher le fil de discussion au chargement du panneau chat.        |
+| **Réponse**       | `200` — liste de `ChatMessageRead` (ordre chronologique)            |
+| **IA**            | Non (lecture base de données uniquement)                            |
+
 
 **Champs message**
 
-| Champ | Description |
-|-------|-------------|
-| `sender` | `USER` ou `MASTER_AGENT` |
-| `content_md` | Contenu Markdown |
-| `metadata` | Ex. `requires_user_input`, `delegations` |
-| `created_at` | Horodatage |
+
+| Champ        | Description                              |
+| ------------ | ---------------------------------------- |
+| `sender`     | `USER` ou `MASTER_AGENT`                 |
+| `content_md` | Contenu Markdown                         |
+| `metadata`   | Ex. `requires_user_input`, `delegations` |
+| `created_at` | Horodatage                               |
+
 
 ---
 
 ### `POST /api/v1/pipelines/{pipeline_id}/chat`
 
-| | |
-|---|---|
-| **Utilité** | Envoyer un message à l’**Agent Maître** : conseils, délégation aux agents spécialisés, questions sur le graphe. |
-| **Usage typique** | Zone de saisie chat dans l’UI ; assistant IA du pipeline ETL. |
-| **Corps requête** | `ChatMessageCreate` |
-| **Réponse** | `200` — `ChatResponse` |
-| **IA** | **Oui** — OpenAI si `OPENAI_API_KEY` ; sinon réponse offline + délégations possibles |
-| **WebSocket** | Émet `chat.message` (×2) et `agent_task.updated` si délégation |
+
+|                   |                                                                                                                 |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Utilité**       | Envoyer un message à l’**Agent Maître** : conseils, délégation aux agents spécialisés, questions sur le graphe. |
+| **Usage typique** | Zone de saisie chat dans l’UI ; assistant IA du pipeline ETL.                                                   |
+| **Corps requête** | `ChatMessageCreate`                                                                                             |
+| **Réponse**       | `200` — `ChatResponse`                                                                                          |
+| **IA**            | **Oui** — OpenAI si `OPENAI_API_KEY` ; sinon réponse offline + délégations possibles                            |
+| **WebSocket**     | Émet `chat.message` (×2) et `agent_task.updated` si délégation                                                  |
+
 
 **Corps (JSON)**
 
@@ -378,12 +416,14 @@ Une **liaison** relie deux nœuds et symbolise le flux de données entre eux.
 
 ### `WS /api/v1/ws/pipelines/{pipeline_id}`
 
-| | |
-|---|---|
-| **Utilité** | Recevoir en temps réel les changements du pipeline (multi-onglets, collaboration future). |
-| **Usage typique** | Le frontend s’abonne à la room du `pipeline_id` et met à jour le canvas sans recharger. |
-| **IA** | Non (canal de notification uniquement) |
-| **Protocole** | Connexion WebSocket ; le client peut envoyer du texte (keep-alive) ; le serveur pousse des événements JSON |
+
+|                   |                                                                                                            |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Utilité**       | Recevoir en temps réel les changements du pipeline (multi-onglets, collaboration future).                  |
+| **Usage typique** | Le frontend s’abonne à la room du `pipeline_id` et met à jour le canvas sans recharger.                    |
+| **IA**            | Non (canal de notification uniquement)                                                                     |
+| **Protocole**     | Connexion WebSocket ; le client peut envoyer du texte (keep-alive) ; le serveur pousse des événements JSON |
+
 
 **Format événement**
 
@@ -395,16 +435,18 @@ Une **liaison** relie deux nœuds et symbolise le flux de données entre eux.
 }
 ```
 
-| `type` | Déclenché par |
-|--------|----------------|
-| `pipeline.updated` | POST/PATCH pipeline |
-| `node.created` | POST node |
-| `node.updated` | PATCH node |
-| `node.deleted` | DELETE node |
-| `edge.created` | POST edge |
-| `edge.deleted` | DELETE edge |
-| `chat.message` | POST chat (message user + réponse agent) |
-| `agent_task.updated` | Délégation créée via POST chat |
+
+| `type`               | Déclenché par                            |
+| -------------------- | ---------------------------------------- |
+| `pipeline.updated`   | POST/PATCH pipeline                      |
+| `node.created`       | POST node                                |
+| `node.updated`       | PATCH node                               |
+| `node.deleted`       | DELETE node                              |
+| `edge.created`       | POST edge                                |
+| `edge.deleted`       | DELETE edge                              |
+| `chat.message`       | POST chat (message user + réponse agent) |
+| `agent_task.updated` | Délégation créée via POST chat           |
+
 
 **Exemple connexion**
 
@@ -422,12 +464,14 @@ Serveur lancé séparément pour l’IDE Cursor :
 fastmcp run app/mcp/server.py:mcp
 ```
 
-| Outil | Utilité | IA |
-|-------|---------|-----|
-| `get_pipeline_context` | Contexte graphe complet pour raisonnement agent | Non (DB) |
-| `summarize_graph` | Résumé texte du pipeline | Non |
-| `create_agent_task_tool` | Créer une tâche agent `PENDING` | Non |
-| `stub_specialized_agent` | Message stub agents non disponibles en MVP | Non |
+
+| Outil                    | Utilité                                         | IA       |
+| ------------------------ | ----------------------------------------------- | -------- |
+| `get_pipeline_context`   | Contexte graphe complet pour raisonnement agent | Non (DB) |
+| `summarize_graph`        | Résumé texte du pipeline                        | Non      |
+| `create_agent_task_tool` | Créer une tâche agent `PENDING`                 | Non      |
+| `stub_specialized_agent` | Message stub agents non disponibles en MVP      | Non      |
+
 
 ---
 
@@ -445,24 +489,29 @@ fastmcp run app/mcp/server.py:mcp
 
 ## Codes d’erreur courants
 
-| Code | Signification |
-|------|----------------|
-| `404` | Pipeline, nœud ou liaison introuvable |
-| `400` | Liaison invalide (source = cible) |
+
+| Code  | Signification                             |
+| ----- | ----------------------------------------- |
+| `404` | Pipeline, nœud ou liaison introuvable     |
+| `400` | Liaison invalide (source = cible)         |
 | `422` | Corps JSON invalide (validation Pydantic) |
-| `500` | Erreur serveur (DB, LLM, etc.) |
+| `500` | Erreur serveur (DB, LLM, etc.)            |
+
 
 ---
 
 ## Fichiers source
 
-| Route | Fichier |
-|-------|---------|
-| Pipelines | `app/api/v1/pipelines.py` |
-| Nœuds | `app/api/v1/nodes.py` |
-| Liaisons | `app/api/v1/edges.py` |
-| Chat | `app/api/v1/chat.py` |
-| WebSocket | `app/api/v1/ws.py` |
-| Montage app | `app/main.py` |
-| Schémas | `app/schemas/` |
+
+| Route         | Fichier                   |
+| ------------- | ------------------------- |
+| Pipelines     | `app/api/v1/pipelines.py` |
+| Nœuds         | `app/api/v1/nodes.py`     |
+| Liasons       | `app/api/v1/edges.py`     |
+| Chat          | `app/api/v1/chat.py`      |
+| WebSocket     | `app/api/v1/ws.py`        |
+| Montage app   | `app/main.py`             |
+| Schémas       | `app/schemas/`            |
 | Événements WS | `app/websocket/events.py` |
+
+

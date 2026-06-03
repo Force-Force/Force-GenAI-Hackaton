@@ -7,6 +7,7 @@ import type {
 } from '../../contracts/backend';
 import type {
   Column,
+  ContainerKind,
   DatamartNodeData,
   PipelineEdge,
   PipelineEdgeData,
@@ -16,6 +17,8 @@ import type {
   ProcessingNodeData,
   ResourceKind,
   ResourceNodeData,
+  SourceFormat,
+  TransformEngine,
   WarehouseRole,
 } from '../../types/pipeline';
 
@@ -144,6 +147,7 @@ export function fromBackendNode(node: NodeRead): PipelineNode {
     const data: ProcessingNodeData = {
       category: 'processing',
       language,
+      engine: raw.engine as TransformEngine | undefined,
       label: (raw.label as string) ?? node.label,
       description: (raw.description as string) ?? '',
       code: (raw.code as string) ?? '',
@@ -162,6 +166,8 @@ export function fromBackendNode(node: NodeRead): PipelineNode {
       category: 'datamart',
       label: (raw.label as string) ?? node.label,
       description: (raw.description as string) ?? '',
+      containerKind: raw.containerKind as ContainerKind | undefined,
+      expanded: typeof raw.expanded === 'boolean' ? raw.expanded : undefined,
       children,
       metadata: raw.metadata as DatamartNodeData['metadata'],
     };
@@ -178,6 +184,7 @@ export function fromBackendNode(node: NodeRead): PipelineNode {
     description: (raw.description as string) ?? '',
     columns: asColumns(raw.columns),
     warehouseRole: raw.warehouseRole as WarehouseRole | undefined,
+    format: raw.format as SourceFormat | undefined,
     metadata: raw.metadata as ResourceNodeData['metadata'],
   };
   return { id: node.id, type: 'resource', position: node.position, data };

@@ -1,4 +1,4 @@
-import type { PipelineEdge, PipelineNode } from '../types/pipeline';
+import { isDatamartNode, type PipelineEdge, type PipelineNode } from '../types/pipeline';
 
 let counter = 0;
 
@@ -27,4 +27,28 @@ export function edgeExists(
 /** Display name for any node category. */
 export function nodeLabel(node: PipelineNode): string {
   return node.data.label;
+}
+
+/**
+ * Flatten container nodes (warehouse / database / datamart) so the tables they
+ * hold are surfaced alongside top-level nodes. Used by DDL compilation and
+ * validation, which operate on the full set of physical tables regardless of
+ * which container they live in.
+ */
+export function flattenGraph(
+  nodes: PipelineNode[],
+  edges: PipelineEdge[],
+): { nodes: PipelineNode[]; edges: PipelineEdge[] } {
+  const outNodes: PipelineNode[] = [];
+  const outEdges: PipelineEdge[] = [...edges];
+
+  for (const node of nodes) {
+    outNodes.push(node);
+    if (isDatamartNode(node)) {
+      outNodes.push(...node.data.children.nodes);
+      outEdges.push(...node.data.children.edges);
+    }
+  }
+
+  return { nodes: outNodes, edges: outEdges };
 }

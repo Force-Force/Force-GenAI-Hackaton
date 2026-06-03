@@ -28,15 +28,15 @@ export function CodeEditorWidget({ node }: { node: ProcessingNode }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-slate-400">
+        <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500">
           {node.data.language} source
         </span>
-        <span className="text-[9px] font-mono text-slate-400">
+        <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500">
           {dirty ? 'unsaved changes' : 'in sync'}
         </span>
       </div>
 
-      <div className="border border-slate-200 rounded-lg overflow-hidden">
+      <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
         <CodeMirror
           value={code}
           height="240px"

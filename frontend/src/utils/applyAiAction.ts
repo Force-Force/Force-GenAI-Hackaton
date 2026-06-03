@@ -7,9 +7,13 @@ import type {
 import { aiActionSchema } from '../contracts/aiActions';
 import { validateWith } from '../contracts/api';
 import {
+  containerKindOf,
+  isDatamartNode,
   isResourceNode,
+  type DatamartNode,
   type PipelineEdge,
   type PipelineGraph,
+  type PipelineNode,
   type ProcessingNode,
   type ResourceNode,
 } from '../types/pipeline';
@@ -63,7 +67,12 @@ function createResource(
   graph: PipelineGraph,
   payload: CreateResourcePayload,
 ): ApplyActionResult {
-  if (graph.nodes.some((n) => n.id === payload.id)) {
+  const existsAnywhere =
+    graph.nodes.some((n) => n.id === payload.id) ||
+    graph.nodes.some(
+      (n) => isDatamartNode(n) && n.data.children.nodes.some((c) => c.id === payload.id),
+    );
+  if (existsAnywhere) {
     return {
       graph,
       changed: false,
@@ -84,6 +93,38 @@ function createResource(
       warehouseRole: payload.warehouseRole,
     },
   };
+
+  // Warehouse tables (fact / dimension / generated) belong INSIDE the warehouse
+  // container, never as standalone pipeline nodes (Section 8).
+  const isWarehouseTable = payload.warehouseRole && payload.warehouseRole !== 'source';
+  if (isWarehouseTable) {
+    const containerIdx = graph.nodes.findIndex(
+      (n) => isDatamartNode(n) && containerKindOf(n.data) === 'warehouse',
+    );
+    if (containerIdx >= 0) {
+      const container = graph.nodes[containerIdx] as DatamartNode;
+      const updated: DatamartNode = {
+        ...container,
+        data: {
+          ...container.data,
+          expanded: true,
+          children: {
+            nodes: [...container.data.children.nodes, node],
+            edges: container.data.children.edges,
+          },
+        },
+      };
+      const nodes: PipelineNode[] = graph.nodes.map((n, i) =>
+        i === containerIdx ? updated : n,
+      );
+      return {
+        graph: { nodes, edges: graph.edges },
+        changed: true,
+        focusNodeId: container.id,
+        message: `Added "${payload.label}" to the ${container.data.label} warehouse.`,
+      };
+    }
+  }
 
   return {
     graph: { nodes: [...graph.nodes, node], edges: graph.edges },

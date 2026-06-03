@@ -3,7 +3,7 @@ import type { NodeProps } from '@xyflow/react';
 import type { NodeCategory } from '../../../types/pipeline';
 import { ResourceNode } from './ResourceNode';
 import { ProcessingNode } from './ProcessingNode';
-import { DatamartNode } from './DatamartNode';
+import { ContainerNode } from './ContainerNode';
 
 /**
  * Central node registry. Adding a future ETL step type = register one entry
@@ -20,7 +20,7 @@ export interface NodeTypeDescriptor {
 export const nodeRegistry: Record<NodeCategory, NodeTypeDescriptor> = {
   resource: { category: 'resource', label: 'Resource', component: ResourceNode },
   processing: { category: 'processing', label: 'Processing', component: ProcessingNode },
-  datamart: { category: 'datamart', label: 'Datamart', component: DatamartNode },
+  datamart: { category: 'datamart', label: 'Container', component: ContainerNode },
 };
 
 /** React Flow nodeTypes map derived from the registry. */

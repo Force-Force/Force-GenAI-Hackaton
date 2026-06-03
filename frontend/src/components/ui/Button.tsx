@@ -22,6 +22,7 @@ const variants: Record<Variant, string> = {
     'hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px] shadow-md shadow-[#4F46E5]/10',
   secondary:
     'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 border-b-[3px] border-b-slate-300 ' +
+    'dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 dark:border-b-slate-900 ' +
     'hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px]',
   success:
     'bg-emerald-600 hover:bg-emerald-500 text-white border-b-[3px] border-emerald-800 ' +
@@ -30,7 +31,8 @@ const variants: Record<Variant, string> = {
     'bg-white text-[#EF4444] border border-[#EF4444]/30 hover:border-[#EF4444] border-b-[3px] border-b-rose-200 ' +
     'hover:bg-[#EF4444]/5 active:border-b-[1px] active:translate-y-[1.5px]',
   ghost:
-    'bg-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100',
+    'bg-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100 ' +
+    'dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800',
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

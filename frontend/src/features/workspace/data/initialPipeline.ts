@@ -7,8 +7,11 @@ import type {
 } from '../../../types/pipeline';
 
 /**
- * Default canvas state: the ENTIRE ETL pipeline laid out left-to-right
- * (sources -> processing -> warehouse -> datamart), not a warehouse-first view.
+ * Default canvas state. The ETL pipeline flows left-to-right:
+ *   sources -> transformations -> Data Warehouse (container) -> Data Mart.
+ *
+ * Warehouse + imported-database tables live INSIDE their container node's
+ * `children` graph (Section 8); they are never standalone canvas nodes.
  */
 
 const factColumns: Column[] = [
@@ -21,6 +24,143 @@ const factColumns: Column[] = [
   { name: 'unit_price', type: 'DECIMAL(10,2)', isPrimaryKey: false, isForeignKey: false },
   { name: 'revenue', type: 'DECIMAL(12,2)', isPrimaryKey: false, isForeignKey: false },
 ];
+
+/** Tables held inside the Data Warehouse container node. */
+const warehouseChildren: PipelineGraph = {
+  nodes: [
+    {
+      id: 'FactSales',
+      type: 'resource',
+      position: { x: 360, y: 200 },
+      data: {
+        category: 'resource',
+        kind: 'warehouse',
+        label: 'FactSales',
+        description: 'Central transactional fact table with aggregated sales measures.',
+        warehouseRole: 'fact',
+        columns: factColumns,
+      },
+    },
+    {
+      id: 'DimCustomer',
+      type: 'resource',
+      position: { x: 40, y: 40 },
+      data: {
+        category: 'resource',
+        kind: 'warehouse',
+        label: 'DimCustomer',
+        description: 'Customer profiles, marketing tiers, and contact details.',
+        warehouseRole: 'dimension',
+        columns: [
+          { name: 'customer_key', type: 'INT', isPrimaryKey: true, isForeignKey: false },
+          { name: 'email', type: 'VARCHAR(250)', isPrimaryKey: false, isForeignKey: false },
+          { name: 'full_name', type: 'VARCHAR(150)', isPrimaryKey: false, isForeignKey: false },
+          { name: 'country', type: 'VARCHAR(100)', isPrimaryKey: false, isForeignKey: false },
+        ],
+      },
+    },
+    {
+      id: 'DimProduct',
+      type: 'resource',
+      position: { x: 40, y: 360 },
+      data: {
+        category: 'resource',
+        kind: 'warehouse',
+        label: 'DimProduct',
+        description: 'Catalog products, categories, and pricing tiers.',
+        warehouseRole: 'dimension',
+        columns: [
+          { name: 'product_key', type: 'INT', isPrimaryKey: true, isForeignKey: false },
+          { name: 'sku_code', type: 'VARCHAR(100)', isPrimaryKey: false, isForeignKey: false },
+          { name: 'product_name', type: 'VARCHAR(150)', isPrimaryKey: false, isForeignKey: false },
+          { name: 'category', type: 'VARCHAR(100)', isPrimaryKey: false, isForeignKey: false },
+        ],
+      },
+    },
+    {
+      id: 'DimDate',
+      type: 'resource',
+      position: { x: 680, y: 40 },
+      data: {
+        category: 'resource',
+        kind: 'warehouse',
+        label: 'DimDate',
+        description: 'Calendar dimension with fiscal and holiday attributes.',
+        warehouseRole: 'dimension',
+        columns: [
+          { name: 'date_key', type: 'INT', isPrimaryKey: true, isForeignKey: false },
+          { name: 'calendar_date', type: 'DATE', isPrimaryKey: false, isForeignKey: false },
+          { name: 'year', type: 'INT', isPrimaryKey: false, isForeignKey: false },
+          { name: 'quarter', type: 'INT', isPrimaryKey: false, isForeignKey: false },
+        ],
+      },
+    },
+    {
+      id: 'DimStore',
+      type: 'resource',
+      position: { x: 680, y: 360 },
+      data: {
+        category: 'resource',
+        kind: 'warehouse',
+        label: 'DimStore',
+        description: 'Physical store locations, regions, and managers.',
+        warehouseRole: 'dimension',
+        columns: [
+          { name: 'store_key', type: 'INT', isPrimaryKey: true, isForeignKey: false },
+          { name: 'store_name', type: 'VARCHAR(100)', isPrimaryKey: false, isForeignKey: false },
+          { name: 'region', type: 'VARCHAR(50)', isPrimaryKey: false, isForeignKey: false },
+        ],
+      },
+    },
+  ],
+  edges: [
+    { id: 'e_fct_cust', source: 'FactSales', target: 'DimCustomer', data: { relationship: 'foreign_key', fromColumn: 'customer_key', toColumn: 'customer_key' } },
+    { id: 'e_fct_prod', source: 'FactSales', target: 'DimProduct', data: { relationship: 'foreign_key', fromColumn: 'product_key', toColumn: 'product_key' } },
+    { id: 'e_fct_date', source: 'FactSales', target: 'DimDate', data: { relationship: 'foreign_key', fromColumn: 'date_key', toColumn: 'date_key' } },
+    { id: 'e_fct_store', source: 'FactSales', target: 'DimStore', data: { relationship: 'foreign_key', fromColumn: 'store_key', toColumn: 'store_key' } },
+  ],
+};
+
+/** Tables held inside the imported CRM database container node. */
+const crmDatabaseChildren: PipelineGraph = {
+  nodes: [
+    {
+      id: 'crm_accounts',
+      type: 'resource',
+      position: { x: 40, y: 40 },
+      data: {
+        category: 'resource',
+        kind: 'table',
+        label: 'accounts',
+        description: 'CRM company accounts.',
+        columns: [
+          { name: 'account_id', type: 'INT', isPrimaryKey: true, isForeignKey: false },
+          { name: 'company_name', type: 'VARCHAR(200)', isPrimaryKey: false, isForeignKey: false },
+          { name: 'tier', type: 'VARCHAR(50)', isPrimaryKey: false, isForeignKey: false },
+        ],
+      },
+    },
+    {
+      id: 'crm_contacts',
+      type: 'resource',
+      position: { x: 40, y: 240 },
+      data: {
+        category: 'resource',
+        kind: 'table',
+        label: 'contacts',
+        description: 'CRM individual contacts linked to accounts.',
+        columns: [
+          { name: 'contact_id', type: 'INT', isPrimaryKey: true, isForeignKey: false },
+          { name: 'account_id', type: 'INT', isPrimaryKey: false, isForeignKey: true, fkRefTable: 'accounts', fkRefColumn: 'account_id' },
+          { name: 'email', type: 'VARCHAR(250)', isPrimaryKey: false, isForeignKey: false },
+        ],
+      },
+    },
+  ],
+  edges: [
+    { id: 'e_crm_fk', source: 'crm_contacts', target: 'crm_accounts', data: { relationship: 'foreign_key', fromColumn: 'account_id', toColumn: 'account_id' } },
+  ],
+};
 
 const datamartChildren: PipelineGraph = {
   nodes: [
@@ -66,13 +206,14 @@ const nodes: PipelineNode[] = [
   {
     id: 'src_postgres_web_orders',
     type: 'resource',
-    position: { x: 0, y: 220 },
+    position: { x: 0, y: 120 },
     data: {
       category: 'resource',
       kind: 'source',
-      label: 'src_postgres_web_orders',
+      label: 'web_orders',
       description: 'Replica ingestion feed from production web order logs.',
       warehouseRole: 'source',
+      format: 'postgresql',
       columns: [
         { name: 'id', type: 'INT', isPrimaryKey: true, isForeignKey: false },
         { name: 'customer_email', type: 'VARCHAR(250)', isPrimaryKey: false, isForeignKey: false },
@@ -83,14 +224,30 @@ const nodes: PipelineNode[] = [
       ],
     },
   },
-  // --- Processing ---
+  // --- Imported Database (expandable container) ---
+  {
+    id: 'db_crm',
+    type: 'datamart',
+    position: { x: 0, y: 360 },
+    data: {
+      category: 'datamart',
+      containerKind: 'database',
+      label: 'CRM Postgres',
+      description: 'Imported CRM database with account and contact tables.',
+      expanded: false,
+      children: crmDatabaseChildren,
+      metadata: { engine: 'postgresql' },
+    },
+  },
+  // --- Transformations ---
   {
     id: 'proc_stg_orders',
     type: 'processing',
-    position: { x: 340, y: 120 },
+    position: { x: 320, y: 120 },
     data: {
       category: 'processing',
       language: 'sql',
+      engine: 'sql',
       label: 'stg_web_orders',
       description: 'Staging clean-up of raw web orders.',
       code: `SELECT
@@ -106,12 +263,33 @@ FROM src_postgres_web_orders;`,
     },
   },
   {
+    id: 'proc_py_features',
+    type: 'processing',
+    position: { x: 320, y: 360 },
+    data: {
+      category: 'processing',
+      language: 'python',
+      engine: 'pandas',
+      label: 'enrich_customer_features',
+      description: 'Joins CRM accounts to enrich customer tiers with pandas.',
+      code: `import pandas as pd
+
+def transform(contacts: pd.DataFrame, accounts: pd.DataFrame) -> pd.DataFrame:
+    merged = contacts.merge(accounts, on="account_id", how="left")
+    merged["tier"] = merged["tier"].fillna("standard")
+    return merged[["email", "company_name", "tier"]]`,
+      inputColumns: ['contact_id', 'account_id', 'email'],
+      outputColumns: ['email', 'company_name', 'tier'],
+    },
+  },
+  {
     id: 'proc_fct_sales',
     type: 'processing',
-    position: { x: 340, y: 340 },
+    position: { x: 620, y: 240 },
     data: {
       category: 'processing',
       language: 'sql',
+      engine: 'sql',
       label: 'build_fct_sales',
       description: 'Builds the FactSales grain from staged orders and dimensions.',
       code: `SELECT
@@ -130,98 +308,29 @@ LEFT JOIN DimProduct p ON p.sku_code = o.prod_sku;`,
       outputColumns: ['sales_key', 'customer_key', 'product_key', 'date_key', 'store_key', 'quantity', 'unit_price', 'revenue'],
     },
   },
-  // --- Warehouse ---
+  // --- Data Warehouse (expandable container) ---
   {
-    id: 'FactSales',
-    type: 'resource',
-    position: { x: 700, y: 320 },
+    id: 'dw_core',
+    type: 'datamart',
+    position: { x: 920, y: 160 },
     data: {
-      category: 'resource',
-      kind: 'warehouse',
-      label: 'FactSales',
-      description: 'Central transactional fact table with aggregated sales measures.',
-      warehouseRole: 'fact',
-      columns: factColumns,
+      category: 'datamart',
+      containerKind: 'warehouse',
+      label: 'Sales Warehouse',
+      description: 'Star-schema warehouse: FactSales surrounded by conformed dimensions.',
+      expanded: false,
+      children: warehouseChildren,
+      metadata: { schema: 'analytics' },
     },
   },
-  {
-    id: 'DimCustomer',
-    type: 'resource',
-    position: { x: 700, y: 40 },
-    data: {
-      category: 'resource',
-      kind: 'warehouse',
-      label: 'DimCustomer',
-      description: 'Customer profiles, marketing tiers, and contact details.',
-      warehouseRole: 'dimension',
-      columns: [
-        { name: 'customer_key', type: 'INT', isPrimaryKey: true, isForeignKey: false },
-        { name: 'email', type: 'VARCHAR(250)', isPrimaryKey: false, isForeignKey: false },
-        { name: 'full_name', type: 'VARCHAR(150)', isPrimaryKey: false, isForeignKey: false },
-        { name: 'country', type: 'VARCHAR(100)', isPrimaryKey: false, isForeignKey: false },
-      ],
-    },
-  },
-  {
-    id: 'DimProduct',
-    type: 'resource',
-    position: { x: 700, y: 560 },
-    data: {
-      category: 'resource',
-      kind: 'warehouse',
-      label: 'DimProduct',
-      description: 'Catalog products, categories, and pricing tiers.',
-      warehouseRole: 'dimension',
-      columns: [
-        { name: 'product_key', type: 'INT', isPrimaryKey: true, isForeignKey: false },
-        { name: 'sku_code', type: 'VARCHAR(100)', isPrimaryKey: false, isForeignKey: false },
-        { name: 'product_name', type: 'VARCHAR(150)', isPrimaryKey: false, isForeignKey: false },
-        { name: 'category', type: 'VARCHAR(100)', isPrimaryKey: false, isForeignKey: false },
-      ],
-    },
-  },
-  {
-    id: 'DimDate',
-    type: 'resource',
-    position: { x: 1040, y: 40 },
-    data: {
-      category: 'resource',
-      kind: 'warehouse',
-      label: 'DimDate',
-      description: 'Calendar dimension with fiscal and holiday attributes.',
-      warehouseRole: 'dimension',
-      columns: [
-        { name: 'date_key', type: 'INT', isPrimaryKey: true, isForeignKey: false },
-        { name: 'calendar_date', type: 'DATE', isPrimaryKey: false, isForeignKey: false },
-        { name: 'year', type: 'INT', isPrimaryKey: false, isForeignKey: false },
-        { name: 'quarter', type: 'INT', isPrimaryKey: false, isForeignKey: false },
-      ],
-    },
-  },
-  {
-    id: 'DimStore',
-    type: 'resource',
-    position: { x: 1040, y: 560 },
-    data: {
-      category: 'resource',
-      kind: 'warehouse',
-      label: 'DimStore',
-      description: 'Physical store locations, regions, and managers.',
-      warehouseRole: 'dimension',
-      columns: [
-        { name: 'store_key', type: 'INT', isPrimaryKey: true, isForeignKey: false },
-        { name: 'store_name', type: 'VARCHAR(100)', isPrimaryKey: false, isForeignKey: false },
-        { name: 'region', type: 'VARCHAR(50)', isPrimaryKey: false, isForeignKey: false },
-      ],
-    },
-  },
-  // --- Datamart ---
+  // --- Data Mart (drill-in container) ---
   {
     id: 'mart_sales_analytics',
     type: 'datamart',
-    position: { x: 1040, y: 320 },
+    position: { x: 1280, y: 200 },
     data: {
       category: 'datamart',
+      containerKind: 'datamart',
       label: 'Sales Analytics Mart',
       description: 'Curated KPIs for sales and customer analytics dashboards.',
       children: datamartChildren,
@@ -231,13 +340,11 @@ LEFT JOIN DimProduct p ON p.sku_code = o.prod_sku;`,
 
 const edges: PipelineEdge[] = [
   { id: 'e_src_stg', source: 'src_postgres_web_orders', target: 'proc_stg_orders', data: { relationship: 'data_flow' } },
+  { id: 'e_db_feat', source: 'db_crm', target: 'proc_py_features', data: { relationship: 'data_flow' } },
   { id: 'e_stg_fct', source: 'proc_stg_orders', target: 'proc_fct_sales', data: { relationship: 'data_flow' } },
-  { id: 'e_fct_build', source: 'proc_fct_sales', target: 'FactSales', data: { relationship: 'data_flow' } },
-  { id: 'e_fct_cust', source: 'FactSales', target: 'DimCustomer', data: { relationship: 'foreign_key', fromColumn: 'customer_key', toColumn: 'customer_key' } },
-  { id: 'e_fct_prod', source: 'FactSales', target: 'DimProduct', data: { relationship: 'foreign_key', fromColumn: 'product_key', toColumn: 'product_key' } },
-  { id: 'e_fct_date', source: 'FactSales', target: 'DimDate', data: { relationship: 'foreign_key', fromColumn: 'date_key', toColumn: 'date_key' } },
-  { id: 'e_fct_store', source: 'FactSales', target: 'DimStore', data: { relationship: 'foreign_key', fromColumn: 'store_key', toColumn: 'store_key' } },
-  { id: 'e_fct_mart', source: 'FactSales', target: 'mart_sales_analytics', data: { relationship: 'data_flow' } },
+  { id: 'e_feat_fct', source: 'proc_py_features', target: 'proc_fct_sales', data: { relationship: 'data_flow' } },
+  { id: 'e_fct_dw', source: 'proc_fct_sales', target: 'dw_core', data: { relationship: 'data_flow' } },
+  { id: 'e_dw_mart', source: 'dw_core', target: 'mart_sales_analytics', data: { relationship: 'data_flow' } },
 ];
 
 export function createInitialPipeline(): PipelineGraph {
