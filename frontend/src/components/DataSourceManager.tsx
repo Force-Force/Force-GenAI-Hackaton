@@ -82,14 +82,14 @@ export default function DataSourceManager({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#1E293B] border border-[#475569]/60 rounded-xl overflow-hidden shadow-xl p-5 select-none animate-fadeIn">
+    <div className="flex flex-col h-full bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xl p-5 select-none animate-fadeIn">
       {/* Header */}
-      <div className="border-b border-[#475569]/40 pb-4 mb-4">
-        <h3 className="text-lg font-sans font-semibold text-[#F8FAFC] flex items-center space-x-2">
-          <Database size={20} className="text-[#10B981]" />
+      <div className="border-b border-slate-150 pb-4 mb-4">
+        <h3 className="text-lg font-sans font-semibold text-slate-850 flex items-center space-x-2">
+          <Database size={20} className="text-emerald-600 font-bold" />
           <span>External Sources Hub</span>
         </h3>
-        <p className="text-xs text-[#94A3B8] mt-0.5">
+        <p className="text-xs text-slate-450 mt-0.5">
           Review synced databases, load warehouse schemas, or drag-and-drop structural definition files.
         </p>
       </div>
@@ -99,7 +99,7 @@ export default function DataSourceManager({
         
         {/* Source Cards Panel */}
         <div className="flex flex-col space-y-3 overflow-y-auto pr-1">
-          <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#94A3B8]">
+          <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
             Connected Cloud Warehouses
           </h4>
           
@@ -108,18 +108,18 @@ export default function DataSourceManager({
             return (
               <div
                 key={src.id}
-                className="bg-slate-900/60 hover:bg-slate-900/90 border border-[#475569]/40 rounded-lg p-4 transition-all duration-200 shadow-sm relative group cursor-pointer"
+                className="bg-slate-50/60 hover:bg-slate-100 border border-slate-200 rounded-lg p-4 transition-all duration-200 shadow-3xs relative group cursor-pointer"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-md ${isConnected ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-[#EF4444]/10 text-slate-500'}`}>
+                    <div className={`p-2 rounded-md ${isConnected ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-slate-400'}`}>
                       <Database size={18} />
                     </div>
                     <div>
-                      <h5 className="font-sans font-bold text-sm text-[#F8FAFC]">
+                      <h5 className="font-sans font-bold text-sm text-slate-850">
                         {src.name}
                       </h5>
-                      <span className="text-[10px] bg-slate-800 text-[#CBD5E1] px-1.5 py-0.5 rounded border border-[#475569]/40 mt-1 font-mono uppercase inline-block">
+                      <span className="text-[10px] bg-white text-slate-600 px-1.5 py-0.5 rounded border border-slate-150 mt-1 font-mono uppercase inline-block">
                         {src.type}
                       </span>
                     </div>
@@ -129,9 +129,9 @@ export default function DataSourceManager({
                     onClick={() => onToggleSource(src.id)}
                     className="p-1 px-2.5 rounded text-[11px] font-mono font-medium flex items-center space-x-1 border hover:-translate-y-0.5 transition-all cursor-pointer"
                     style={{
-                      backgroundColor: isConnected ? '#10B98115' : '#EF444415',
-                      borderColor: isConnected ? '#10B98150' : '#EF444450',
-                      color: isConnected ? '#10B981' : '#EF4444'
+                      backgroundColor: isConnected ? '#10B98110' : '#EF444410',
+                      borderColor: isConnected ? '#10B98130' : '#EF444430',
+                      color: isConnected ? '#059669' : '#DC2626'
                     }}
                   >
                     {isConnected ? (
@@ -148,13 +148,13 @@ export default function DataSourceManager({
                   </button>
                 </div>
 
-                <p className="text-xs text-[#CBD5E1] mt-2.5 leading-relaxed">
+                <p className="text-xs text-slate-550 mt-2.5 leading-relaxed">
                   {src.description}
                 </p>
 
-                <div className="mt-3 flex justify-between items-center text-[11px] font-mono text-[#94A3B8] border-t border-[#475569]/20 pt-2.5">
+                <div className="mt-3 flex justify-between items-center text-[11px] font-mono text-slate-400 border-t border-slate-100 pt-2.5">
                   <span>Replicas: {src.tableCount} tables in buffer</span>
-                  <span className="text-cyan-400 group-hover:underline">View Tables &rarr;</span>
+                  <span className="text-indigo-600 group-hover:underline">View Tables &rarr;</span>
                 </div>
               </div>
             );
@@ -163,7 +163,7 @@ export default function DataSourceManager({
 
         {/* Drag-and-Drop / File Uploader panel */}
         <div className="flex flex-col space-y-3">
-          <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#94A3B8]">
+          <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
             Instant Schema Generator
           </h4>
 
@@ -173,82 +173,82 @@ export default function DataSourceManager({
             onDrop={handleDrop}
             className={`border border-dashed rounded-lg p-5 flex flex-col items-center justify-center text-center transition-all duration-200 relative ${
               dragOver
-                ? 'border-[#06B6D4] bg-[#06B6D4]/5'
-                : 'border-[#475569] hover:border-[#475569]/90 bg-slate-900/30'
+                ? 'border-indigo-500 bg-indigo-50/30'
+                : 'border-slate-250 hover:border-slate-350 bg-slate-50/70'
             }`}
             style={{ minHeight: '175px' }}
           >
-            <Upload size={32} className="text-[#06B6D4]/70 mb-3 animate-bounce" />
+            <Upload size={32} className="text-indigo-500/70 mb-3 animate-bounce" />
             
-            <p className="text-xs font-semibold text-[#F8FAFC]">
+            <p className="text-xs font-semibold text-slate-800">
               Drag and drop any DDL SQL or demographic CSV here
             </p>
-            <p className="text-[11px] text-[#94A3B8] mt-1 max-w-xs">
+            <p className="text-[11px] text-slate-450 mt-1 max-w-xs">
               Directly parse column metadata configurations, data types, and primary indexes.
             </p>
 
             <div className="flex space-x-2 mt-4">
               <button
                 onClick={() => handleSchemaImport('csv')}
-                className="flex items-center space-x-1.5 text-[11px] font-medium bg-slate-800 text-[#CBD5E1] hover:text-white px-3 py-1.5 rounded transition-all cursor-pointer border border-[#475569]/60"
+                className="flex items-center space-x-1.5 text-[11px] font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 border-b-[3px] border-slate-300 hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px] px-3 py-1.5 rounded-full transition-all duration-150 cursor-pointer shadow-3xs"
               >
-                <FileSpreadsheet size={13} className="text-[#10B981]" />
+                <FileSpreadsheet size={13} className="text-emerald-600" />
                 <span>Simulate CSV Payload</span>
               </button>
               <button
                 onClick={() => handleSchemaImport('sql')}
-                className="flex items-center space-x-1.5 text-[11px] font-medium bg-slate-800 text-[#CBD5E1] hover:text-white px-3 py-1.5 rounded transition-all cursor-pointer border border-[#475569]/60"
+                className="flex items-center space-x-1.5 text-[11px] font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 border-b-[3px] border-slate-300 hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px] px-3 py-1.5 rounded-full transition-all duration-150 cursor-pointer shadow-3xs"
               >
-                <FileCode size={13} className="text-[#06B6D4]" />
+                <FileCode size={13} className="text-indigo-600" />
                 <span>Simulate SQL DDL</span>
               </button>
             </div>
           </div>
 
           {/* Schema Live Parser Preview */}
-          <div className="flex-1 bg-slate-950/80 border border-[#475569]/40 rounded-lg p-4 flex flex-col justify-between overflow-hidden relative">
-            <div className="absolute top-2.5 right-2.5 text-[10px] font-mono tracking-wider text-[#94A3B8] uppercase">
+          <div className="flex-1 bg-slate-50/80 border border-slate-200 rounded-lg p-4 flex flex-col justify-between overflow-hidden relative shadow-inner">
+            <div className="absolute top-2.5 right-2.5 text-[10px] font-mono tracking-wider text-slate-400 uppercase">
               Parsed Output
             </div>
 
             {isParsing ? (
               <div className="flex-1 flex flex-col items-center justify-center space-y-2">
-                <span className="h-6 w-6 border-2 border-[#06B6D4] border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs font-mono text-[#CBD5E1]">Analyzing structural definitions...</p>
+                <span className="h-6 w-6 border-2 border-indigo-505 border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs font-mono text-slate-500 animate-pulse">Analyzing structural definitions...</p>
               </div>
             ) : uploadedSchema ? (
-              <div className="flex flex-col h-full justify-between">
+              <div className="flex flex-col h-full justify-between animate-fadeIn">
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="h-2 w-2 rounded-full bg-[#10B981]" />
-                    <span className="text-xs font-mono text-[#10B981] font-bold">SCHEMA PARSED SUCCESSFULLY</span>
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="text-xs font-mono text-emerald-600 font-bold">SCHEMA PARSED SUCCESSFULLY</span>
                   </div>
                   
                   {/* Table details */}
                   <div className="mt-3">
-                    <div className="text-[#F8FAFC] font-sans font-bold text-sm">
+                    <div className="text-slate-800 font-sans font-bold text-sm">
                       {uploadedSchema.name}
                     </div>
-                    <p className="text-[11px] text-[#CBD5E1] mt-1 line-clamp-1">
+                    <p className="text-[11px] text-slate-500 mt-1 line-clamp-1 leading-relaxed">
                       {uploadedSchema.description}
                     </p>
                   </div>
 
                   {/* Columns list */}
-                  <div className="mt-3 overflow-y-auto max-h-[85px] space-y-1 border-t border-[#475569]/20 pt-2 font-mono text-[11px] text-[#CBD5E1]">
+                  <div className="mt-3 overflow-y-auto max-h-[85px] space-y-1 border-t border-slate-200 pt-2 font-mono text-[11px] text-slate-700">
                     {uploadedSchema.columns.map((col, i) => (
-                      <div key={i} className="flex justify-between border-b border-[#475569]/10 py-0.5">
-                        <span className={col.isPrimaryKey ? 'text-[#06B6D4] font-bold' : ''}>
+                      <div key={i} className="flex justify-between border-b border-slate-100 py-0.5">
+                        <span className={col.isPrimaryKey ? 'text-indigo-600 font-bold' : ''}>
                           {col.name} {col.isPrimaryKey ? '(PK)' : ''}
                         </span>
-                        <span className="text-[#94A3B8]">{col.type}</span>
+                        <span className="text-slate-400">{col.type}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="mt-3 border-t border-[#475569]/30 pt-3 flex justify-between items-center bg-slate-900/20">
-                  <span className="text-[10px] text-[#94A3B8] font-mono">
+                <div className="mt-3 border-t border-slate-200 pt-3 flex justify-between items-center">
+                  <span className="text-[10px] text-slate-400 font-mono">
                     Format: {fileType === 'csv' ? 'CSV File Headers' : 'SQL CREATE TABLE DDL'}
                   </span>
                   <button
@@ -256,7 +256,7 @@ export default function DataSourceManager({
                       onDeployImportedSource(uploadedSchema);
                       setUploadedSchema(null);
                     }}
-                    className="flex items-center space-x-1.5 text-xs bg-[#10B981] hover:bg-[#10B981]/90 text-white font-semibold px-3 py-1.5 rounded cursor-pointer transition-all"
+                    className="flex items-center space-x-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-1.5 rounded-full border-b-[3px] border-emerald-800 hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px] cursor-pointer transition-all duration-150 shadow-3xs"
                   >
                     <Plus size={13} />
                     <span>Map onto Canvas</span>
@@ -265,8 +265,8 @@ export default function DataSourceManager({
               </div>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-center">
-                <p className="text-xs text-[#94A3B8] font-mono">No files imported yet.</p>
-                <p className="text-[10px] text-[#94A3B8]/60 mt-1">Upload files raw schema above to instantly generate nodes on your canvas.</p>
+                <p className="text-xs text-slate-400 font-mono">No files imported yet.</p>
+                <p className="text-[10px] text-slate-400/65 mt-1 leading-normal">Upload files raw schema above to instantly generate nodes on your canvas.</p>
               </div>
             )}
           </div>

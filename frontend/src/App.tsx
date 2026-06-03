@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layers, Database, ShieldAlert, Bot, Sparkles, AlertTriangle, Play, CheckCircle2, RotateCcw, Copy, Download } from 'lucide-react';
+import { Layers, Database, ShieldAlert, Bot, Sparkles, AlertTriangle, Play, CheckCircle2, RotateCcw, Copy, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { WarehouseNode, WarehouseConnection, DataSource, ValidationItem, Transformation, ChatMessage, TableType } from './types';
 import {
@@ -23,6 +23,10 @@ export default function App() {
   const [projectName, setProjectName] = useState('Retail Warehouse Master Draft');
   const [activeTab, setActiveTab] = useState<'canvas' | 'sources' | 'validation'>('canvas');
 
+  // Co-existing panel visibility states
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [rightOpen, setRightOpen] = useState(true);
+
   // Schema state
   const [tables, setTables] = useState<WarehouseNode[]>(INITIAL_TABLES);
   const [connections, setConnections] = useState<WarehouseConnection[]>(INITIAL_CONNECTIONS);
@@ -43,7 +47,7 @@ export default function App() {
       id: 'welcome_greeting',
       sender: 'assistant',
       timestamp: '10:08 AM',
-      text: "### 👋 Welcome to AuraBI Workspace!\n\nI am your live **AuraAI Data Architect**. Together, we can design star schemas, resolve referential join mappings, validate design patterns, and generate pipelines.\n\nTry asking me: *\"Add a promotion dimension table\"* or *\"Create a currency exchange rate dimension\"* to see interactive visual layout reactions!"
+      text: "### Welcome to AuraBI Workspace!\n\nI am your live **AuraAI Data Architect**. Together, we can design star schemas, resolve referential join mappings, validate design patterns, and generate pipelines.\n\nTry asking me: *\"Add a promotion dimension table\"* or *\"Create a currency exchange rate dimension\"* to see interactive visual layout reactions!"
     }
   ]);
 
@@ -120,7 +124,7 @@ export default function App() {
       id: `sys_${Date.now()}`,
       sender: 'assistant',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: `### 🛠️ Table Node Initialized\n\nI have instantiated your manual node **"${newTable.name}"** on the canvas. Double click the column builders in the Inspector on the right to append attributes.`
+      text: `### Table Node Initialized\n\nI have instantiated your manual node **"${newTable.name}"** on the canvas. Double click the column builders in the Inspector on the right to append attributes.`
     };
     setMessages(prev => [...prev, sysMsg]);
   };
@@ -135,7 +139,7 @@ export default function App() {
       id: `sys_${Date.now()}`,
       sender: 'assistant',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: `### 🗑️ Table Dropped\n\nTable node **"${id}"** and its connections were safely cleared from the schema design.`
+      text: `### Table Dropped\n\nTable node **"${id}"** and its connections were safely cleared from the schema design.`
     };
     setMessages(prev => [...prev, alertMsg]);
   };
@@ -175,7 +179,7 @@ export default function App() {
       id: `sys_${Date.now()}`,
       sender: 'assistant',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: `### 🔗 Visual Connections Mapped\n\nI mapped an animated trace connecting **${fromTable}.${fromCol}** as an active Foreign Key referencing **${toTable}.${toCol}**!`
+      text: `### Visual Connections Mapped\n\nI mapped an animated trace connecting **${fromTable}.${fromCol}** as an active Foreign Key referencing **${toTable}.${toCol}**!`
     };
     setMessages(prev => [...prev, logMsg]);
   };
@@ -259,7 +263,7 @@ export default function App() {
         id: `sys_val_${Date.now()}`,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: `### 🔍 Automated Validation Complete\n\nI executed standard metrics compiler audits on your schema. Checked PK declarations, regional mappings, and foreign key connections.\n\nReview detailed diagnostics in the **Validation Center** tab.`
+        text: `### Automated Validation Complete\n\nI executed standard metrics compiler audits on your schema. Checked PK declarations, regional mappings, and foreign key connections.\n\nReview detailed diagnostics in the **Validation Center** tab.`
       };
       setMessages(prev => [...prev, valReply]);
 
@@ -321,7 +325,7 @@ export default function App() {
       id: `sys_import_${Date.now()}`,
       sender: 'assistant',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: `### 📥 Parsed Table Deployed\n\nTable **"${importedTable.name}"** parsed from imported headers was injected into visual workspace canvas at coordinates { x: -420, y: 340 }.\n\nYou can click and link its variables (e.g. mapping customer_email lookup indexes) onto "DimCustomer".`
+      text: `### Parsed Table Deployed\n\nTable **"${importedTable.name}"** parsed from imported headers was injected into visual workspace canvas at coordinates { x: -420, y: 340 }.\n\nYou can click and link its variables (e.g. mapping customer_email lookup indexes) onto "DimCustomer".`
     };
     setMessages(prev => [...prev, appMsg]);
   };
@@ -346,7 +350,7 @@ export default function App() {
       id: `sys_trans_${Date.now()}`,
       sender: 'assistant',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: `### ⚙️ dbt Compilation Successful\n\nI compiled an incremental staging pipeline **"${dbtTransform.name}"** executing database hashes.\n\nReview compiled logic structures and inputs in the **Right Inspector Panel**.`
+      text: `### dbt Compilation Successful\n\nI compiled an incremental staging pipeline **"${dbtTransform.name}"** executing database hashes.\n\nReview compiled logic structures and inputs in the **Right Inspector Panel**.`
     };
     setMessages(prev => [...prev, transMsg]);
   };
@@ -367,7 +371,7 @@ export default function App() {
         id: `sys_action_${Date.now()}`,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: `### ✅ Table Created\n\nI successfully mapped and created **"${tableNode.name}"** at positions x: ${tableNode.position.x}, y: ${tableNode.position.y}!`
+        text: `### Table Created\n\nI successfully mapped and created **"${tableNode.name}"** at positions x: ${tableNode.position.x}, y: ${tableNode.position.y}!`
       };
       setMessages(prev => [...prev, applyMsg]);
     } else if (actionType === 'suggest_pipeline') {
@@ -401,7 +405,7 @@ export default function App() {
       id: `sys_reset_${Date.now()}`,
       sender: 'assistant',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: "### 🧹 Workspace Purged\n\nI have reset the design studio completely. Your figma canvas is empty. Write prompts like *\"Add a standard sales star schema\"* or click manual triggers to begin drafting!"
+      text: "### Workspace Purged\n\nI have reset the design studio completely. Your figma canvas is empty. Write prompts like *\"Add a standard sales star schema\"* or click manual triggers to begin drafting!"
     };
     setMessages([resetMsg]);
   };
@@ -452,7 +456,7 @@ export default function App() {
         id: `sys_err_${Date.now()}`,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: "### 💡 Connection Note\n\nYour Express local environment is wrapping. In a real cloud build, your request would query the active Gemini API server-side.\n\nLet me simulate resolving your instructions: I compiled recommended metadata dimensions mapping your criteria! Click **Apply Schema** on the blueprint card to inspect it visually."
+        text: "### Connection Note\n\nYour Express local environment is wrapping. In a real cloud build, your request would query the active Gemini API server-side.\n\nLet me simulate resolving your instructions: I compiled recommended metadata dimensions mapping your criteria! Click **Apply Schema** on the blueprint card to inspect it visually."
       };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
@@ -467,7 +471,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen w-screen bg-[#0F172A] text-[#F8FAFC] flex flex-col overflow-hidden font-sans select-none relative select-text">
+    <div className="h-screen w-screen bg-[#F8FAFC] text-slate-800 flex flex-col overflow-hidden font-sans select-none relative select-text">
       
       {/* 1. Header (64px) */}
       <TopNav
@@ -490,20 +494,46 @@ export default function App() {
           onSendMessage={onSendMessage}
           onApplyAction={handleApplyAction}
           isGenerating={isGenerating}
+          isCollapsed={!leftOpen}
+          onToggleCollapse={() => setLeftOpen(false)}
         />
 
-        {/* Center column (55% Width): Multi-tab Visual Design Workspace */}
-        <div className="w-[55%] h-full flex flex-col justify-between bg-[#0F172A] overflow-hidden select-none relative">
+        {/* Center column (Flex Adapted): Multi-tab Visual Design Workspace */}
+        <div className="flex-1 h-full flex flex-col justify-between bg-slate-100 overflow-hidden select-none relative">
+          
+          {/* Ambient Left floating reopen handle */}
+          {!leftOpen && (
+            <button
+              onClick={() => setLeftOpen(true)}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-30 bg-white hover:bg-slate-50 text-slate-600 hover:text-[#4F46E5] py-4 px-1.5 rounded-r-lg border-y border-r border-slate-200 shadow-md cursor-pointer transition-all flex flex-col items-center space-y-1.5 active:bg-slate-100"
+              title="Expand AuraAI"
+            >
+              <Bot size={16} className="text-[#4F46E5]" />
+              <ChevronRight size={12} className="text-slate-400" />
+            </button>
+          )}
+
+          {/* Ambient Right floating reopen handle */}
+          {!rightOpen && (
+            <button
+              onClick={() => setRightOpen(true)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-30 bg-white hover:bg-slate-50 text-slate-600 hover:text-sky-600 py-4 px-1.5 rounded-l-lg border-y border-l border-slate-200 shadow-md cursor-pointer transition-all flex flex-col items-center space-y-1.5 active:bg-slate-100"
+              title="Expand Inspector"
+            >
+              <Layers size={16} className="text-sky-600" />
+              <ChevronLeft size={12} className="text-slate-400" />
+            </button>
+          )}
           
           {/* Tab buttons switcher */}
-          <div className="bg-[#1E293B] border-b border-[#475569]/50 px-4 py-2 flex items-center justify-between shrink-0 select-none">
+          <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0 select-none">
             <div className="flex space-x-2">
               <button
                 onClick={() => setActiveTab('canvas')}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition-all ${
+                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all duration-150 border-b-[3px] hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px] ${
                   activeTab === 'canvas'
-                    ? 'bg-[#4F46E5] text-white'
-                    : 'text-[#CBD5E1] hover:text-white hover:bg-slate-800'
+                    ? 'bg-[#4F46E5] text-white border-indigo-800 shadow-md shadow-[#4F46E5]/10'
+                    : 'bg-white text-slate-700 border-slate-200 border-slate-300 hover:bg-slate-50'
                 }`}
               >
                 <Layers size={13} />
@@ -512,10 +542,10 @@ export default function App() {
 
               <button
                 onClick={() => setActiveTab('sources')}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition-all ${
+                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all duration-150 border-b-[3px] hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px] ${
                   activeTab === 'sources'
-                    ? 'bg-[#10B981]/25 text-[#10B981] border border-[#10B981]/40'
-                    : 'text-[#CBD5E1] hover:text-white hover:bg-slate-800'
+                    ? 'bg-emerald-600 text-white border-emerald-800 shadow-md shadow-emerald-600/10'
+                    : 'bg-white text-slate-700 border-slate-200 border-slate-300 hover:bg-slate-50'
                 }`}
               >
                 <Database size={13} />
@@ -524,10 +554,10 @@ export default function App() {
 
               <button
                 onClick={() => setActiveTab('validation')}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition-all ${
+                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all duration-150 border-b-[3px] hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px] ${
                   activeTab === 'validation'
-                    ? 'bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30'
-                    : 'text-[#CBD5E1] hover:text-white hover:bg-slate-800'
+                    ? 'bg-amber-500 text-white border-amber-700 shadow-md shadow-amber-500/10'
+                    : 'bg-white text-slate-700 border-slate-200 border-slate-300 hover:bg-slate-50'
                 }`}
               >
                 <ShieldAlert size={13} />
@@ -598,47 +628,49 @@ export default function App() {
           isExpanded={tables.find(t => t.id === selectedNodeId) ? expandedTables.includes(selectedNodeId!) : false}
           totalTablesCount={tables.length}
           totalConnectionsCount={connections.length}
+          isCollapsed={!rightOpen}
+          onToggleCollapse={() => setRightOpen(false)}
         />
 
       </div>
 
       {/* Export Schema compile overlay modal dialog */}
       {showExportModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fadeIn select-text">
-          <div className="bg-[#1E293B] border border-[#475569] rounded-xl max-w-2xl w-full p-6 shadow-2xl flex flex-col justify-between animate-fadeIn relative">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fadeIn select-text">
+          <div className="bg-white border border-slate-250 rounded-xl max-w-2xl w-full p-6 shadow-2xl flex flex-col justify-between animate-fadeIn relative">
             <div className="mb-4">
-              <h4 className="text-[#F8FAFC] font-sans font-bold text-md flex items-center space-x-2">
+              <h4 className="text-slate-900 font-sans font-bold text-md flex items-center space-x-2">
                 <CheckCircle2 className="text-[#10B981]" size={20} />
                 <span>SQL Star Schema DLL Compiled</span>
               </h4>
-              <p className="text-xs text-[#CBD5E1] mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 AuraBI has successfully compiled your visually designed diagram into functional ANSI SQL CREATE TABLE statements.
               </p>
             </div>
 
             {/* Code preview block in JetBrains mono styling */}
-            <div className="bg-slate-950 p-4 rounded-lg overflow-y-auto max-h-[300px] border border-[#475569]/30 relative">
-              <pre className="font-mono text-[11px] text-[#CBD5E1] leading-relaxed whitespace-pre select-text">
+            <div className="bg-slate-50 p-4 rounded-lg overflow-y-auto max-h-[300px] border border-slate-200 relative">
+              <pre className="font-mono text-[11px] text-slate-800 leading-relaxed whitespace-pre select-text">
                 <code>{compiledSql}</code>
               </pre>
             </div>
 
-            {/* Action buttons */}
-            <div className="mt-5 flex items-center justify-between border-t border-[#475569]/30 pt-4 select-none">
-              <span className="text-[10px] text-slate-500 font-mono">
+             {/* Action buttons */}
+            <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 select-none">
+              <span className="text-[10px] text-slate-450 font-mono">
                 Engine: PostgreSQL / Snowflake Compatible
               </span>
               <div className="flex space-x-2">
                 <button
                   onClick={copyToClipboard}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-[#CBD5E1] hover:text-white font-semibold text-xs rounded border border-[#475569] cursor-pointer flex items-center space-x-1.5 transition-colors"
+                  className="px-5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 border-b-[3px] border-slate-300 hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px] font-semibold text-xs rounded-full cursor-pointer flex items-center space-x-1.5 transition-all duration-150"
                 >
                   <Copy size={13} />
                   <span>{copiedNotification ? 'Copied code!' : 'Copy Code'}</span>
                 </button>
                 <button
                   onClick={() => setShowExportModal(false)}
-                  className="px-4 py-2 bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-white font-semibold text-xs rounded cursor-pointer transition-colors"
+                  className="px-5 py-2 bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-white font-bold text-xs rounded-full border-b-[3px] border-indigo-800 hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px] transition-all duration-150 cursor-pointer shadow-md shadow-[#4F46E5]/10"
                 >
                   Close Preview
                 </button>
