@@ -2,22 +2,52 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '../../features/chat/store/chatStore';
 import { usePipelineStore } from '../../features/workspace/store/pipelineStore';
 import { useWorkspaceStore } from '../../features/workspace/store/workspaceStore';
-import type { ChatResponse } from '../../contracts/aiActions';
+import type { AiAction } from '../../contracts/aiActions';
 import type { PipelineNode } from '../../types/pipeline';
 
-function mockBackend(body: unknown) {
+/** Build a backend chat response, optionally carrying a structured action. */
+function chatResponse(text: string, action?: AiAction) {
+  return {
+    user_message: { id: 'u1', sender: 'USER', content_md: 'q', created_at: '2026-06-03T10:00:00Z' },
+    agent_message: {
+      id: 'a1',
+      sender: 'MASTER_AGENT',
+      content_md: text,
+      metadata: action ? { action } : null,
+      created_at: '2026-06-03T10:00:01Z',
+    },
+    agent_tasks: [
+      { id: 't1', agent_role: 'PROFILER', instruction: 'Profile the data', status: 'PENDING' },
+    ],
+  };
+}
+
+/**
+ * Route the chat endpoint to a given body; all other endpoints (node/edge
+ * create from optimistic sync) fail so reconciliation is skipped and the
+ * locally-created ids are preserved for assertions.
+ */
+function mockChat(body: unknown) {
   vi.stubGlobal(
     'fetch',
-    vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      text: async () => JSON.stringify(body),
-    })),
+    vi.fn(async (url: string) => {
+      if (String(url).includes('/chat')) {
+        return { ok: true, status: 200, text: async () => JSON.stringify(body) };
+      }
+      return { ok: false, status: 500, text: async () => '' };
+    }),
   );
 }
 
 beforeEach(() => {
-  usePipelineStore.setState({ nodes: [], edges: [], selectedNodeId: null, viewStack: [] });
+  usePipelineStore.setState({
+    nodes: [],
+    edges: [],
+    selectedNodeId: null,
+    viewStack: [],
+    pipelineId: 'pipe-1',
+    syncStatus: 'online',
+  });
   useChatStore.setState({ messages: [], isGenerating: false });
   useWorkspaceStore.setState({ activeTab: 'sources' });
 });
@@ -27,10 +57,9 @@ afterEach(() => {
 });
 
 describe('chat → action → canvas flow', () => {
-  it('appends a validated assistant message with an action', async () => {
-    const response: ChatResponse = {
-      text: 'Here is a promotion dimension.',
-      action: {
+  it('appends an assistant message with an action parsed from metadata', async () => {
+    mockChat(
+      chatResponse('Here is a promotion dimension.', {
         type: 'create_resource',
         payload: {
           id: 'DimPromotion',
@@ -39,27 +68,24 @@ describe('chat → action → canvas flow', () => {
           description: '',
           columns: [{ name: 'promo_key', type: 'INT', isPrimaryKey: true, isForeignKey: false }],
         },
-      },
-    };
-    mockBackend(response);
+      }),
+    );
 
     await useChatStore.getState().sendMessage('add a promotion dimension');
 
-    const messages = useChatStore.getState().messages;
-    const last = messages[messages.length - 1];
+    const last = useChatStore.getState().messages.at(-1)!;
     expect(last.sender).toBe('assistant');
     expect(last.action?.type).toBe('create_resource');
+    expect(last.tasks?.[0]?.agent_role).toBe('PROFILER');
   });
 
-  it('applies an action so the node appears on the canvas and switches to the canvas tab', async () => {
-    const response: ChatResponse = {
-      text: 'Adding it.',
-      action: {
+  it('applies an action so the node appears and switches to the canvas tab', async () => {
+    mockChat(
+      chatResponse('Adding it.', {
         type: 'create_resource',
         payload: { id: 'DimPromotion', label: 'DimPromotion', kind: 'table', description: '', columns: [] },
-      },
-    };
-    mockBackend(response);
+      }),
+    );
 
     await useChatStore.getState().sendMessage('add it');
     const action = useChatStore.getState().messages.at(-1)!.action!;
@@ -69,14 +95,14 @@ describe('chat → action → canvas flow', () => {
     expect(useWorkspaceStore.getState().activeTab).toBe('canvas');
   });
 
-  it('rejects an invalid AI payload and does not mutate the graph', async () => {
-    // action missing required `id` -> fails schema validation in aiService.
-    mockBackend({ text: 'bad', action: { type: 'create_resource', payload: { label: 'X' } } });
+  it('drops an invalid action from metadata without an error message', async () => {
+    mockChat(chatResponse('bad action', { type: 'create_resource', payload: { label: 'X' } } as unknown as AiAction));
 
     await useChatStore.getState().sendMessage('break it');
 
     const last = useChatStore.getState().messages.at(-1)!;
-    expect(last.text).toContain('Backend Unavailable');
+    expect(last.text).toContain('bad action');
+    expect(last.action ?? null).toBeNull();
     expect(usePipelineStore.getState().nodes).toHaveLength(0);
   });
 
@@ -91,6 +117,13 @@ describe('chat → action → canvas flow', () => {
     await useChatStore.getState().sendMessage('hello');
     const last = useChatStore.getState().messages.at(-1)!;
     expect(last.text).toContain('Backend Unavailable');
+  });
+
+  it('warns when no pipeline is bound', async () => {
+    usePipelineStore.setState({ pipelineId: null });
+    await useChatStore.getState().sendMessage('hello');
+    const last = useChatStore.getState().messages.at(-1)!;
+    expect(last.text).toContain('Backend Not Connected');
   });
 });
 

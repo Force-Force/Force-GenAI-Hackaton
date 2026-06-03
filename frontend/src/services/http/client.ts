@@ -1,4 +1,4 @@
-import { buildUrl } from './config';
+import { buildHealthUrl, buildUrl } from './config';
 import { withAuthHeaders } from './authInterceptor';
 
 /** Normalized API error so callers can handle failures consistently. */
@@ -25,7 +25,17 @@ async function parseJsonSafely(response: Response): Promise<unknown> {
   }
 }
 
-export async function postJson<TBody extends object>(
+async function ensureOk(response: Response, path: string): Promise<void> {
+  if (!response.ok) {
+    throw new ApiError(
+      `Request to ${path} failed with status ${response.status}`,
+      response.status,
+    );
+  }
+}
+
+async function sendWithBody<TBody extends object>(
+  method: 'POST' | 'PATCH' | 'PUT',
   path: string,
   body: TBody,
   options: RequestOptions = {},
@@ -33,7 +43,7 @@ export async function postJson<TBody extends object>(
   let response: Response;
   try {
     response = await fetch(buildUrl(path), {
-      method: 'POST',
+      method,
       headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(body),
       signal: options.signal,
@@ -45,14 +55,24 @@ export async function postJson<TBody extends object>(
     );
   }
 
-  if (!response.ok) {
-    throw new ApiError(
-      `Request to ${path} failed with status ${response.status}`,
-      response.status,
-    );
-  }
-
+  await ensureOk(response, path);
   return parseJsonSafely(response);
+}
+
+export function postJson<TBody extends object>(
+  path: string,
+  body: TBody,
+  options: RequestOptions = {},
+): Promise<unknown> {
+  return sendWithBody('POST', path, body, options);
+}
+
+export function patchJson<TBody extends object>(
+  path: string,
+  body: TBody,
+  options: RequestOptions = {},
+): Promise<unknown> {
+  return sendWithBody('PATCH', path, body, options);
 }
 
 export async function getJson(
@@ -73,12 +93,47 @@ export async function getJson(
     );
   }
 
-  if (!response.ok) {
+  await ensureOk(response, path);
+  return parseJsonSafely(response);
+}
+
+/** DELETE request. Backend returns 204 with no body for these routes. */
+export async function del(
+  path: string,
+  options: RequestOptions = {},
+): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(path), {
+      method: 'DELETE',
+      headers: withAuthHeaders(),
+      signal: options.signal,
+    });
+  } catch (err) {
     throw new ApiError(
-      `Request to ${path} failed with status ${response.status}`,
-      response.status,
+      err instanceof Error ? err.message : 'Network request failed',
+      0,
     );
   }
 
-  return parseJsonSafely(response);
+  await ensureOk(response, path);
+}
+
+/** Liveness ping against the API root `/health` route. */
+export async function health(options: RequestOptions = {}): Promise<boolean> {
+  try {
+    const response = await fetch(buildHealthUrl(), {
+      method: 'GET',
+      headers: withAuthHeaders(),
+      signal: options.signal,
+    });
+    if (!response.ok) return false;
+    const raw = await parseJsonSafely(response);
+    if (raw && typeof raw === 'object' && 'status' in raw) {
+      return (raw as { status?: string }).status === 'ok';
+    }
+    return false;
+  } catch {
+    return false;
+  }
 }

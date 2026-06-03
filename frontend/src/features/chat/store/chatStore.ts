@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import type { AiAction } from '../../../contracts/aiActions';
+import type { AgentTask } from '../../../contracts/backend';
 import * as aiService from '../../../services/ai/aiService';
+import * as pipelineService from '../../../services/pipeline/pipelineService';
+import { adaptChatMessage } from '../../../services/ai/chatAdapter';
 import { usePipelineStore } from '../../workspace/store/pipelineStore';
 import { useWorkspaceStore } from '../../workspace/store/workspaceStore';
 import { genId } from '../../../utils/graph';
@@ -12,6 +15,7 @@ interface ChatState {
   appendMessage: (message: ChatMessage) => void;
   sendMessage: (text: string) => Promise<void>;
   applyAction: (action: AiAction) => void;
+  loadHistory: (pipelineId: string) => Promise<void>;
   submitProcessingCode: (
     nodeId: string,
     language: 'sql' | 'python',
@@ -23,8 +27,12 @@ function now(): string {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function assistant(text: string, action: AiAction | null = null): ChatMessage {
-  return { id: genId('ai'), sender: 'assistant', timestamp: now(), text, action };
+function assistant(
+  text: string,
+  action: AiAction | null = null,
+  tasks: AgentTask[] = [],
+): ChatMessage {
+  return { id: genId('ai'), sender: 'assistant', timestamp: now(), text, action, tasks };
 }
 
 const WELCOME: ChatMessage = {
@@ -54,12 +62,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
     };
     set((s) => ({ messages: [...s.messages, userMsg], isGenerating: true }));
 
-    const { nodes, edges } = usePipelineStore.getState();
-    const result = await aiService.chat(trimmed, { nodes, edges });
+    const pipelineId = usePipelineStore.getState().pipelineId;
+    if (!pipelineId) {
+      get().appendMessage(
+        assistant(
+          '### Backend Not Connected\n\nNo pipeline is bound yet, so the AI Master Agent is unavailable. Your message was not sent. Once the backend is reachable the workspace will reconnect automatically.',
+        ),
+      );
+      set({ isGenerating: false });
+      return;
+    }
+
+    const result = await aiService.chat(pipelineId, trimmed);
 
     if (result.ok && result.response) {
       get().appendMessage(
-        assistant(result.response.text, result.response.action),
+        assistant(
+          result.response.text,
+          result.response.action,
+          result.response.tasks,
+        ),
       );
     } else {
       get().appendMessage(
@@ -82,9 +104,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     const result = usePipelineStore.getState().applyAction(action);
     if (result.error) {
-      get().appendMessage(
-        assistant(`### Action Rejected\n\n${result.error}`),
-      );
+      get().appendMessage(assistant(`### Action Rejected\n\n${result.error}`));
       return;
     }
     if (result.changed) {
@@ -95,21 +115,32 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  submitProcessingCode: async (nodeId, language, code) => {
-    usePipelineStore.getState().updateProcessingCode(nodeId, code);
-    set({ isGenerating: true });
-    const result = await aiService.submitProcessingCode(nodeId, language, code);
-    if (result.ok && result.response) {
-      get().appendMessage(
-        assistant(result.response.text, result.response.action),
-      );
-    } else {
-      get().appendMessage(
-        assistant(
-          `### Code Saved Locally\n\nThe updated ${language.toUpperCase()} code was applied to the node, but the backend review could not be reached.\n\nDetails: ${result.error ?? 'unknown error'}`,
-        ),
-      );
+  loadHistory: async (pipelineId) => {
+    try {
+      const history = await pipelineService.getChatHistory(pipelineId);
+      if (history.length === 0) return;
+      const messages: ChatMessage[] = history.map((m) => {
+        const adapted = adaptChatMessage(m);
+        return {
+          id: adapted.id,
+          sender: adapted.sender,
+          timestamp: adapted.timestamp,
+          text: adapted.text,
+          action: adapted.action,
+        };
+      });
+      set({ messages });
+    } catch {
+      // History is best-effort; keep the in-memory conversation on failure.
     }
-    set({ isGenerating: false });
+  },
+
+  submitProcessingCode: async (nodeId, language, code) => {
+    // The backend has no dedicated code-review route, so persist the code via
+    // the node PATCH (handled by the store) and ask the Master Agent to review.
+    usePipelineStore.getState().updateProcessingCode(nodeId, code);
+    await get().sendMessage(
+      `I updated the ${language.toUpperCase()} code for node "${nodeId}". Please review it:\n\n\`\`\`${language}\n${code}\n\`\`\``,
+    );
   },
 }));

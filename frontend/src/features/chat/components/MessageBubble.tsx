@@ -2,6 +2,7 @@ import { Bot, User } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 import type { ChatMessage } from '../types';
 import { ActionCard } from './ActionCard';
+import { AgentTaskList } from './AgentTaskList';
 
 function renderLine(line: string, index: number, isAI: boolean) {
   if (line.startsWith('### ')) {
@@ -50,6 +51,9 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
         </div>
 
         {isAI && message.action && <ActionCard action={message.action} />}
+        {isAI && message.tasks && message.tasks.length > 0 && (
+          <AgentTaskList tasks={message.tasks} />
+        )}
       </div>
     </div>
   );
