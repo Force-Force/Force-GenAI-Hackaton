@@ -140,6 +140,32 @@ export const usePipelineStore = create<PipelineState>()(
         }
       }
 
+      /**
+       * Persist in-place updates to existing nodes (route 8, PATCH node). Used
+       * when an applied action mutates a node that already exists on the backend,
+       * e.g. a table routed INTO a warehouse/database container (the container's
+       * `data.children` changes but its id does not).
+       */
+      async function syncChanged(ids: string[]): Promise<void> {
+        if (syncDisabled() || ids.length === 0) return;
+        const pid = get().pipelineId!;
+        set({ syncStatus: 'syncing' });
+        try {
+          for (const id of ids) {
+            const node = get().nodes.find((n) => n.id === id);
+            if (!node) continue;
+            await pipelineService.updateNode(
+              pid,
+              id,
+              toNodeUpdateBody({ position: node.position, data: node.data }),
+            );
+          }
+          set({ syncStatus: 'online' });
+        } catch {
+          set({ syncStatus: 'offline' });
+        }
+      }
+
       async function syncDeleteNode(id: string): Promise<void> {
         if (syncDisabled()) return;
         const pid = get().pipelineId!;
@@ -313,7 +339,24 @@ export const usePipelineStore = create<PipelineState>()(
             const newEdges = result.graph.edges.filter(
               (e) => !before.edges.some((o) => o.id === e.id),
             );
-            void syncCreated(newNodes, newEdges);
+            // Existing nodes mutated in place (e.g. a table routed into a
+            // warehouse/database container) must be PATCHed so the change is
+            // persisted via the documented node route, not lost locally.
+            const changedNodeIds = result.graph.nodes
+              .filter((n) => {
+                const old = before.nodes.find((o) => o.id === n.id);
+                if (!old || old === n) return false;
+                return (
+                  JSON.stringify(old.data) !== JSON.stringify(n.data) ||
+                  old.position.x !== n.position.x ||
+                  old.position.y !== n.position.y
+                );
+              })
+              .map((n) => n.id);
+            void (async () => {
+              await syncCreated(newNodes, newEdges);
+              await syncChanged(changedNodeIds);
+            })();
           }
           return result;
         },

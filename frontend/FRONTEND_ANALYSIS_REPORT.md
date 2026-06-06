@@ -336,3 +336,20 @@ npm run lint
 ```
 
 Result: passed. The TypeScript compiler did not report errors.
+
+## Addendum: Can the backend AI modify the canvas? (route verification)
+
+Question: do the documented routes (`Documentation/API_ROUTES.md`) let the backend AI agent modify the canvas?
+
+Finding: not directly. The only AI route is `POST /api/v1/pipelines/{id}/chat` (route 13). It returns a text reply, `agent_tasks` (created `PENDING`, "non executees en MVP"), and metadata. It emits only `chat.message` and `agent_task.updated` over WebSocket. It never creates/updates/deletes nodes or edges and never emits `node.*` / `edge.*` events. The graph-mutating routes (7-11: POST/PATCH/DELETE nodes and edges) are all non-AI CRUD endpoints meant to be called by the client. The Python backend is not part of this repository, so the backend agent cannot be changed from here.
+
+Conclusion: the routes DO enable AI-driven canvas changes, but the actuation must happen on the frontend. The frontend AI agent turns a backend message into structured actions, applies them locally, and persists them through the node/edge REST routes; the backend then echoes `node.created` / `node.updated` / `edge.created` over WebSocket to other clients.
+
+### Persistence design (implemented)
+
+- New top-level nodes/edges created by an applied action are persisted via `POST .../nodes` and `POST .../edges` (`syncCreated` in `src/features/workspace/store/pipelineStore.ts`), with client-to-backend id reconciliation.
+- In-place updates to existing nodes are now persisted via `PATCH .../nodes/{id}` (`syncChanged`). This closes the gap where a table routed INTO a warehouse/database container (which mutates the container's `data.children` but not its id) was never written to the backend. Container `data` (including nested `children`) is round-tripped losslessly by `services/mapping/graphMapping.ts`, and `nodeReadSchema.data` is free-form JSON (`z.record`), so PATCH responses still validate.
+
+### Validation endpoint note
+
+There is no dedicated validation/scoring endpoint in the provided routes. The "Run Validation" action therefore queries the authoritative graph via `GET /api/v1/pipelines/{id}` (route 4), runs the local rule set against that server-truth graph, and surfaces a weighted Schema Health Score (success = 1, warning = 0.5, error = 0). It falls back to the local graph when no pipeline is bound or the request fails, and labels which source was used.

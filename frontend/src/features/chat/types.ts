@@ -10,4 +10,7 @@ export interface ChatMessage {
   action?: AiAction | null;
   /** Delegated backend agent tasks surfaced alongside an assistant reply. */
   tasks?: AgentTask[];
+  /** Marks messages generated locally (e.g. the apply-agent summary) so they
+   * are excluded from re-processing by the frontend agent. */
+  system?: boolean;
 }

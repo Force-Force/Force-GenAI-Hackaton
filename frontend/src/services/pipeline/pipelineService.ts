@@ -7,6 +7,7 @@ import {
   nodeReadSchema,
   pipelineListSchema,
   pipelineReadSchema,
+  validationRunSchema,
   type ArchitectureDesign,
   type BackendChatResponse,
   type ChatMessageRead,
@@ -15,6 +16,7 @@ import {
   type PipelineListItem,
   type PipelineRead,
   type PipelineStatus,
+  type ValidationRun,
 } from '../../contracts/backend';
 import type { z } from 'zod';
 import {
@@ -123,6 +125,33 @@ export async function deleteEdge(
   edgeId: string,
 ): Promise<void> {
   await del(`/pipelines/${pipelineId}/edges/${edgeId}`);
+}
+
+// --- Validation ---
+
+/**
+ * Run the backend validation engine against the persisted pipeline graph and
+ * return the authoritative result (score, grade, status, issues, summary).
+ * Set `useLlm` to append a best-effort LLM advisory to the summary (route 7).
+ */
+export async function validatePipeline(
+  pipelineId: string,
+  useLlm = false,
+): Promise<ValidationRun> {
+  const raw = await postJson(
+    `/pipelines/${pipelineId}/validate?use_llm=${useLlm}`,
+    {},
+  );
+  return parse(validationRunSchema, raw, 'validation run');
+}
+
+/** Most recent persisted validation run, or null if none exists (route 9). */
+export async function getLatestValidation(
+  pipelineId: string,
+): Promise<ValidationRun | null> {
+  const raw = await getJson(`/pipelines/${pipelineId}/validations/latest`);
+  if (raw === null || raw === undefined) return null;
+  return parse(validationRunSchema, raw, 'validation run');
 }
 
 // --- Chat ---

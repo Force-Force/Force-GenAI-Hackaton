@@ -109,6 +109,28 @@ export const backendChatResponseSchema = z.object({
   agent_tasks: z.array(agentTaskSchema).default([]),
 });
 
+/** Validation engine contracts (Routes.md routes 7-9). */
+export const validationSeveritySchema = z.enum(['ERROR', 'WARNING', 'INFO']);
+export const validationStatusSchema = z.enum(['PASSED', 'FAILED']);
+
+export const validationIssueSchema = z.object({
+  severity: validationSeveritySchema,
+  code: z.string().default(''),
+  message: z.string().default(''),
+  node_id: z.string().nullable().optional(),
+});
+
+export const validationRunSchema = z.object({
+  id: z.string(),
+  pipeline_id: z.string().optional(),
+  score: z.number(),
+  grade: z.string().optional(),
+  status: validationStatusSchema,
+  issues: z.array(validationIssueSchema).default([]),
+  summary: z.string().default(''),
+  created_at: z.string().optional(),
+});
+
 /** Realtime event envelope pushed over the WebSocket channel. */
 export const wsEventSchema = z.object({
   type: z.enum([
@@ -120,6 +142,7 @@ export const wsEventSchema = z.object({
     'edge.deleted',
     'chat.message',
     'agent_task.updated',
+    'validation.completed',
   ]),
   pipeline_id: z.string().optional(),
   payload: z.unknown().optional(),
@@ -138,4 +161,8 @@ export type BackendChatResponse = z.infer<typeof backendChatResponseSchema>;
 export type WsEvent = z.infer<typeof wsEventSchema>;
 export type ArchitectureDesign = z.infer<typeof architectureDesignSchema>;
 export type PipelineStatus = z.infer<typeof pipelineStatusSchema>;
+export type ValidationSeverity = z.infer<typeof validationSeveritySchema>;
+export type ValidationStatus = z.infer<typeof validationStatusSchema>;
+export type ValidationIssue = z.infer<typeof validationIssueSchema>;
+export type ValidationRun = z.infer<typeof validationRunSchema>;
 export type WsEventType = WsEvent['type'];

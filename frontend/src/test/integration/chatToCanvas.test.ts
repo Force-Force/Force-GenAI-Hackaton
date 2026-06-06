@@ -48,7 +48,8 @@ beforeEach(() => {
     pipelineId: 'pipe-1',
     syncStatus: 'online',
   });
-  useChatStore.setState({ messages: [], isGenerating: false });
+  // These tests exercise the manual apply flow; auto-apply has its own tests.
+  useChatStore.setState({ messages: [], isGenerating: false, autoApply: false });
   useWorkspaceStore.setState({ activeTab: 'sources' });
 });
 
@@ -124,6 +125,144 @@ describe('chat → action → canvas flow', () => {
     await useChatStore.getState().sendMessage('hello');
     const last = useChatStore.getState().messages.at(-1)!;
     expect(last.text).toContain('Backend Not Connected');
+  });
+});
+
+interface ApiCall {
+  method: string;
+  url: string;
+}
+
+function jsonRes(status: number, body: unknown) {
+  return { ok: status < 400, status, text: async () => JSON.stringify(body) };
+}
+
+/** Mock the node/edge REST routes and record every call's method + url. */
+function mockGraphApi(): ApiCall[] {
+  const calls: ApiCall[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: { method?: string }) => {
+      const method = (init?.method ?? 'GET').toUpperCase();
+      const u = String(url);
+      calls.push({ method, url: u });
+      if (method === 'PATCH' && u.includes('/nodes/')) {
+        const id = u.split('/nodes/')[1];
+        return jsonRes(200, {
+          id,
+          type: 'SINK',
+          subtype: 'generic',
+          label: '',
+          position: { x: 0, y: 0 },
+          data: {},
+          status: 'IDLE',
+        });
+      }
+      if (method === 'POST' && u.includes('/nodes')) {
+        return jsonRes(201, {
+          id: 'srv-node',
+          type: 'SINK',
+          subtype: 'generic',
+          label: '',
+          position: { x: 0, y: 0 },
+          data: {},
+          status: 'IDLE',
+        });
+      }
+      if (method === 'POST' && u.includes('/edges')) {
+        return jsonRes(201, { id: 'srv-edge', source: 'a', target: 'b' });
+      }
+      return jsonRes(500, {});
+    }),
+  );
+  return calls;
+}
+
+async function waitFor(predicate: () => boolean, ms = 1000): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < ms) {
+    if (predicate()) return;
+    await new Promise((r) => setTimeout(r, 5));
+  }
+  throw new Error('waitFor timed out');
+}
+
+describe('AI canvas persistence via REST routes', () => {
+  it('PATCHes the container when an AI table is routed into a warehouse (not a stray POST)', async () => {
+    const container: PipelineNode = {
+      id: 'dw_core',
+      type: 'datamart',
+      position: { x: 0, y: 0 },
+      data: {
+        category: 'datamart',
+        label: 'Warehouse',
+        description: '',
+        containerKind: 'warehouse',
+        children: { nodes: [], edges: [] },
+      },
+    };
+    usePipelineStore.setState({
+      nodes: [container],
+      edges: [],
+      selectedNodeId: null,
+      viewStack: [],
+      pipelineId: 'pipe-1',
+      syncStatus: 'online',
+    });
+
+    const calls = mockGraphApi();
+
+    usePipelineStore.getState().applyAction({
+      type: 'create_resource',
+      payload: {
+        id: 'fct_sales',
+        label: 'fct_sales',
+        kind: 'table',
+        warehouseRole: 'fact',
+        description: '',
+        columns: [{ name: 'sales_key', type: 'INT', isPrimaryKey: true, isForeignKey: false }],
+      },
+    });
+
+    await waitFor(() =>
+      calls.some((c) => c.method === 'PATCH' && c.url.includes('/nodes/dw_core')),
+    );
+
+    // The nested table must not be POSTed as a standalone backend node.
+    expect(calls.some((c) => c.method === 'POST' && c.url.includes('/nodes'))).toBe(false);
+    // It now lives inside the container's children.
+    const stored = usePipelineStore.getState().nodes.find((n) => n.id === 'dw_core')!;
+    expect(
+      stored.data.category === 'datamart' &&
+        stored.data.children.nodes.some((n) => n.id === 'fct_sales'),
+    ).toBe(true);
+  });
+
+  it('POSTs a standalone node for a top-level AI resource', async () => {
+    usePipelineStore.setState({
+      nodes: [],
+      edges: [],
+      selectedNodeId: null,
+      viewStack: [],
+      pipelineId: 'pipe-1',
+      syncStatus: 'online',
+    });
+
+    const calls = mockGraphApi();
+
+    usePipelineStore.getState().applyAction({
+      type: 'create_resource',
+      payload: {
+        id: 'raw_orders',
+        label: 'raw_orders',
+        kind: 'source',
+        description: '',
+        columns: [],
+      },
+    });
+
+    await waitFor(() => calls.some((c) => c.method === 'POST' && c.url.includes('/nodes')));
+    expect(calls.some((c) => c.method === 'PATCH' && c.url.includes('/nodes/'))).toBe(false);
   });
 });
 

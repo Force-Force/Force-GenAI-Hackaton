@@ -16,10 +16,21 @@ const ROW = {
   error: 'bg-rose-50 border-rose-200/70 dark:bg-rose-500/10 dark:border-rose-500/30',
 };
 
+function scoreTone(score: number): string {
+  if (score >= 85) return 'text-emerald-600 dark:text-emerald-400';
+  if (score >= 60) return 'text-amber-500 dark:text-amber-400';
+  return 'text-rose-500 dark:text-rose-400';
+}
+
 export function ValidationCenter() {
   const validations = useWorkspaceStore((s) => s.validations);
   const isValidating = useWorkspaceStore((s) => s.isValidating);
   const runValidation = useWorkspaceStore((s) => s.runValidation);
+  const score = useWorkspaceStore((s) => s.validationScore);
+  const grade = useWorkspaceStore((s) => s.validationGrade);
+  const status = useWorkspaceStore((s) => s.validationStatus);
+  const summary = useWorkspaceStore((s) => s.validationSummary);
+  const source = useWorkspaceStore((s) => s.validationSource);
 
   return (
     <div className="h-full overflow-y-auto p-6 max-w-3xl mx-auto w-full">
@@ -28,11 +39,58 @@ export function ValidationCenter() {
           <ShieldCheck size={18} className="text-[#4F46E5] dark:text-indigo-400" />
           <h2 className="text-sm font-sans font-bold text-slate-800 dark:text-slate-100">Schema Validation Center</h2>
         </div>
-        <Button variant="primary" onClick={runValidation} disabled={isValidating}>
+        <Button variant="primary" onClick={() => void runValidation()} disabled={isValidating}>
           <RefreshCw size={13} className={cn(isValidating && 'animate-spin')} />
           Run Validation
         </Button>
       </div>
+
+      {score !== null && (
+        <div className="mb-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold">
+                  Schema Health Score
+                </span>
+                {status && (
+                  <span
+                    className={cn(
+                      'text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded',
+                      status === 'PASSED'
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400'
+                        : 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
+                    )}
+                  >
+                    {status}
+                  </span>
+                )}
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                {source === 'backend'
+                  ? 'Computed by the backend engine (POST /pipelines/{id}/validate).'
+                  : 'Computed locally — backend unavailable.'}
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              {grade && (
+                <span className={cn('text-2xl font-sans font-bold', scoreTone(score))}>
+                  {grade}
+                </span>
+              )}
+              <span className={cn('text-3xl font-sans font-bold tabular-nums', scoreTone(score))}>
+                {score}
+                <span className="text-base text-slate-400 dark:text-slate-500">/100</span>
+              </span>
+            </div>
+          </div>
+          {summary && (
+            <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+              {summary}
+            </div>
+          )}
+        </div>
+      )}
 
       {validations.length === 0 ? (
         <div className="text-center text-slate-400 dark:text-slate-500 text-xs py-16 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl">

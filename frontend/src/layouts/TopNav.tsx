@@ -76,7 +76,7 @@ export function TopNav() {
         >
           <RotateCcw size={13} /> Reset
         </Button>
-        <Button variant="secondary" onClick={runValidation}>
+        <Button variant="secondary" onClick={() => void runValidation()}>
           <ShieldCheck size={13} /> Validate
         </Button>
         <Button variant="primary" onClick={openExport}>
