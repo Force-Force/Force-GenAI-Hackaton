@@ -58,6 +58,9 @@ L’API écoute sur `0.0.0.0:8000` par défaut.
 | http://127.0.0.1:8000/docs | Swagger (vous) |
 | http://\<votre-ip\>:8000/docs | Swagger (collègues) |
 | http://\<votre-ip\>:8000/health | Santé |
+Référence détaillée des routes (usage, utilité, exemples) : [docs/API_ROUTES.md](docs/API_ROUTES.md)
+
+### Docker (API + DB)
 
 Guide détaillé partage réseau : **[docs/EXPOSITION_RESEAU.md](docs/EXPOSITION_RESEAU.md)**
 
