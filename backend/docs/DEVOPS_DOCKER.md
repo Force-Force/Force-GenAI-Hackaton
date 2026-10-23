@@ -54,6 +54,13 @@ Edit `.env` before starting the stack. At minimum, review:
 | `MODEL_BASE_URL` | Agent analysis and Explain Why | Use an endpoint reachable from the container. |
 | `MODEL_API_KEY` | Agent analysis and Explain Why | Keep secret; never commit `.env`. |
 | `NEMOTRON_MODEL` | Agent analysis and Explain Why | Use the provider's model identifier. |
+| `MODEL_PROVIDER` | Active model route | Set to `nightshift` for the required Nightshift runtime or `nvidia` for the direct NVIDIA-compatible route. |
+| `NIGHTSHIFT_BASE_URL` | Nightshift runtime | Obtain the endpoint from HackOS/organizers; keep it separate from NVIDIA settings. |
+| `NIGHTSHIFT_API_KEY` | Nightshift runtime | Obtain the runtime token from HackOS/organizers; never reuse a coding-tool token or NVIDIA key. |
+| `NIGHTSHIFT_MODEL` | Nightshift runtime | Use the Nemotron lane/model name supplied by the organizers. |
+| `NVIDIA_BASE_URL` | Direct NVIDIA route | Optional when `MODEL_PROVIDER=nvidia`; use only a verified NVIDIA endpoint. |
+| `NVIDIA_API_KEY` | Direct NVIDIA route | Optional direct-route credential; keep separate from `NIGHTSHIFT_API_KEY`. |
+| `NVIDIA_MODEL` | Direct NVIDIA route | Optional direct-route model name. |
 | `ZETARIS_API_URL` or `ZETARIS_REST_URL` | Zetaris-backed analysis/ETL | Use a container-reachable hostname, not an inaccessible host-local address. |
 | `ZETARIS_API_KEY` | Zetaris-backed analysis/ETL | Keep secret; never commit `.env`. |
 | `ZETARIS_ORG_ID` | Zetaris-backed analysis/ETL | Use the organization ID supplied by Zetaris. |

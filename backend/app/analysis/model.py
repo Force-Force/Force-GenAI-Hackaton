@@ -8,10 +8,11 @@ logger = logging.getLogger(__name__)
 
 
 class NemotronClient:
-    def __init__(self, base_url: str, api_key: str, model: str) -> None:
+    def __init__(self, base_url: str, api_key: str, model: str, provider: str = "nvidia") -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.model = model
+        self.provider = provider
 
     def _client(self) -> OpenAI:
         return OpenAI(base_url=self.base_url, api_key=self.api_key)

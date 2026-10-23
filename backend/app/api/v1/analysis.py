@@ -32,10 +32,12 @@ async def query_agent(
         org_id=settings.zetaris_org_id,
         sql_endpoint=settings.zetaris_sql_endpoint,
     )
+    model_base_url, model_api_key, model_name = settings.active_model_config
     llm = NemotronClient(
-        base_url=settings.model_base_url,
-        api_key=settings.model_api_key,
-        model=settings.nemotron_model,
+        base_url=model_base_url,
+        api_key=model_api_key,
+        model=model_name,
+        provider=settings.model_provider,
     )
     agent = AnalysisAgent(zetaris, llm, max_iterations=settings.max_agent_iterations)
     try:
@@ -44,7 +46,7 @@ async def query_agent(
         raise HTTPException(status_code=502, detail="Analyse externe indisponible.") from exc
     trace = result["trace"]
     trace["request_id"] = request_id
-    trace["model"] = settings.nemotron_model
+    trace["model"] = model_name
     trace["model_route"] = "configured"
     trace["latency_ms"] = round((perf_counter() - started) * 1000, 2)
     executed = trace.get("sql_executions", [])
@@ -54,10 +56,14 @@ async def query_agent(
         request_id=request_id,
         sql=executed[-1].get("sql") if executed else None,
         sources=["Zetaris"] if executed else [],
-        model=settings.nemotron_model,
+        model=model_name,
         model_route="configured",
         latency_ms=trace["latency_ms"],
         warnings=[] if executed else ["No Zetaris query was executed; factual claims may be incomplete."],
+        provider=settings.model_provider,
+        intent=trace.get("intent", {}).get("intent"),
+        risk_level=trace.get("intent", {}).get("risk_level"),
+        approval_required=bool(trace.get("intent", {}).get("approval_required", False)),
     )
     _traces[request_id] = explain
     response.headers["X-Request-ID"] = request_id

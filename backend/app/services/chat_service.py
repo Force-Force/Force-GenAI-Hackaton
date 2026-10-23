@@ -51,6 +51,7 @@ async def handle_chat_message(db: AsyncSession, pipeline_id: UUID, content: str)
     agent_metadata: dict = {"architecture": "analysis"}
     try:
         settings = get_analysis_settings()
+        model_base_url, model_api_key, model_name = settings.active_model_config
         agent = AnalysisAgent(
             ZetarisClient(
                 settings.resolved_zetaris_url,
@@ -58,7 +59,12 @@ async def handle_chat_message(db: AsyncSession, pipeline_id: UUID, content: str)
                 settings.zetaris_org_id,
                 settings.zetaris_sql_endpoint,
             ),
-            NemotronClient(settings.model_base_url, settings.model_api_key, settings.nemotron_model),
+            NemotronClient(
+                model_base_url,
+                model_api_key,
+                model_name,
+                provider=settings.model_provider,
+            ),
             max_iterations=settings.max_agent_iterations,
         )
         result = await asyncio.to_thread(agent.run, content)

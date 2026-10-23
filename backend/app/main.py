@@ -74,6 +74,7 @@ async def database_schema_error(_request: Request, exc: ProgrammingError) -> JSO
 async def health() -> dict[str, str | bool]:
     return {
         "status": "ok",
-        "model": settings.nemotron_model or None,
+        "model": settings.active_model or None,
         "llm_configured": settings.llm_configured,
+        "provider": settings.model_provider,
     }

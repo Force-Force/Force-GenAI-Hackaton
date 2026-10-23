@@ -62,6 +62,9 @@ Référence détaillée des routes (usage, utilité, exemples) : [docs/API_ROUTE
 
 Guide Docker/DevOps : [docs/DEVOPS_DOCKER.md](docs/DEVOPS_DOCKER.md)
 Guide d'intégration frontend : [docs/FRONTEND_INTEGRATION.md](docs/FRONTEND_INTEGRATION.md)
+Explication des technologies sponsors : [docs/SPONSOR_TECHNOLOGY.md](docs/SPONSOR_TECHNOLOGY.md)
+
+Evaluation reproductible Scout Intent : `python scripts/evaluate_scout_intent.py`
 
 ### Docker (API + DB)
 
@@ -70,6 +73,7 @@ Guide détaillé partage réseau : **[docs/EXPOSITION_RESEAU.md](docs/EXPOSITION
 Référence des routes : **[docs/API_ROUTES.md](docs/API_ROUTES.md)**
 Guide Docker/DevOps : **[docs/DEVOPS_DOCKER.md](docs/DEVOPS_DOCKER.md)**
 Guide d'intégration frontend : **[docs/FRONTEND_INTEGRATION.md](docs/FRONTEND_INTEGRATION.md)**
+Explication des technologies sponsors : **[docs/SPONSOR_TECHNOLOGY.md](docs/SPONSOR_TECHNOLOGY.md)**
 Workflow `curl` : **[docs/WORKFLOW_CURL.md](docs/WORKFLOW_CURL.md)** — démo rapide `./scripts/demo_workflow.sh`, **usage normal** `./scripts/workflow_normal.sh`
 
 ## Variables d’environnement

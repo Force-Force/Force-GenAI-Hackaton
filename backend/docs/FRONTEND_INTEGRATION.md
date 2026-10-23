@@ -88,9 +88,15 @@ Response:
 {
   "status": "ok",
   "model": "model-name-or-null",
-  "llm_configured": true
+  "llm_configured": true,
+  "provider": "nightshift"
 }
 ```
+
+Analysis responses also include `provider`, `intent`, `risk_level`, and
+`approval_required`. The `intent` is `informational`, `predictive`, or
+`action-oriented`. Action-oriented requests are stopped before data execution
+until the surrounding workflow obtains Guardian approval.
 
 ### `POST /pipelines`
 
@@ -371,6 +377,7 @@ Request:
 for client correlation; otherwise the backend generates one. Response includes
 `response`, `trace`, `request_id`, `status`, `sql`, `sources`, `views_used`,
 `model`, `model_route`, `latency_ms`, calculation/evidence arrays, and warnings.
+It also includes `provider`, `intent`, `risk_level`, and `approval_required`.
 The backend returns `500` for incomplete provider configuration and `502` when
 the external analysis provider fails.
 

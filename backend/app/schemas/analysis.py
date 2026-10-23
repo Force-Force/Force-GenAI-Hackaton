@@ -23,3 +23,7 @@ class AgentQueryResponse(BaseModel):
     calculations: list[dict[str, Any]] = Field(default_factory=list)
     evidence: list[dict[str, Any]] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    provider: str | None = None
+    intent: str | None = None
+    risk_level: str | None = None
+    approval_required: bool = False

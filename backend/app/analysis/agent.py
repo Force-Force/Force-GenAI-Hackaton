@@ -2,6 +2,7 @@ import json
 from typing import Any
 
 from app.analysis.data import ZetarisClient
+from app.analysis.intent import ScoutIntentEngine
 from app.analysis.model import NemotronClient
 
 TOOL_SCHEMA = [
@@ -39,8 +40,26 @@ class AnalysisAgent:
         self.zetaris = zetaris_client
         self.llm = llm_client
         self.max_iterations = max_iterations
+        self.intent_engine = ScoutIntentEngine()
 
     def run(self, question: str, request_id: str | None = None) -> dict[str, Any]:
+        intent = self.intent_engine.classify(question)
+        if intent.approval_required:
+            response = (
+                "Cette demande est orientée action et nécessite une approbation Guardian "
+                "avant toute exécution."
+            )
+            return {
+                "response": response,
+                "trace": {
+                    "question": question,
+                    "steps": [],
+                    "sql_executions": [],
+                    "final_answer": response,
+                    "intent": intent.as_dict(),
+                    "provider": self.llm.provider,
+                },
+            }
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": question},
@@ -50,6 +69,8 @@ class AnalysisAgent:
             "steps": [],
             "sql_executions": [],
             "final_answer": "",
+            "intent": intent.as_dict(),
+            "provider": self.llm.provider,
         }
 
         for iteration in range(1, self.max_iterations + 1):

@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     model_base_url: str = ""
     model_api_key: str = ""
     nemotron_model: str = ""
+    model_provider: str = "nightshift"
+    nightshift_base_url: str = ""
+    nightshift_api_key: str = ""
+    nightshift_model: str = ""
+    nvidia_base_url: str = ""
+    nvidia_api_key: str = ""
+    nvidia_model: str = ""
 
     chat_history_limit: int = 20
 
@@ -30,7 +37,25 @@ class Settings(BaseSettings):
 
     @property
     def llm_configured(self) -> bool:
-        return bool(self.model_base_url and self.model_api_key and self.nemotron_model)
+        if self.model_provider == "nightshift":
+            return bool(
+                (self.nightshift_base_url or self.model_base_url)
+                and self.nightshift_api_key
+                and (self.nightshift_model or self.nemotron_model)
+            )
+        if self.model_provider == "nvidia":
+            return bool(
+                (self.nvidia_base_url or self.model_base_url)
+                and (self.nvidia_api_key or self.model_api_key)
+                and (self.nvidia_model or self.nemotron_model)
+            )
+        return False
+
+    @property
+    def active_model(self) -> str:
+        if self.model_provider == "nightshift":
+            return self.nightshift_model or self.nemotron_model
+        return self.nvidia_model or self.nemotron_model
 
 
 @lru_cache

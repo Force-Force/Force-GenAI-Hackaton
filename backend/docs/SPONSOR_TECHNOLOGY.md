@@ -1,0 +1,150 @@
+# 3.7 Sponsor Technology Explanation
+
+## Overview
+
+AuraBI combines governed data access, natural-language analysis, and a visual
+ETL workflow. The sponsor technologies fit into different parts of that
+workflow:
+
+```text
+User question / ETL instruction
+          |
+          v
+  NVIDIA Nemotron (reasoning and SQL planning)
+          |
+          v
+       Zetaris (read-only data execution)
+          |
+          v
+  Evidence, explanation, and ReactFlow UI
+```
+
+The active runtime model route is selected with `MODEL_PROVIDER`. The required
+submission route is `nightshift`, where Nightshift supplies the runtime and a
+Nemotron lane serves requests. A direct `nvidia` route remains available for
+local/provider testing. The Nightshift endpoint, token, and lane name must be
+provided by HackOS or the event organizers; no credentials are stored in this
+repository.
+
+## Zetaris
+
+### How it is integrated
+
+Zetaris is integrated through a dedicated `ZetarisClient` in
+`app/analysis/data.py`. The backend configures the client with:
+
+- `ZETARIS_API_URL` or `ZETARIS_REST_URL` for the Zetaris REST base URL
+- `ZETARIS_SQL_ENDPOINT`, defaulting to `/sql-editor/sqls/run`
+- `ZETARIS_API_KEY` for authentication
+- `ZETARIS_ORG_ID` for organization scoping
+
+For every request, the client sends `Authorization`, `X-Org-ID`,
+`X-Request-ID`, and JSON containing a generated query ID, SQL text, source
+`SqlEditor`, and a row limit.
+
+The integration is used by `POST /api/v1/agent/query` and
+`POST /api/v1/pipelines/{pipeline_id}/chat`. The ETL workflow also uses the
+configured data-source/SQL services when introspecting and executing pipeline
+instructions.
+
+### What role it plays
+
+Zetaris is the governed data execution layer. Nemotron can interpret a question
+and propose a query, but Zetaris runs the read query against the analytical data
+source and returns rows as evidence.
+
+The analysis client only permits read-oriented SQL: `SELECT`, `SHOW`, and
+`DESCRIBE`. It rejects write or schema-changing statements such as `INSERT`,
+`UPDATE`, `DELETE`, `DROP`, and `ALTER`, and rejects multiple SQL statements.
+Timeouts, authentication failures, rate limits, transport errors, and malformed
+responses are returned as explicit provider errors.
+
+This gives AuraBI a clear control boundary: the model reasons about the user's
+request, while Zetaris supplies the factual result used in the answer. The
+response can expose generated SQL, source name, trace, latency, and warnings so
+the frontend can show how an answer was produced.
+
+## Meterless
+
+### How it is integrated
+
+Meterless is integrated through the provider selector and the OpenAI-compatible
+model adapter. Set `MODEL_PROVIDER=nightshift` and provide
+`NIGHTSHIFT_BASE_URL`, `NIGHTSHIFT_API_KEY`, and `NIGHTSHIFT_MODEL`. The
+Nightshift token is intentionally separate from both `NVIDIA_API_KEY` and
+coding-tool credentials. The adapter preserves the contract:
+
+```text
+messages + optional tools -> model response
+```
+
+The active provider is returned by `/health`, included in analysis traces, and
+returned as `provider` in `/agent/query`. Missing Nightshift configuration makes
+the service report `llm_configured=false`; it never claims Meterless/Nightshift
+served a request. The provider contract is covered by adapter/configuration
+tests, while live authentication, tool calling, rate-limit, timeout, and lane
+compatibility checks require the organizer-issued endpoint and token.
+
+### What role it would play
+
+Nightshift/Meterless is the runtime model provider for the natural-language
+layer. It generates or refines analysis plans, SQL proposals, explanations, and
+follow-up questions, while Zetaris remains the data execution layer.
+
+## NVIDIA
+
+### How it is integrated
+
+NVIDIA technology contributes through the Nemotron lane served by Nightshift
+and through the compatible model adapter in
+`app/analysis/model.py`. The adapter uses the OpenAI-compatible
+`chat.completions` interface and reads `MODEL_BASE_URL`, `MODEL_API_KEY`, and
+`NEMOTRON_MODEL`.
+
+The model is used in the `AnalysisAgent`, called by
+`POST /api/v1/agent/query` and
+`POST /api/v1/pipelines/{pipeline_id}/chat`. The adapter supports ordinary chat
+completion and tool-enabled completion, allowing the agent to use iterative
+reasoning and select the appropriate data-analysis action before Zetaris
+executes the read-only query.
+
+The adapter handles provider rate limits with bounded retries and returns
+explicit errors when the model route is unavailable. `/health` reports the
+configured model name and whether the required LLM settings are present.
+
+### What role it plays
+
+NVIDIA Nemotron is the reasoning and orchestration layer of AuraBI. It helps
+turn a human business question into a structured process:
+
+1. Understand the business intent.
+2. Decide whether data retrieval is needed.
+3. Generate a read-only SQL query or use an analysis tool.
+4. Receive data returned from Zetaris.
+5. Produce an explanation grounded in the returned evidence.
+6. Include trace data such as SQL, sources, latency, and warnings.
+
+In the visual ETL experience, the model-backed chat helps users understand a
+pipeline and request transformations in natural language. Execution and
+high-risk operations remain behind validation and Guardian approval flows.
+
+## What is unique about our use of the sponsor technologies
+
+1. **The model does not pretend to be the database.** Nemotron interprets the
+   question and plans the analysis; Zetaris executes the read query and returns
+   the evidence.
+2. **The result is explainable.** AuraBI returns the answer together with trace
+   data, generated SQL, sources, latency, and warnings.
+3. **The same intelligence works at two levels.** It supports both standalone
+   analyst questions and contextual pipeline chat connected to the ReactFlow
+   graph.
+4. **Safety is part of the workflow.** Analysis SQL is restricted to one
+   read-oriented statement, while pipeline execution can pause for Guardian
+   approvals or user questions.
+5. **The runtime route is explicit.** Scout Intent classifies every request and
+   exposes intent, risk, route, and approval requirement. Nightshift/Nemotron
+   provides the model response only after that decision, and provider identity
+   is visible in health and traces.
+
+Together, NVIDIA provides reasoning, Zetaris provides governed data access, and
+the frontend presents the resulting analysis and controls in a visual workflow.
