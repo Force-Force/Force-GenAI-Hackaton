@@ -42,6 +42,8 @@ class HackathonAgent(SupervisorAgent):
     def run(self, question: str) -> dict[str, Any]:
         result = super().run(question)
         return {
+            "request_id": result.get("request_id"),
+            "status": result.get("status", "ok"),
             "response": result["response"],
             "trace": result["trace"],
         }

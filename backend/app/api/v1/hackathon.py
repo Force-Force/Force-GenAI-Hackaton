@@ -28,4 +28,9 @@ async def query_agent(payload: AgentQueryRequest) -> AgentQueryResponse:
     )
     agent = HackathonAgent(zetaris, llm, max_iterations=settings.max_agent_iterations)
     result = agent.run(payload.question)
-    return AgentQueryResponse(**result)
+    return AgentQueryResponse(
+        request_id=result.get("request_id") or "unknown",
+        status=result.get("status", "ok"),
+        response=result["response"],
+        trace=result["trace"],
+    )

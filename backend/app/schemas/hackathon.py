@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -6,5 +8,7 @@ class AgentQueryRequest(BaseModel):
 
 
 class AgentQueryResponse(BaseModel):
+    request_id: str
+    status: str = "ok"
     response: str
-    trace: dict
+    trace: dict[str, Any]
