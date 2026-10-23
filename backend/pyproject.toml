@@ -16,6 +16,12 @@ dependencies = [
     "openai>=1.0.0",
     "requests>=2.31.0",
     "python-multipart>=0.0.18",
+<<<<<<< HEAD
+=======
+    "python-dotenv>=1.0.1",
+    "openai>=1.54.0",
+    "cursor-sdk>=0.1.6",
+>>>>>>> 332d523 (strucutre agent fdigures)
 ]
 
 [project.optional-dependencies]
