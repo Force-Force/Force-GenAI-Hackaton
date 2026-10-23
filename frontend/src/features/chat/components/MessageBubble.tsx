@@ -12,14 +12,14 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
     <div className={cn('flex flex-col max-w-[90%] animate-fadeIn', isAI ? 'self-start mr-auto' : 'self-end ml-auto')}>
       <div
         className={cn(
-          'flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-slate-500 mb-1 font-mono uppercase tracking-wider',
+          'flex items-center gap-1.5 text-[10px] text-slate-400 mb-1 font-mono uppercase tracking-wider',
           isAI ? 'justify-start' : 'justify-end',
         )}
       >
-        {isAI ? <Bot size={12} className="text-indigo-600 dark:text-indigo-400" /> : null}
+        {isAI ? <Bot size={12} className="text-indigo-600" /> : null}
         <span>{isAI ? 'AuraAI Architect' : 'You'}</span>
         {!isAI ? <User size={12} /> : null}
-        <span className="text-[9px] text-slate-300 dark:text-slate-600">•</span>
+        <span className="text-[9px] text-slate-300">•</span>
         <span>{message.timestamp}</span>
       </div>
 
@@ -27,7 +27,7 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
         className={cn(
           'p-3.5 rounded-xl text-xs leading-relaxed border shadow-sm',
           isAI
-            ? 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200'
+            ? 'bg-slate-50 border-slate-200 text-slate-700'
             : 'bg-indigo-600 border-indigo-700 text-white',
         )}
       >

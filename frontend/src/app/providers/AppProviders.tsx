@@ -1,16 +1,14 @@
 import { useEffect, type ReactNode } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { ErrorBoundary } from './ErrorBoundary';
-import { applyThemeClass, useThemeStore } from '../../store/themeStore';
 
-/** Global providers: error boundary + React Flow context + theme sync. */
+/** Global providers: error boundary + React Flow context. */
 export function AppProviders({ children }: { children: ReactNode }) {
-  const theme = useThemeStore((s) => s.theme);
-
-  // Keep the <html> class in sync (covers first paint + external changes).
+  // Ensure the document stays strictly in light mode.
   useEffect(() => {
-    applyThemeClass(theme);
-  }, [theme]);
+    document.documentElement.classList.remove('dark');
+    document.documentElement.style.colorScheme = 'light';
+  }, []);
 
   return (
     <ErrorBoundary>

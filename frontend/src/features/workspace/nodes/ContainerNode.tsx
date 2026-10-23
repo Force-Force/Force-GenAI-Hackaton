@@ -19,22 +19,22 @@ const THEMES: Record<'warehouse' | 'database' | 'datamart', ContainerTheme> = {
     letter: 'W',
     title: 'Data Warehouse',
     accentTile: 'bg-gradient-to-br from-indigo-500 to-indigo-700 text-white',
-    accentText: 'text-indigo-600 dark:text-indigo-300',
-    selectedRing: 'border-[#4F46E5] ring-2 ring-[#4F46E5]/30 dark:border-indigo-400',
+    accentText: 'text-indigo-600',
+    selectedRing: 'border-[#4F46E5] ring-2 ring-[#4F46E5]/30',
   },
   database: {
     letter: 'D',
     title: 'Imported Database',
     accentTile: 'bg-gradient-to-br from-cyan-500 to-sky-700 text-white',
-    accentText: 'text-sky-600 dark:text-sky-300',
-    selectedRing: 'border-[#06B6D4] ring-2 ring-[#06B6D4]/30 dark:border-cyan-400',
+    accentText: 'text-sky-600',
+    selectedRing: 'border-[#06B6D4] ring-2 ring-[#06B6D4]/30',
   },
   datamart: {
     letter: 'M',
     title: 'Data Mart',
     accentTile: 'bg-gradient-to-br from-amber-400 to-orange-600 text-white',
-    accentText: 'text-amber-600 dark:text-amber-300',
-    selectedRing: 'border-amber-500 ring-2 ring-amber-500/30 dark:border-amber-400',
+    accentText: 'text-amber-600',
+    selectedRing: 'border-amber-500 ring-2 ring-amber-500/30',
   },
 };
 
@@ -64,13 +64,13 @@ export function ContainerNode({ id, data, selected }: NodeProps<DatamartNodeType
   return (
     <div
       className={cn(
-        'rounded-2xl border-2 bg-white dark:bg-slate-900 shadow-lg transition-all',
+        'rounded-2xl border-2 bg-white shadow-lg transition-all',
         expanded ? 'w-[320px]' : 'w-[260px]',
-        selected ? theme.selectedRing : 'border-slate-300 dark:border-slate-700',
+        selected ? theme.selectedRing : 'border-slate-300',
       )}
     >
-      <Handle type="target" position={Position.Left} className="!bg-slate-400 dark:!bg-slate-500" />
-      <Handle type="source" position={Position.Right} className="!bg-slate-400 dark:!bg-slate-500" />
+      <Handle type="target" position={Position.Left} className="!bg-slate-400" />
+      <Handle type="source" position={Position.Right} className="!bg-slate-400" />
 
       {/* Header — always visible (collapsed metadata). */}
       <button
@@ -93,20 +93,20 @@ export function ContainerNode({ id, data, selected }: NodeProps<DatamartNodeType
           <div className={cn('text-[10px] font-mono uppercase tracking-wider font-bold', theme.accentText)}>
             {theme.title}
           </div>
-          <div className="text-[15px] font-sans font-black text-slate-800 dark:text-slate-100 truncate leading-tight">
+          <div className="text-[15px] font-sans font-black text-slate-800 truncate leading-tight">
             {data.label}
           </div>
-          <div className="text-[10px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">
+          <div className="text-[10px] font-mono text-slate-400 mt-0.5">
             {tables.length} {tables.length === 1 ? 'table' : 'tables'}
           </div>
         </div>
         {isDrillIn ? (
-          <ArrowRightToLine size={16} className="text-slate-400 dark:text-slate-500 shrink-0" />
+          <ArrowRightToLine size={16} className="text-slate-400 shrink-0" />
         ) : (
           <ChevronDown
             size={18}
             className={cn(
-              'text-slate-400 dark:text-slate-500 shrink-0 transition-transform duration-300',
+              'text-slate-400 shrink-0 transition-transform duration-300',
               expanded && 'rotate-180',
             )}
           />
@@ -129,7 +129,7 @@ export function ContainerNode({ id, data, selected }: NodeProps<DatamartNodeType
                 <WarehouseTable key={table.id} data={table.data as ResourceNodeData} />
               ))}
               {tables.length === 0 && (
-                <div className="text-[10px] font-mono text-slate-400 dark:text-slate-500 text-center py-3">
+                <div className="text-[10px] font-mono text-slate-400 text-center py-3">
                   No tables in this container yet.
                 </div>
               )}
@@ -144,13 +144,13 @@ export function ContainerNode({ id, data, selected }: NodeProps<DatamartNodeType
 /** A single database table rendered as a compact schema grid (not a card). */
 function WarehouseTable({ data }: { data: ResourceNodeData }) {
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-50/60 dark:bg-slate-800/40">
-      <div className="flex items-center justify-between px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-        <span className="text-[11px] font-mono font-bold text-slate-700 dark:text-slate-200 truncate">
+    <div className="rounded-lg border border-slate-200 overflow-hidden bg-slate-50/60">
+      <div className="flex items-center justify-between px-2.5 py-1.5 bg-slate-100 border-b border-slate-200">
+        <span className="text-[11px] font-mono font-bold text-slate-700 truncate">
           {data.label}
         </span>
         {data.warehouseRole && (
-          <span className="text-[8px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          <span className="text-[8px] font-mono uppercase tracking-wider text-slate-400">
             {data.warehouseRole}
           </span>
         )}
@@ -160,31 +160,31 @@ function WarehouseTable({ data }: { data: ResourceNodeData }) {
           {data.columns.map((col) => (
             <tr
               key={col.name}
-              className="border-b border-slate-100 dark:border-slate-800 last:border-b-0"
+              className="border-b border-slate-100 last:border-b-0"
             >
               <td className="px-2 py-1 w-4">
                 {col.isPrimaryKey ? (
-                  <Key size={10} className="text-indigo-600 dark:text-indigo-400" />
+                  <Key size={10} className="text-indigo-600" />
                 ) : col.isForeignKey ? (
-                  <Link2 size={10} className="text-emerald-600 dark:text-emerald-400" />
+                  <Link2 size={10} className="text-emerald-600" />
                 ) : (
-                  <span className="text-slate-300 dark:text-slate-600">•</span>
+                  <span className="text-slate-300">•</span>
                 )}
               </td>
-              <td className="px-1 py-1 text-slate-700 dark:text-slate-200 truncate">
+              <td className="px-1 py-1 text-slate-700 truncate">
                 {col.name}
                 {col.isForeignKey && col.fkRefTable && (
-                  <span className="text-emerald-600/70 dark:text-emerald-400/70"> → {col.fkRefTable}</span>
+                  <span className="text-emerald-600/70"> → {col.fkRefTable}</span>
                 )}
               </td>
-              <td className="px-2 py-1 text-right text-slate-400 dark:text-slate-500 uppercase whitespace-nowrap">
+              <td className="px-2 py-1 text-right text-slate-400 uppercase whitespace-nowrap">
                 {col.type}
               </td>
             </tr>
           ))}
           {data.columns.length === 0 && (
             <tr>
-              <td colSpan={3} className="px-2 py-1.5 text-slate-400 dark:text-slate-500 text-center">
+              <td colSpan={3} className="px-2 py-1.5 text-slate-400 text-center">
                 No columns
               </td>
             </tr>

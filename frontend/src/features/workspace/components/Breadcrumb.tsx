@@ -12,20 +12,20 @@ export function Breadcrumb() {
   return (
     <nav
       aria-label="Datamart navigation"
-      className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-[11px] font-mono"
+      className="flex items-center gap-1 px-3 py-1.5 bg-white border-b border-slate-200 text-[11px] font-mono"
     >
       <button
         onClick={exitToRoot}
-        className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-[#4F46E5] dark:hover:text-indigo-300 cursor-pointer"
+        className="flex items-center gap-1 text-slate-500 hover:text-[#4F46E5] cursor-pointer"
       >
         <Home size={12} /> Pipeline
       </button>
       {viewStack.map((frame, i) => (
         <span key={frame.datamartId} className="flex items-center gap-1">
-          <ChevronRight size={12} className="text-slate-300 dark:text-slate-600" />
+          <ChevronRight size={12} className="text-slate-300" />
           <button
             onClick={() => exitToFrame(i)}
-            className="text-slate-700 dark:text-slate-200 hover:text-[#4F46E5] dark:hover:text-indigo-300 cursor-pointer font-semibold disabled:cursor-default"
+            className="text-slate-700 hover:text-[#4F46E5] cursor-pointer font-semibold disabled:cursor-default"
             disabled={i === viewStack.length - 1}
           >
             {frame.label}

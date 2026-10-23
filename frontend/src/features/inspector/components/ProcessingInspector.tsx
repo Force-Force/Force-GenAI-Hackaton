@@ -9,23 +9,23 @@ export function ProcessingInspector({ node }: { node: ProcessingNode }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="border-b border-slate-150 dark:border-slate-800 pb-3">
-        <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-purple-600 dark:text-fuchsia-300 uppercase tracking-wider">
+      <div className="border-b border-slate-150 pb-3">
+        <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-purple-600 uppercase tracking-wider">
           <Code2 size={12} />
           <span>Processing ({node.data.language})</span>
         </div>
-        <h3 className="text-md font-sans font-bold text-slate-800 dark:text-slate-100 mt-1">{node.data.label}</h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{node.data.description}</p>
+        <h3 className="text-md font-sans font-bold text-slate-800 mt-1">{node.data.label}</h3>
+        <p className="text-xs text-slate-500 mt-1 leading-relaxed">{node.data.description}</p>
       </div>
 
       <div className="space-y-2">
-        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase block">Source Inlets</span>
+        <span className="text-[10px] font-mono text-slate-400 uppercase block">Source Inlets</span>
         <div className="flex flex-wrap gap-1 font-mono text-[10px]">
           {node.data.inputColumns.map((c) => (
             <Badge key={c} tone="neutral">{c}</Badge>
           ))}
         </div>
-        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase block mt-2">Target Outlets</span>
+        <span className="text-[10px] font-mono text-slate-400 uppercase block mt-2">Target Outlets</span>
         <div className="flex flex-wrap gap-1 font-mono text-[10px]">
           {node.data.outputColumns.map((c) => (
             <Badge key={c} tone="info">{c}</Badge>

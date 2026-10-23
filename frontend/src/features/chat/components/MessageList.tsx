@@ -24,10 +24,10 @@ export function MessageList() {
             <Bot size={12} className="text-indigo-600" />
             <span>AuraAI thinking...</span>
           </div>
-          <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl space-y-2.5 w-72">
-            <div className="h-3.5 bg-slate-200 dark:bg-slate-600 rounded-full w-2/3" />
-            <div className="h-2.5 bg-slate-200 dark:bg-slate-600 rounded-full w-11/12" />
-            <div className="h-2.5 bg-slate-200 dark:bg-slate-600 rounded-full w-4/5" />
+          <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2.5 w-72">
+            <div className="h-3.5 bg-slate-200 rounded-full w-2/3" />
+            <div className="h-2.5 bg-slate-200 rounded-full w-11/12" />
+            <div className="h-2.5 bg-slate-200 rounded-full w-4/5" />
           </div>
         </div>
       )}

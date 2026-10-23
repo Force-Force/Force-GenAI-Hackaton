@@ -11,15 +11,15 @@ const ICONS = {
 };
 
 const ROW = {
-  success: 'bg-emerald-50 border-emerald-200/70 dark:bg-emerald-500/10 dark:border-emerald-500/30',
-  warning: 'bg-amber-50 border-amber-200/70 dark:bg-amber-500/10 dark:border-amber-500/30',
-  error: 'bg-rose-50 border-rose-200/70 dark:bg-rose-500/10 dark:border-rose-500/30',
+  success: 'bg-emerald-50 border-emerald-200/70',
+  warning: 'bg-amber-50 border-amber-200/70',
+  error: 'bg-rose-50 border-rose-200/70',
 };
 
 function scoreTone(score: number): string {
-  if (score >= 85) return 'text-emerald-600 dark:text-emerald-400';
-  if (score >= 60) return 'text-amber-500 dark:text-amber-400';
-  return 'text-rose-500 dark:text-rose-400';
+  if (score >= 85) return 'text-emerald-600';
+  if (score >= 60) return 'text-amber-500';
+  return 'text-rose-500';
 }
 
 export function ValidationCenter() {
@@ -36,8 +36,8 @@ export function ValidationCenter() {
     <div className="h-full overflow-y-auto p-6 max-w-3xl mx-auto w-full">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <ShieldCheck size={18} className="text-[#4F46E5] dark:text-indigo-400" />
-          <h2 className="text-sm font-sans font-bold text-slate-800 dark:text-slate-100">Schema Validation Center</h2>
+          <ShieldCheck size={18} className="text-[#4F46E5]" />
+          <h2 className="text-sm font-sans font-bold text-slate-800">Schema Validation Center</h2>
         </div>
         <Button variant="primary" onClick={() => void runValidation()} disabled={isValidating}>
           <RefreshCw size={13} className={cn(isValidating && 'animate-spin')} />
@@ -46,11 +46,11 @@ export function ValidationCenter() {
       </div>
 
       {score !== null && (
-        <div className="mb-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+        <div className="mb-4 p-4 rounded-xl border border-slate-200 bg-white">
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
                   Schema Health Score
                 </span>
                 {status && (
@@ -58,15 +58,15 @@ export function ValidationCenter() {
                     className={cn(
                       'text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded',
                       status === 'PASSED'
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400'
-                        : 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-rose-100 text-rose-700',
                     )}
                   >
                     {status}
                   </span>
                 )}
               </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              <div className="text-[11px] text-slate-500 mt-1">
                 {source === 'backend'
                   ? 'Computed by the backend engine (POST /pipelines/{id}/validate).'
                   : 'Computed locally — backend unavailable.'}
@@ -80,12 +80,12 @@ export function ValidationCenter() {
               )}
               <span className={cn('text-3xl font-sans font-bold tabular-nums', scoreTone(score))}>
                 {score}
-                <span className="text-base text-slate-400 dark:text-slate-500">/100</span>
+                <span className="text-base text-slate-400">/100</span>
               </span>
             </div>
           </div>
           {summary && (
-            <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+            <div className="mt-3 pt-3 border-t border-slate-100 text-[11px] leading-relaxed text-slate-600">
               {summary}
             </div>
           )}
@@ -93,7 +93,7 @@ export function ValidationCenter() {
       )}
 
       {validations.length === 0 ? (
-        <div className="text-center text-slate-400 dark:text-slate-500 text-xs py-16 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+        <div className="text-center text-slate-400 text-xs py-16 border border-dashed border-slate-200 rounded-xl">
           No validation results yet. Run a validation to audit the warehouse schema.
         </div>
       ) : (
@@ -102,8 +102,8 @@ export function ValidationCenter() {
             <div key={item.id} className={cn('flex items-start gap-3 p-3.5 rounded-lg border', ROW[item.type])}>
               <div className="mt-0.5">{ICONS[item.type]}</div>
               <div>
-                <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold">{item.category}</div>
-                <div className="text-xs text-slate-700 dark:text-slate-200 mt-0.5 leading-relaxed">{item.message}</div>
+                <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">{item.category}</div>
+                <div className="text-xs text-slate-700 mt-0.5 leading-relaxed">{item.message}</div>
               </div>
             </div>
           ))}

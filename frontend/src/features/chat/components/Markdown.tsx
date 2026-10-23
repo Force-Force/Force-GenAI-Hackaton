@@ -25,7 +25,7 @@ const components = (inverted: boolean): Components => ({
       rel="noreferrer noopener"
       className={cn(
         'underline underline-offset-2 font-medium',
-        inverted ? 'text-indigo-100' : 'text-indigo-600 dark:text-indigo-300',
+        inverted ? 'text-indigo-100' : 'text-indigo-600',
       )}
     >
       {children}
@@ -37,7 +37,7 @@ const components = (inverted: boolean): Components => ({
     <blockquote
       className={cn(
         'border-l-2 pl-3 my-2 italic',
-        inverted ? 'border-indigo-300/60 text-indigo-100' : 'border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400',
+        inverted ? 'border-indigo-300/60 text-indigo-100' : 'border-slate-300 text-slate-500',
       )}
     >
       {children}
@@ -58,7 +58,7 @@ const components = (inverted: boolean): Components => ({
       <code
         className={cn(
           'font-mono text-[11px] px-1 py-0.5 rounded',
-          inverted ? 'bg-indigo-500/40 text-white' : 'bg-slate-200/70 dark:bg-slate-700 text-slate-800 dark:text-slate-100',
+          inverted ? 'bg-indigo-500/40 text-white' : 'bg-slate-200/70 text-slate-800',
         )}
       >
         {children}
@@ -71,15 +71,15 @@ const components = (inverted: boolean): Components => ({
     </div>
   ),
   thead: ({ children }) => (
-    <thead className={inverted ? 'bg-indigo-500/30' : 'bg-slate-100 dark:bg-slate-800'}>{children}</thead>
+    <thead className={inverted ? 'bg-indigo-500/30' : 'bg-slate-100'}>{children}</thead>
   ),
   th: ({ children }) => (
-    <th className="border border-slate-300/50 dark:border-slate-600 px-2 py-1 text-left font-bold">{children}</th>
+    <th className="border border-slate-300/50 px-2 py-1 text-left font-bold">{children}</th>
   ),
   td: ({ children }) => (
-    <td className="border border-slate-200/60 dark:border-slate-700 px-2 py-1">{children}</td>
+    <td className="border border-slate-200/60 px-2 py-1">{children}</td>
   ),
-  hr: () => <hr className="my-2 border-slate-200 dark:border-slate-700" />,
+  hr: () => <hr className="my-2 border-slate-200" />,
 });
 
 export function Markdown({ children, inverted = false }: { children: string; inverted?: boolean }) {

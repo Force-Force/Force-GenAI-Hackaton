@@ -17,7 +17,7 @@ export function PromptShortcuts() {
           key={p}
           disabled={isGenerating}
           onClick={() => void sendMessage(p)}
-          className="text-[10px] bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-300 px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 font-semibold transition-colors duration-150 cursor-pointer disabled:opacity-40"
+          className="text-[10px] bg-white hover:bg-slate-50 text-indigo-600 px-2.5 py-1 rounded-full border border-slate-200 font-semibold transition-colors duration-150 cursor-pointer disabled:opacity-40"
         >
           {p}
         </button>

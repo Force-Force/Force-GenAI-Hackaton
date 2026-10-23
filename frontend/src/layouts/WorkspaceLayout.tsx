@@ -5,7 +5,7 @@ import { InspectorPanel } from '../features/inspector/components/InspectorPanel'
 import { CenterWorkspace } from '../features/workspace/components/CenterWorkspace';
 
 const handleClass =
-  'w-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-[#4F46E5]/40 data-[separator-active=true]:bg-[#4F46E5] transition-colors';
+  'w-1.5 bg-slate-200 hover:bg-[#4F46E5]/40 data-[separator-active=true]:bg-[#4F46E5] transition-colors';
 
 /** Three-panel resizable shell: AI chat (left), canvas (center), inspector (right). */
 export function WorkspaceLayout() {

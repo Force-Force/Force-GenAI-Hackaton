@@ -39,7 +39,7 @@ export function GeneratedCodePanel({ node }: { node: PipelineNode }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+        <span className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
           <Code2 size={12} /> Generated Code
         </span>
         <div className="flex items-center gap-1">
@@ -51,7 +51,7 @@ export function GeneratedCodePanel({ node }: { node: PipelineNode }) {
                 'text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded transition-colors cursor-pointer',
                 lang === l
                   ? 'bg-[#4F46E5] text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700',
+                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200',
               )}
             >
               {l}

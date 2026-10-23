@@ -16,16 +16,13 @@ const variants: Record<Variant, string> = {
   primary:
     'bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-white',
   secondary:
-    'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 ' +
-    'dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700',
+    'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200',
   success:
     'bg-emerald-600 hover:bg-emerald-500 text-white',
   danger:
-    'bg-white hover:bg-rose-50 text-[#EF4444] border border-[#EF4444]/30 hover:border-[#EF4444] ' +
-    'dark:bg-slate-800 dark:hover:bg-rose-950/30',
+    'bg-white hover:bg-rose-50 text-[#EF4444] border border-[#EF4444]/30 hover:border-[#EF4444]',
   ghost:
-    'bg-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100 ' +
-    'dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800',
+    'bg-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100',
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

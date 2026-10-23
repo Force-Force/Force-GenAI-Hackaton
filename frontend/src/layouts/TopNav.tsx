@@ -1,8 +1,7 @@
-import { Boxes, ShieldCheck, FileCode2, RotateCcw, PanelLeft, PanelRight, Sun, Moon } from 'lucide-react';
+import { Boxes, ShieldCheck, FileCode2, RotateCcw, PanelLeft, PanelRight } from 'lucide-react';
 import { Badge, Button } from '../components/ui';
 import { useWorkspaceStore } from '../features/workspace/store/workspaceStore';
 import { usePipelineStore } from '../features/workspace/store/pipelineStore';
-import { useThemeStore } from '../store/themeStore';
 
 export function TopNav() {
   const projectName = useWorkspaceStore((s) => s.projectName);
@@ -18,38 +17,28 @@ export function TopNav() {
   const setRightCollapsed = useWorkspaceStore((s) => s.setRightCollapsed);
 
   const resetWorkspace = usePipelineStore((s) => s.resetWorkspace);
-  const theme = useThemeStore((s) => s.theme);
-  const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
   return (
-    <header className="flex items-center justify-between px-4 h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0">
+    <header className="flex items-center justify-between px-4 h-14 bg-white border-b border-slate-200 shrink-0">
       <div className="flex items-center gap-3 min-w-0">
         <div className="flex items-center gap-2 shrink-0">
           <div className="bg-[#4F46E5] p-1.5 rounded-lg text-white">
             <Boxes size={18} />
           </div>
-          <span className="font-sans font-black text-slate-900 dark:text-slate-100 tracking-tight">AuraBI</span>
+          <span className="font-sans font-black text-slate-900 tracking-tight">AuraBI</span>
         </div>
-        <span className="text-slate-300 dark:text-slate-600">/</span>
+        <span className="text-slate-300">/</span>
         <input
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
           aria-label="Project name"
-          className="text-sm font-semibold text-slate-700 dark:text-slate-200 bg-transparent outline-none focus:bg-slate-50 dark:focus:bg-slate-800 rounded px-2 py-1 min-w-0 truncate hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          className="text-sm font-semibold text-slate-700 bg-transparent outline-none focus:bg-slate-50 rounded px-2 py-1 min-w-0 truncate hover:bg-slate-50 transition-colors"
         />
         {isValid === true && <Badge tone="success">Valid</Badge>}
         {isValid === false && <Badge tone="danger">Errors</Badge>}
       </div>
 
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          onClick={toggleTheme}
-          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-        >
-          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-        </Button>
         <Button
           variant="ghost"
           aria-pressed={!leftCollapsed}
@@ -66,7 +55,7 @@ export function TopNav() {
         >
           <PanelRight size={15} />
         </Button>
-        <span className="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1" />
+        <span className="w-px h-5 bg-slate-200 mx-1" />
         <Button
           variant="secondary"
           onClick={() => {

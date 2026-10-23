@@ -82,17 +82,17 @@ export function DataSourceManager() {
   return (
     <div className="h-full overflow-y-auto p-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <h2 className="text-sm font-sans font-bold text-slate-800 dark:text-slate-100">Connected Sources</h2>
+        <h2 className="text-sm font-sans font-bold text-slate-800">Connected Sources</h2>
         {sources.map((s) => (
           <Panel key={s.id} className="!rounded-lg">
             <div className="flex items-center justify-between p-3.5">
               <div className="flex items-center gap-3">
-                <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-lg text-slate-600 dark:text-slate-300">
+                <div className="bg-slate-100 p-2 rounded-lg text-slate-600">
                   <Database size={16} />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-slate-800 dark:text-slate-100">{s.name}</div>
-                  <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{s.tableCount} tables • {s.type}</div>
+                  <div className="text-xs font-bold text-slate-800">{s.name}</div>
+                  <div className="text-[10px] text-slate-400 font-mono">{s.tableCount} tables • {s.type}</div>
                 </div>
               </div>
               <button onClick={() => toggle(s.id)} className="cursor-pointer" aria-label={`Toggle ${s.name}`}>
@@ -108,7 +108,7 @@ export function DataSourceManager() {
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-sm font-sans font-bold text-slate-800 dark:text-slate-100">Import Schema</h2>
+        <h2 className="text-sm font-sans font-bold text-slate-800">Import Schema</h2>
         <Panel className="!rounded-lg p-4 gap-3">
           <div className="flex items-center gap-2">
             <Button variant={format === 'csv' ? 'primary' : 'secondary'} onClick={() => setFormat('csv')}>CSV</Button>
@@ -120,7 +120,7 @@ export function DataSourceManager() {
                 className="hidden"
                 onChange={(e) => void onFile(e.target.files?.[0])}
               />
-              <span className="inline-flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-300 cursor-pointer hover:underline font-semibold">
+              <span className="inline-flex items-center gap-1 text-[11px] text-indigo-600 cursor-pointer hover:underline font-semibold">
                 <FileUp size={13} /> Upload file
               </span>
             </label>
@@ -139,17 +139,17 @@ export function DataSourceManager() {
           </Button>
 
           {imported.length > 0 && (
-            <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-lg p-2.5 text-[11px] text-emerald-700 dark:text-emerald-300">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 text-[11px] text-emerald-700">
               <div className="font-bold flex items-center gap-1.5 mb-1"><CheckCircle2 size={12} /> Imported</div>
               {imported.map((i) => <div key={i} className="font-mono">{i}</div>)}
-              <button onClick={() => setActiveTab('canvas')} className="mt-1.5 text-emerald-700 dark:text-emerald-300 underline cursor-pointer font-semibold">
+              <button onClick={() => setActiveTab('canvas')} className="mt-1.5 text-emerald-700 underline cursor-pointer font-semibold">
                 View on canvas →
               </button>
             </div>
           )}
 
           {errors.length > 0 && (
-            <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg p-2.5 text-[11px] text-amber-700 dark:text-amber-300">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-[11px] text-amber-700">
               <div className="font-bold flex items-center gap-1.5 mb-1"><AlertTriangle size={12} /> Parser Notices</div>
               {errors.map((e, i) => <div key={i} className="font-mono">{e}</div>)}
             </div>
