@@ -1,4 +1,4 @@
-# DataPipe Backend (ORA-BI)
+# AuraBI Backend
 
 Visual ETL backend for banking data pipelines. Provides REST + WebSocket APIs for a ReactFlow frontend and a Master Agent chat orchestrator.
 
@@ -30,7 +30,7 @@ sudo -u postgres psql -f scripts/setup_postgres.sql
 
 ```bash
 cp .env.example .env
-# Éditez .env : CURSOR_API_KEY, CORS si besoin (voir docs/CURSOR_API_KEYS.md)
+# Éditez .env : les paramètres Nemotron/Zetaris et CORS si besoin
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -76,10 +76,11 @@ Workflow `curl` : **[docs/WORKFLOW_CURL.md](docs/WORKFLOW_CURL.md)** — démo r
 | `API_PORT` | Port HTTP (défaut `8000`) |
 | `CORS_ORIGINS` | URLs frontend autorisées (virgules) |
 | `CORS_ALLOW_ALL` | `true` = tout autoriser en dev LAN |
-| `LLM_PROVIDER` | `cursor` (défaut), `gemini`, ou `openai` |
-| `CURSOR_API_KEY` | Clé Cursor — modèle Composer ([guide](docs/CURSOR_API_KEYS.md)) |
-| `CURSOR_MODEL` | ex. `composer-2.5` |
-| `GEMINI_API_KEY` / `OPENAI_API_KEY` | Alternatives si autre `LLM_PROVIDER` |
+| `MODEL_BASE_URL` | Endpoint OpenAI-compatible du modèle Nemotron |
+| `MODEL_API_KEY` | Clé du fournisseur de modèle |
+| `NEMOTRON_MODEL` | Identifiant du modèle Nemotron |
+| `ZETARIS_API_URL` / `ZETARIS_REST_URL` | Endpoint analytique Zetaris |
+| `ZETARIS_API_KEY` / `ZETARIS_ORG_ID` | Authentification et organisation Zetaris |
 
 Vérification : `GET /health` → `llm_provider`, `llm_configured`.
 

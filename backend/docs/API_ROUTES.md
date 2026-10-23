@@ -7,7 +7,8 @@ Documentation interactive : `/docs`
 
 **Authentification (MVP)** : aucune. Toutes les routes sont publiques en développement.
 
-**IA requise** : seule la route `POST …/chat` appelle l’Agent Maître (Gemini si `GEMINI_API_KEY` est définie, sinon mode offline).
+**IA requise** : les routes d’analyse utilisent l’adaptateur Nemotron configuré
+par `MODEL_BASE_URL`, `MODEL_API_KEY` et `NEMOTRON_MODEL`.
 
 ---
 

@@ -3,10 +3,12 @@ from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class HackathonSettings(BaseSettings):
+class AnalysisSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     zetaris_rest_url: str = "http://localhost:8888/api/v1.0"
+    zetaris_api_url: str = ""
+    zetaris_sql_endpoint: str = "/sql-editor/sqls/run"
     zetaris_org_id: int = 1
     zetaris_api_key: str = ""
 
@@ -15,6 +17,10 @@ class HackathonSettings(BaseSettings):
     nemotron_model: str = ""
 
     max_agent_iterations: int = 8
+
+    @property
+    def resolved_zetaris_url(self) -> str:
+        return self.zetaris_api_url or self.zetaris_rest_url
 
     @property
     def missing_required_fields(self) -> list[str]:
@@ -34,13 +40,13 @@ class HackathonSettings(BaseSettings):
         if missing:
             joined = ", ".join(missing)
             raise RuntimeError(
-                "Configuration AuraBI incomplète pour le hackathon. Renseigne dans .env : "
+                "Configuration AuraBI incomplète pour l'analyse. Renseigne dans .env : "
                 f"{joined}. Aucune valeur n'est affichée ici."
             )
 
 
 @lru_cache
-def get_hackathon_settings() -> HackathonSettings:
-    settings = HackathonSettings()
+def get_analysis_settings() -> AnalysisSettings:
+    settings = AnalysisSettings()
     settings.require_complete()
     return settings

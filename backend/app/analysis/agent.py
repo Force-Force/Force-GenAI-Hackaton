@@ -1,8 +1,8 @@
 import json
 from typing import Any
 
-from app.hackathon.data import ZetarisClient
-from app.hackathon.power import NemotronClient
+from app.analysis.data import ZetarisClient
+from app.analysis.model import NemotronClient
 
 TOOL_SCHEMA = [
     {
@@ -34,13 +34,13 @@ Règles prioritaires :
 """
 
 
-class HackathonAgent:
+class AnalysisAgent:
     def __init__(self, zetaris_client: ZetarisClient, llm_client: NemotronClient, max_iterations: int = 8) -> None:
         self.zetaris = zetaris_client
         self.llm = llm_client
         self.max_iterations = max_iterations
 
-    def run(self, question: str) -> dict[str, Any]:
+    def run(self, question: str, request_id: str | None = None) -> dict[str, Any]:
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": question},
@@ -84,7 +84,7 @@ class HackathonAgent:
             sql = arguments.get("sql", "")
             limit = int(arguments.get("limit", 100))
             confirmed = bool(arguments.get("confirmed", False))
-            rows = self.zetaris.run_sql(sql=sql, limit=limit, confirmed=confirmed)
+            rows = self.zetaris.run_sql(sql=sql, limit=limit, confirmed=confirmed, request_id=request_id)
             trace["sql_executions"].append(
                 {
                     "iteration": iteration,

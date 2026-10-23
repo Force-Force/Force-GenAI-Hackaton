@@ -220,9 +220,9 @@ curl -s -X POST "${API}/pipelines/${PIPELINE_ID}/chat" \
 
 1. Enregistrement du message **USER** en base.
 2. Chargement du graphe (`nodes`, `edges`) + **20 derniers messages** d’historique.
-3. Appel **Agent Maître** :
-   - avec `CURSOR_API_KEY` → Cursor Composer (`composer-2.5` par défaut) ;
-   - sans clé → **mode offline** (réponse déterministe basée sur le graphe).
+3. Appel du runtime d’analyse Nemotron avec la question et le contexte du
+   pipeline. Si la configuration du modèle ou de Zetaris est absente, la route
+   retourne une erreur explicite plutôt qu’une réponse inventée.
 4. Enregistrement de la réponse **MASTER_AGENT**.
 5. Si la réponse contient un bloc ` ```delegation ` → création d’**`AgentTask`**.
 6. Réponse HTTP + événements WS `chat.message` et éventuellement `agent_task.updated`.
