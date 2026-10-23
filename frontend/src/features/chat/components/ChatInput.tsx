@@ -29,7 +29,7 @@ export function ChatInput() {
         type="submit"
         disabled={!value.trim() || isGenerating}
         aria-label="Send message"
-        className="bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-white p-2.5 rounded-full border-b-[3px] border-indigo-800 hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px] transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        className="bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-white p-2.5 rounded-full transition-colors duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <Send size={15} />
       </button>

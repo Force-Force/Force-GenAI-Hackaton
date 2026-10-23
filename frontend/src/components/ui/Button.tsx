@@ -7,29 +7,22 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
 }
 
-/**
- * Tactile pill button matching the design system: 1px border + 3px bottom
- * border that lifts on hover and presses down on active.
- */
 const base =
-  'inline-flex items-center justify-center gap-1.5 rounded-full text-xs font-bold ' +
-  'transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ' +
+  'inline-flex items-center justify-center gap-1.5 rounded-full text-xs font-semibold ' +
+  'transition-colors duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5]/50';
 
 const variants: Record<Variant, string> = {
   primary:
-    'bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-white border-b-[3px] border-indigo-800 ' +
-    'hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px] shadow-md shadow-[#4F46E5]/10',
+    'bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-white',
   secondary:
-    'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 border-b-[3px] border-b-slate-300 ' +
-    'dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 dark:border-b-slate-900 ' +
-    'hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px]',
+    'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 ' +
+    'dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700',
   success:
-    'bg-emerald-600 hover:bg-emerald-500 text-white border-b-[3px] border-emerald-800 ' +
-    'hover:border-b-[4px] hover:-translate-y-[1px] active:border-b-[1px] active:translate-y-[2px]',
+    'bg-emerald-600 hover:bg-emerald-500 text-white',
   danger:
-    'bg-white text-[#EF4444] border border-[#EF4444]/30 hover:border-[#EF4444] border-b-[3px] border-b-rose-200 ' +
-    'hover:bg-[#EF4444]/5 active:border-b-[1px] active:translate-y-[1.5px]',
+    'bg-white hover:bg-rose-50 text-[#EF4444] border border-[#EF4444]/30 hover:border-[#EF4444] ' +
+    'dark:bg-slate-800 dark:hover:bg-rose-950/30',
   ghost:
     'bg-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100 ' +
     'dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800',
