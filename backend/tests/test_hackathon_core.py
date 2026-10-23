@@ -14,6 +14,10 @@ def test_zetaris_rejects_write_sql_without_confirmation() -> None:
     with pytest.raises(ValueError, match="READ_ONLY"):
         client.validate_sql("CREATE TABLE demo (id INT)")
 
+    plan = client.dry_run_sql("CREATE TABLE demo (id INT)")
+    assert plan["operation"] == "write"
+    assert plan["requires_confirmation"] is True
+
 
 def test_nemotron_client_uses_openai_compatible_settings() -> None:
     client = NemotronClient(

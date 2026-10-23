@@ -11,26 +11,81 @@ logger = logging.getLogger(__name__)
 
 class ZetarisClient:
     READ_ONLY_PREFIX = re.compile(r"^\s*(SELECT|SHOW|DESCRIBE)\b", re.IGNORECASE)
+    WRITE_PREFIX = re.compile(
+        r"^\s*(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|MERGE|REPLACE|GRANT|REVOKE|CALL|EXEC|BEGIN|COMMIT|ROLLBACK)\b",
+        re.IGNORECASE,
+    )
 
     def __init__(self, base_url: str, api_key: str, org_id: int = 1) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.org_id = org_id
 
+    @staticmethod
+    def _normalize_sql(sql: str) -> str:
+        return (sql or "").strip()
+
+    @classmethod
+    def classify_sql(cls, sql: str) -> str:
+        cleaned = cls._normalize_sql(sql)
+        if not cleaned:
+            return "empty"
+        if cls.READ_ONLY_PREFIX.match(cleaned):
+            return "read"
+        if cls.WRITE_PREFIX.match(cleaned):
+            return "write"
+        return "unknown"
+
+    def dry_run_sql(self, sql: str, limit: int = 100) -> dict[str, Any]:
+        cleaned_sql = self._normalize_sql(sql)
+        if not cleaned_sql:
+            raise ValueError("SQL vide : aucune requête à exécuter.")
+
+        kind = self.classify_sql(cleaned_sql)
+        plan = {
+            "sql": cleaned_sql,
+            "operation": kind,
+            "limit": max(1, int(limit)),
+            "requires_confirmation": kind in {"write", "unknown"},
+            "dry_run": True,
+            "message": "Aucune exécution n’a été déclenchée. Validation de plan uniquement.",
+        }
+
+        if kind == "read":
+            plan["message"] = "Requête de lecture autorisée. Exécution possible sans confirmation supplémentaire."
+        elif kind in {"write", "unknown"}:
+            plan["message"] = (
+                "Opération non-lecture détectée. Un dry-run a été produit ; "
+                "l’exécution réelle nécessite une confirmation explicite et un contrôle manuel."
+            )
+        return plan
+
     def validate_sql(self, sql: str, confirmed: bool = False) -> str:
-        cleaned = (sql or "").strip()
+        cleaned = self._normalize_sql(sql)
         if not cleaned:
             raise ValueError("SQL vide : aucune requête à exécuter.")
+
+        kind = self.classify_sql(cleaned)
         if confirmed:
             return cleaned
-        if not self.READ_ONLY_PREFIX.match(cleaned):
-            raise ValueError(
-                "READ_ONLY: seules les requêtes SELECT, SHOW et DESCRIBE sont autorisées sans confirmed=True."
-            )
-        return cleaned
+
+        if kind == "read":
+            return cleaned
+
+        raise ValueError(
+            "READ_ONLY: seules les requêtes SELECT, SHOW et DESCRIBE sont autorisées sans confirmed=True. "
+            "Tout ordre de création/modification doit passer par un dry-run et une confirmation explicite."
+        )
 
     def run_sql(self, sql: str, limit: int = 100, confirmed: bool = False) -> list[dict[str, Any]]:
         cleaned_sql = self.validate_sql(sql, confirmed=confirmed)
+        dry_run = self.dry_run_sql(cleaned_sql, limit=limit)
+        if dry_run["requires_confirmation"] and not confirmed:
+            raise ValueError(
+                "Dry-run requis avant toute modification ou création. "
+                "Passe confirmed=True uniquement après validation explicite de la requête."
+            )
+
         url = f"{self.base_url}/sql-editor/sqls/run"
         request_id = str(uuid.uuid4())
         payload = {
