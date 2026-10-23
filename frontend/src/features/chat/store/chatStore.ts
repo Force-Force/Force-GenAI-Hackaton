@@ -7,21 +7,14 @@ import { adaptChatMessage } from '../../../services/ai/chatAdapter';
 import { usePipelineStore } from '../../workspace/store/pipelineStore';
 import { useWorkspaceStore } from '../../workspace/store/workspaceStore';
 import { genId } from '../../../utils/graph';
-import { inferActionsFromMessage, describeAction } from '../agent/applyAgent';
-import { getLlmStatus, planActionsWithLlm } from '../../../services/ai/frontendAgent';
 import type { ChatMessage } from '../types';
 
 interface ChatState {
   messages: ChatMessage[];
   isGenerating: boolean;
-  /** When true, the frontend agent auto-applies changes from backend replies. */
-  autoApply: boolean;
   appendMessage: (message: ChatMessage) => void;
-  setAutoApply: (value: boolean) => void;
   sendMessage: (text: string) => Promise<void>;
   applyAction: (action: AiAction) => void;
-  /** Read a backend reply and apply every change it contains. */
-  runApplyAgent: (message: ChatMessage) => Promise<void>;
   loadHistory: (pipelineId: string) => Promise<void>;
   submitProcessingCode: (
     nodeId: string,
@@ -53,12 +46,9 @@ const WELCOME: ChatMessage = {
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [WELCOME],
   isGenerating: false,
-  autoApply: true,
 
   appendMessage: (message) =>
     set((s) => ({ messages: [...s.messages, message] })),
-
-  setAutoApply: (value) => set({ autoApply: value }),
 
   sendMessage: async (text) => {
     const trimmed = text.trim();
@@ -93,8 +83,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       );
       get().appendMessage(reply);
       set({ isGenerating: false });
-      // The frontend agent reads the reply and applies any changes it finds.
-      if (get().autoApply) void get().runApplyAgent(reply);
       return;
     }
 
@@ -126,79 +114,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } else if (result.message) {
       get().appendMessage(assistant(result.message));
     }
-  },
-
-  runApplyAgent: async (message) => {
-    // Never re-process the agent's own summaries.
-    if (message.system || message.sender !== 'assistant') return;
-
-    const pipeline = usePipelineStore.getState();
-    const graph = { nodes: pipeline.nodes, edges: pipeline.edges };
-
-    // Prefer the real LLM agent when configured; fall back to the heuristic.
-    let actions: AiAction[] = [];
-    let labels: string[] = [];
-    let reasoning = '';
-    let usedLlm = false;
-
-    const status = await getLlmStatus();
-    if (status.enabled) {
-      const plan = await planActionsWithLlm(message.text, graph);
-      if (plan && plan.actions.length > 0) {
-        actions = plan.actions;
-        labels = plan.actions.map(describeAction);
-        reasoning = plan.reasoning;
-        usedLlm = true;
-      }
-    }
-
-    if (actions.length === 0) {
-      const inferred = inferActionsFromMessage(message, graph);
-      actions = inferred.actions;
-      labels = inferred.notes;
-    }
-
-    if (actions.length === 0) return;
-
-    const applied: string[] = [];
-    const skipped: string[] = [];
-    actions.forEach((action, i) => {
-      const result = usePipelineStore.getState().applyAction(action);
-      const label = labels[i] ?? action.type;
-      if (result.error) skipped.push(`${label} — ${result.error}`);
-      else if (result.changed) applied.push(result.message || label);
-      else if (result.message) skipped.push(result.message);
-    });
-
-    if (applied.length === 0 && skipped.length === 0) return;
-
-    useWorkspaceStore.getState().setActiveTab('canvas');
-
-    const title = usedLlm ? '### AI Agent' : '### Frontend Agent';
-    const lines: string[] = [title];
-    if (usedLlm && reasoning) lines.push(`_${reasoning}_`, '');
-    if (applied.length > 0) {
-      lines.push(`Applied ${applied.length} change${applied.length > 1 ? 's' : ''} to the canvas:`);
-      lines.push(...applied.map((a) => `- ${a}`));
-    }
-    if (skipped.length > 0) {
-      lines.push('', 'Skipped:');
-      lines.push(...skipped.map((s) => `- ${s}`));
-    }
-
-    set((s) => ({
-      messages: [
-        ...s.messages,
-        {
-          id: genId('agent'),
-          sender: 'assistant',
-          timestamp: now(),
-          text: lines.join('\n'),
-          action: null,
-          system: true,
-        },
-      ],
-    }));
   },
 
   loadHistory: async (pipelineId) => {

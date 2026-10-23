@@ -1,4 +1,4 @@
-import { Sparkles, Wand2, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Wand2 } from 'lucide-react';
 import type { AiAction } from '../../../contracts/aiActions';
 import { Button } from '../../../components/ui';
 import { useChatStore } from '../store/chatStore';
@@ -6,8 +6,6 @@ import { useChatStore } from '../store/chatStore';
 /** Renders a structured AI action with Apply Changes / Explain controls. */
 export function ActionCard({ action }: { action: AiAction }) {
   const applyAction = useChatStore((s) => s.applyAction);
-  const autoApply = useChatStore((s) => s.autoApply);
-  const autoApplied = autoApply && action.type !== 'explain';
 
   return (
     <div className="mt-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-3 shadow-sm">
@@ -20,43 +18,32 @@ export function ActionCard({ action }: { action: AiAction }) {
         <ActionSummary action={action} />
       </div>
 
-      {autoApplied ? (
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <span className="flex items-center gap-1.5 text-[10.5px] font-mono font-bold text-emerald-600 dark:text-emerald-300">
-            <CheckCircle2 size={13} /> Applied automatically
-          </span>
-          <Button variant="secondary" onClick={() => applyAction(action)}>
-            Re-apply
-          </Button>
-        </div>
-      ) : (
-        <div className="mt-3 flex items-center gap-2">
-          <Button
-            variant="primary"
-            className="flex-1"
-            onClick={() => applyAction(action)}
-          >
-            {action.type === 'explain' ? (
-              'Ask'
-            ) : (
-              <>
-                <Wand2 size={12} /> Apply Changes
-              </>
-            )}
-          </Button>
-          {action.type !== 'explain' && (
-            <Button
-              variant="secondary"
-              className="flex-1"
-              onClick={() =>
-                applyAction({ type: 'explain', payload: { target: summaryTarget(action) } })
-              }
-            >
-              Explain
-            </Button>
+      <div className="mt-3 flex items-center gap-2">
+        <Button
+          variant="primary"
+          className="flex-1"
+          onClick={() => applyAction(action)}
+        >
+          {action.type === 'explain' ? (
+            'Ask'
+          ) : (
+            <>
+              <Wand2 size={12} /> Apply Changes
+            </>
           )}
-        </div>
-      )}
+        </Button>
+        {action.type !== 'explain' && (
+          <Button
+            variant="secondary"
+            className="flex-1"
+            onClick={() =>
+              applyAction({ type: 'explain', payload: { target: summaryTarget(action) } })
+            }
+          >
+            Explain
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

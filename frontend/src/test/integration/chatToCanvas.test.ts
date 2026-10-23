@@ -48,8 +48,7 @@ beforeEach(() => {
     pipelineId: 'pipe-1',
     syncStatus: 'online',
   });
-  // These tests exercise the manual apply flow; auto-apply has its own tests.
-  useChatStore.setState({ messages: [], isGenerating: false, autoApply: false });
+  useChatStore.setState({ messages: [], isGenerating: false });
   useWorkspaceStore.setState({ activeTab: 'sources' });
 });
 
