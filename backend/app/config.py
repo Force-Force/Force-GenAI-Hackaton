@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
 
+    zetaris_rest_url: str = "http://localhost:8888/api/v1.0"
+    zetaris_org_id: int = 1
+    zetaris_api_key: str = ""
+
+    model_base_url: str = ""
+    model_api_key: str = ""
+    nemotron_model: str = ""
+
     chat_history_limit: int = 20
 
     @property
