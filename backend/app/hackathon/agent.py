@@ -3,6 +3,7 @@ from typing import Any
 
 from app.hackathon.data import ZetarisClient
 from app.hackathon.power import NemotronClient
+from app.hackathon.supervisor import SupervisorAgent
 
 TOOL_SCHEMA = [
     {
@@ -34,86 +35,13 @@ Règles prioritaires :
 """
 
 
-class HackathonAgent:
+class HackathonAgent(SupervisorAgent):
     def __init__(self, zetaris_client: ZetarisClient, llm_client: NemotronClient, max_iterations: int = 8) -> None:
-        self.zetaris = zetaris_client
-        self.llm = llm_client
-        self.max_iterations = max_iterations
+        super().__init__(zetaris_client=zetaris_client, llm_client=llm_client, max_iterations=max_iterations)
 
     def run(self, question: str) -> dict[str, Any]:
-        messages: list[dict[str, Any]] = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": question},
-        ]
-        trace: dict[str, Any] = {
-            "question": question,
-            "steps": [],
-            "sql_executions": [],
-            "final_answer": "",
+        result = super().run(question)
+        return {
+            "response": result["response"],
+            "trace": result["trace"],
         }
-
-        for iteration in range(1, self.max_iterations + 1):
-            trace["steps"].append({"iteration": iteration, "stage": "llm_call"})
-            completion = self.llm.chat_with_tools(messages=messages, tools=TOOL_SCHEMA)
-            message = completion.choices[0].message
-            tool_calls = getattr(message, "tool_calls", None) or []
-
-            if not tool_calls:
-                content = message.content or "Aucune donnée exploitable n'a été produite par le modèle."
-                trace["final_answer"] = content
-                trace["steps"].append({"iteration": iteration, "stage": "final_response"})
-                return {
-                    "response": content,
-                    "trace": trace,
-                }
-
-            tool_call = tool_calls[0]
-            tool_name = tool_call.function.name
-            arguments = json.loads(tool_call.function.arguments or "{}")
-            trace["steps"].append({
-                "iteration": iteration,
-                "stage": "tool_call",
-                "tool": tool_name,
-                "arguments": arguments,
-            })
-
-            if tool_name != "run_sql":
-                messages.append({"role": "assistant", "content": f"Outil non pris en charge : {tool_name}."})
-                continue
-
-            sql = arguments.get("sql", "")
-            limit = int(arguments.get("limit", 100))
-            confirmed = bool(arguments.get("confirmed", False))
-            rows = self.zetaris.run_sql(sql=sql, limit=limit, confirmed=confirmed)
-            trace["sql_executions"].append(
-                {
-                    "iteration": iteration,
-                    "sql": sql,
-                    "limit": limit,
-                    "confirmed": confirmed,
-                    "row_count": len(rows),
-                    "preview": rows[:10],
-                }
-            )
-
-            messages.append({
-                "role": "assistant",
-                "content": None,
-                "tool_calls": [{
-                    "id": tool_call.id,
-                    "type": "function",
-                    "function": {
-                        "name": "run_sql",
-                        "arguments": json.dumps({"sql": sql, "limit": limit, "confirmed": confirmed}),
-                    },
-                }],
-            })
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": json.dumps(rows, ensure_ascii=False),
-            })
-
-        final_response = "Le modèle n'a pas produit de réponse finale exploitable après plusieurs itérations."
-        trace["final_answer"] = final_response
-        return {"response": final_response, "trace": trace}
