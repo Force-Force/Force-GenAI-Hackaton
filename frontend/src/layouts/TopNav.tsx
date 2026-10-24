@@ -1,7 +1,8 @@
-import { Boxes, ShieldCheck, FileCode2, RotateCcw, PanelLeft, PanelRight } from 'lucide-react';
+import { Boxes, ShieldCheck, FileCode2, RotateCcw, PanelLeft, PanelRight, Palette } from 'lucide-react';
 import { Badge, Button } from '../components/ui';
 import { useWorkspaceStore } from '../features/workspace/store/workspaceStore';
 import { usePipelineStore } from '../features/workspace/store/pipelineStore';
+import { navigateTo } from '../utils/navigation';
 
 export function TopNav() {
   const projectName = useWorkspaceStore((s) => s.projectName);
@@ -56,6 +57,13 @@ export function TopNav() {
           <PanelRight size={15} />
         </Button>
         <span className="w-px h-5 bg-slate-200 mx-1" />
+        <Button
+          variant="secondary"
+          onClick={() => navigateTo('/components')}
+          aria-label="View components palette"
+        >
+          <Palette size={13} /> Components
+        </Button>
         <Button
           variant="secondary"
           onClick={() => {
