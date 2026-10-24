@@ -1,8 +1,9 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import {
   Bot, Database, Workflow, ShieldCheck, FileCode2, Play, Plus, Settings,
-  Sparkles, Search, Bell, Trash2, type LucideIcon,
+  Sparkles, Search, Bell, Trash2, Layers, Filter, Terminal, type LucideIcon,
 } from 'lucide-react';
+import { DropdownArrow, Select, Dropdown, type SelectOption, type DropdownItem } from '../../components/ui';
 
 /** Brand tokens (single source of truth for this page). */
 export const C = {
@@ -337,6 +338,185 @@ export function SizesSection() {
             ))}
           </tbody>
         </table>
+      </div>
+    </Section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Custom Dropdowns & Dropdown Arrow Section                           */
+/* ------------------------------------------------------------------ */
+
+const SQL_DIALECT_OPTIONS: SelectOption[] = [
+  { value: 'zetaris', label: 'Zetaris SQL Lakehouse', badge: 'Recommended', description: 'Zero-copy virtualization gateway', icon: <Layers size={14} /> },
+  { value: 'postgres', label: 'PostgreSQL Engine', badge: 'v16', description: 'Transactional staging & relations', icon: <Database size={14} /> },
+  { value: 'snowflake', label: 'Snowflake Warehouse', badge: 'Cloud', description: 'Curated dimensional marts & BI', icon: <FileCode2 size={14} /> },
+  { value: 'duckdb', label: 'DuckDB In-Memory', description: 'Sub-second vectorized aggregations', icon: <Terminal size={14} /> },
+  { value: 'stripe_api', label: 'Stripe Events Stream', disabled: true, description: 'Incoming webhook listener (Offline)', icon: <Filter size={14} /> },
+];
+
+const SIZE_SELECT_OPTIONS: SelectOption[] = [
+  { value: 'daily', label: 'Daily Micro-batch (15m)' },
+  { value: 'hourly', label: 'Hourly Batch Sync' },
+  { value: 'realtime', label: 'Continuous CDC Stream (<30s)' },
+];
+
+const ACTION_MENU_ITEMS: DropdownItem[] = [
+  { id: '1', label: 'Execute DDL Compile', icon: <Play size={13} />, shortcut: '⌘E' },
+  { id: '2', label: 'Audit Referential Integrity', icon: <ShieldCheck size={13} />, shortcut: '⌘A' },
+  { id: '3', label: 'Export Schema as SQL', icon: <FileCode2 size={13} />, dividerBefore: true },
+  { id: '4', label: 'Delete Transformation Stage', icon: <Trash2 size={13} />, danger: true },
+];
+
+export function DropdownsSection() {
+  const [arrowOpen, setArrowOpen] = useState(false);
+  const [selectedDialect, setSelectedDialect] = useState('zetaris');
+  const [selectedSizeOpt, setSelectedSizeOpt] = useState('daily');
+
+  return (
+    <Section id="dropdowns" eyebrow="06 · Controls" title="Custom Dropdown & Dropdown Arrow System">
+      {/* 1. Custom Dropdown Arrow Showcase */}
+      <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label>Custom Dropdown Arrow (Interactive 180° Rotation)</Label>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Precision geometric SVG chevron and caret with smooth rotation states and brand coloring.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setArrowOpen((prev) => !prev)}
+            className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#064C1C] text-[#FDFFFC] hover:bg-[#1E2D24] transition-all cursor-pointer shadow-xs"
+          >
+            Toggle State ({arrowOpen ? 'Open 180°' : 'Closed 0°'})
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+          <div className="p-4 rounded-xl border border-slate-100 bg-[#FDFFFC] flex flex-col items-center justify-center gap-2 text-center">
+            <span className={`${MONO} text-[10px] text-slate-400 font-bold uppercase`}>Chevron (16px)</span>
+            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-[#064C1C]">
+              <DropdownArrow isOpen={arrowOpen} size={16} />
+            </div>
+            <span className="text-[11px] font-mono text-slate-500">{arrowOpen ? 'rotate-180' : 'rotate-0'}</span>
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-100 bg-[#FDFFFC] flex flex-col items-center justify-center gap-2 text-center">
+            <span className={`${MONO} text-[10px] text-slate-400 font-bold uppercase`}>Chevron (12px Sm)</span>
+            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-[#D66F14]">
+              <DropdownArrow isOpen={arrowOpen} size={12} />
+            </div>
+            <span className="text-[11px] font-mono text-slate-500">Cinnamon</span>
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-100 bg-[#FDFFFC] flex flex-col items-center justify-center gap-2 text-center">
+            <span className={`${MONO} text-[10px] text-slate-400 font-bold uppercase`}>Caret Solid (16px)</span>
+            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-[#334139]">
+              <DropdownArrow isOpen={arrowOpen} size={16} variant="caret" />
+            </div>
+            <span className="text-[11px] font-mono text-slate-500">Charcoal Caret</span>
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-100 bg-[#FDFFFC] flex flex-col items-center justify-center gap-2 text-center">
+            <span className={`${MONO} text-[10px] text-slate-400 font-bold uppercase`}>Caret Solid (12px)</span>
+            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-[#064C1C]">
+              <DropdownArrow isOpen={arrowOpen} size={12} variant="caret" />
+            </div>
+            <span className="text-[11px] font-mono text-slate-500">Forest Caret</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Custom Select Dropdown Variations */}
+      <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-5">
+        <div>
+          <Label>Accessible Custom Select Dropdowns</Label>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Keyboard accessible (Arrow keys, Space/Enter, Escape), typeahead filter search, option badges, and Porcelain styling.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Rich Select with Icons, Badges & Search */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[#334139] flex items-center justify-between">
+              <span>SQL Engine Dialect (Rich with Search & Badges)</span>
+              <span className="text-[10px] font-mono text-slate-400 font-normal">searchable</span>
+            </label>
+            <Select
+              value={selectedDialect}
+              onChange={(val) => setSelectedDialect(val)}
+              options={SQL_DIALECT_OPTIONS}
+              searchable
+              placeholder="Choose SQL dialect..."
+            />
+            <p className="text-[11px] font-mono text-slate-400">
+              Selected value: <strong className="text-[#064C1C]">{selectedDialect}</strong>
+            </p>
+          </div>
+
+          {/* Size Scale */}
+          <div className="space-y-3">
+            <label className="text-xs font-bold text-[#334139]">
+              Size Variants (Compact Sm, Standard Md, Prominent Lg)
+            </label>
+            <div className="space-y-2">
+              <Select
+                value={selectedSizeOpt}
+                onChange={(val) => setSelectedSizeOpt(val)}
+                options={SIZE_SELECT_OPTIONS}
+                size="sm"
+                placeholder="Compact small select..."
+              />
+              <Select
+                value={selectedSizeOpt}
+                onChange={(val) => setSelectedSizeOpt(val)}
+                options={SIZE_SELECT_OPTIONS}
+                size="md"
+                placeholder="Medium standard select..."
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100">
+          {/* Action Menu Dropdown */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[#334139]">
+              Action Dropdown Menu (Contextual Tools)
+            </label>
+            <div>
+              <Dropdown
+                trigger="Pipeline Actions"
+                items={ACTION_MENU_ITEMS}
+                align="left"
+              />
+            </div>
+          </div>
+
+          {/* Disabled & Error States */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[#334139]">
+              Validation Error & Disabled States
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <Select
+                disabled
+                value="duckdb"
+                options={SQL_DIALECT_OPTIONS}
+                size="sm"
+                placeholder="Disabled state..."
+              />
+              <Select
+                error="Required field"
+                options={SIZE_SELECT_OPTIONS}
+                size="sm"
+                placeholder="With validation error..."
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </Section>
   );

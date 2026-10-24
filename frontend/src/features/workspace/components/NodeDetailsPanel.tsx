@@ -8,13 +8,13 @@ import {
   Key,
   Plus,
   SlidersHorizontal,
-  ChevronDown,
   Layers,
   Link2,
   PanelRightClose,
 } from 'lucide-react';
 import { usePipelineStore } from '../store/pipelineStore';
 import { useWorkspaceStore } from '../store/workspaceStore';
+import { Select } from '../../../components/ui';
 import type {
   Column,
   PipelineNode,
@@ -155,28 +155,26 @@ export function NodeDetailsPanel() {
       {/* Node Switcher Strip (when multiple nodes exist) */}
       {nodes.length > 0 && (
         <div className="px-4 py-2 border-b border-[#334139]/10 bg-[#334139]/[0.02] flex items-center gap-2 shrink-0">
-          <label htmlFor="node-select-drawer" className="text-[10px] font-mono font-bold text-[#334139]/60 uppercase shrink-0">
+          <span className="text-[10px] font-mono font-bold text-[#334139]/60 uppercase shrink-0">
             Node:
-          </label>
-          <div className="relative flex-1 min-w-0">
-            <select
-              id="node-select-drawer"
+          </span>
+          <div className="flex-1 min-w-0">
+            <Select
+              size="sm"
               value={selectedNodeId || ''}
-              onChange={(e) => {
-                const val = e.target.value;
+              onChange={(val) => {
                 selectNode(val ? val : null);
                 setConfirmDelete(false);
               }}
-              className="w-full text-xs font-semibold text-[#334139] bg-transparent outline-none cursor-pointer py-1 pr-6 truncate"
-            >
-              <option value="">-- Choose node to inspect --</option>
-              {nodes.map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.data.label} ({n.data.category})
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={13} className="absolute right-0 top-1/2 -translate-y-1/2 text-[#334139]/40 pointer-events-none" />
+              options={[
+                { value: '', label: '-- Choose node to inspect --' },
+                ...nodes.map((n) => ({
+                  value: n.id,
+                  label: `${n.data.label} (${n.data.category})`,
+                })),
+              ]}
+              aria-label="Select node to inspect"
+            />
           </div>
         </div>
       )}
@@ -280,40 +278,32 @@ export function NodeDetailsPanel() {
                     <label className="text-[10px] font-mono font-bold uppercase text-[#334139]/70">
                       Kind
                     </label>
-                    <select
+                    <Select
+                      size="sm"
                       value={selectedNode.data.kind}
-                      onChange={(e) =>
-                        updateNodeData(selectedNode.id, { kind: e.target.value as ResourceKind })
+                      onChange={(val) =>
+                        updateNodeData(selectedNode.id, { kind: val as ResourceKind })
                       }
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#334139]/20 text-xs font-semibold text-[#334139] outline-none cursor-pointer"
-                    >
-                      {RESOURCE_KINDS.map((k) => (
-                        <option key={k} value={k}>
-                          {k}
-                        </option>
-                      ))}
-                    </select>
+                      options={RESOURCE_KINDS.map((k) => ({ value: k, label: k }))}
+                      aria-label="Resource kind"
+                    />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-[10px] font-mono font-bold uppercase text-[#334139]/70">
                       Role
                     </label>
-                    <select
+                    <Select
+                      size="sm"
                       value={selectedNode.data.warehouseRole || 'dimension'}
-                      onChange={(e) =>
+                      onChange={(val) =>
                         updateNodeData(selectedNode.id, {
-                          warehouseRole: e.target.value as WarehouseRole,
+                          warehouseRole: val as WarehouseRole,
                         })
                       }
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#334139]/20 text-xs font-semibold text-[#334139] outline-none cursor-pointer"
-                    >
-                      {WAREHOUSE_ROLES.map((r) => (
-                        <option key={r} value={r}>
-                          {r}
-                        </option>
-                      ))}
-                    </select>
+                      options={WAREHOUSE_ROLES.map((r) => ({ value: r, label: r }))}
+                      aria-label="Warehouse role"
+                    />
                   </div>
                 </div>
 
@@ -385,21 +375,16 @@ export function NodeDetailsPanel() {
                         value={colName}
                         onChange={(e) => setColName(e.target.value)}
                         placeholder="column_name"
-                        className="px-2 py-1 text-xs font-mono bg-[#FDFFFC] border border-[#334139]/20 rounded-md text-[#334139] outline-none focus:border-[#064C1C]"
+                        className="px-2 py-1 text-xs font-mono bg-[#FDFFFC] border border-[#334139]/20 rounded-md text-[#334139] outline-none focus:border-[#064C1C] h-7"
                         aria-label="New column name"
                       />
-                      <select
+                      <Select
+                        size="sm"
                         value={colType}
-                        onChange={(e) => setColType(e.target.value)}
-                        className="px-2 py-1 text-[11px] font-mono bg-[#FDFFFC] border border-[#334139]/20 rounded-md text-[#334139] outline-none cursor-pointer"
+                        onChange={(val) => setColType(val)}
+                        options={COLUMN_TYPES.map((t) => ({ value: t, label: t }))}
                         aria-label="New column type"
-                      >
-                        {COLUMN_TYPES.map((t) => (
-                          <option key={t} value={t}>
-                            {t}
-                          </option>
-                        ))}
-                      </select>
+                      />
                     </div>
 
                     <div className="flex items-center justify-between pt-1">
@@ -445,18 +430,22 @@ export function NodeDetailsPanel() {
                   <label className="text-[10px] font-mono font-bold uppercase text-[#334139]/70">
                     Language / Engine
                   </label>
-                  <select
-                    value={selectedNode.data.language}
-                    onChange={(e) =>
-                      updateNodeData(selectedNode.id, {
-                        language: e.target.value as ProcessingLanguage,
-                      })
-                    }
-                    className="px-2 py-1 rounded-md bg-white border border-[#334139]/20 text-xs font-semibold text-[#334139] outline-none cursor-pointer"
-                  >
-                    <option value="sql">SQL</option>
-                    <option value="python">Python</option>
-                  </select>
+                  <div className="w-32">
+                    <Select
+                      size="sm"
+                      value={selectedNode.data.language}
+                      onChange={(val) =>
+                        updateNodeData(selectedNode.id, {
+                          language: val as ProcessingLanguage,
+                        })
+                      }
+                      options={[
+                        { value: 'sql', label: 'SQL' },
+                        { value: 'python', label: 'Python' },
+                      ]}
+                      aria-label="Processing language"
+                    />
+                  </div>
                 </div>
 
                 {/* Script Code Textarea */}
@@ -483,19 +472,23 @@ export function NodeDetailsPanel() {
                   <label className="text-[10px] font-mono font-bold uppercase text-[#334139]/70">
                     Container Kind
                   </label>
-                  <select
-                    value={selectedNode.data.containerKind || 'datamart'}
-                    onChange={(e) =>
-                      updateNodeData(selectedNode.id, {
-                        containerKind: e.target.value as ContainerKind,
-                      })
-                    }
-                    className="px-2 py-1 rounded-md bg-white border border-[#334139]/20 text-xs font-semibold text-[#334139] outline-none cursor-pointer"
-                  >
-                    <option value="datamart">Datamart</option>
-                    <option value="warehouse">Warehouse</option>
-                    <option value="database">Database</option>
-                  </select>
+                  <div className="w-36">
+                    <Select
+                      size="sm"
+                      value={selectedNode.data.containerKind || 'datamart'}
+                      onChange={(val) =>
+                        updateNodeData(selectedNode.id, {
+                          containerKind: val as ContainerKind,
+                        })
+                      }
+                      options={[
+                        { value: 'datamart', label: 'Datamart' },
+                        { value: 'warehouse', label: 'Warehouse' },
+                        { value: 'database', label: 'Database' },
+                      ]}
+                      aria-label="Container Kind"
+                    />
+                  </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-white border border-[#334139]/15 space-y-1">

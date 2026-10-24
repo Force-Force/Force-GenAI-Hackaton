@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, Copy, Check, Palette, Sparkles, Layers, Box } from 'lucide-react';
 import { navigateTo } from '../utils/navigation';
 import {
-  ButtonsSection, TypographySection, IconsSection, ColorsSection, SizesSection,
+  ButtonsSection, TypographySection, IconsSection, ColorsSection, SizesSection, DropdownsSection,
 } from './components/DesignSections';
 interface PaletteColor {
   hex: string;
@@ -298,6 +298,7 @@ export function ComponentsPage() {
         <IconsSection />
         <ColorsSection />
         <SizesSection />
+        <DropdownsSection />
       </main>
     </div>
   );
