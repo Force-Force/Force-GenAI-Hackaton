@@ -1,0 +1,188 @@
+import type { AiInsightModel } from '../types';
+
+export const AI_PROPOSED_INSIGHTS: AiInsightModel[] = [
+  {
+    id: 'insight-sales-waterfall',
+    kpiId: 'kpi-net-rev',
+    kpiName: 'Net Revenue',
+    domain: 'sales',
+    categoryLabel: 'Sales & Revenue',
+    title: 'Revenue Decomposition & Leakage Waterfall',
+    summary:
+      '$91.7K leakage (7.4%) across gateway fees ($42.1K), promos ($31.2K), and returns ($18.4K). Net realized: $1.15M.',
+    aiReasoning: 'Waterfall isolates exact margin leakage points.',
+    aiConfidenceScore: 99.2,
+    selectedGraphType: 'waterfall-decomposition',
+    availableGraphOptions: [
+      {
+        type: 'waterfall-decomposition',
+        label: 'Waterfall',
+        isAiRecommended: true,
+        reasoning: 'Decomposes Gross to Net deductions.',
+      },
+      {
+        type: 'anomaly-ribbon',
+        label: 'Trend',
+        isAiRecommended: false,
+        reasoning: 'Time-series view.',
+      },
+    ],
+    headlineMetrics: [
+      { label: 'Gross Volume', value: '$1.25M', delta: '+12.4%', trend: 'up' },
+      { label: 'Net Realized', value: '$1.15M', delta: '+9.1%', trend: 'up' },
+      { label: 'Leakage', value: '-$91.7K', delta: '-7.4%', trend: 'down' },
+      { label: 'Disputed', value: '$14.4K', delta: 'Hold', trend: 'down' },
+    ],
+    waterfallData: [
+      { id: 'wf-1', label: 'Gross Billings', amount: 1245000, formatted: '$1.25M', type: 'base', note: 'Stripe & Storefront' },
+      { id: 'wf-2', label: 'Gateway Fees', amount: -42100, formatted: '-$42.1K', type: 'deduction', note: '2.9% + $0.30 blended rate', driftPct: '-3.4%' },
+      { id: 'wf-3', label: 'Promos', amount: -31200, formatted: '-$31.2K', type: 'deduction', note: 'Holiday coupons', driftPct: '-2.5%' },
+      { id: 'wf-4', label: 'Returns', amount: -18400, formatted: '-$18.4K', type: 'deduction', note: '1.5% return rate', driftPct: '-1.5%' },
+      { id: 'wf-5', label: 'Net Recognized Mart', amount: 1153300, formatted: '$1.15M', type: 'total', note: 'Recognized mart total' },
+    ],
+    actionableInsights: [
+      'EU interchange ran 45 bps above average on non-SEPA transactions.',
+      'Holiday promo codes showed 14% cannibalization on repeat purchases.',
+    ],
+  },
+  {
+    id: 'insight-customer-cohort',
+    kpiId: 'kpi-customer-ltv',
+    kpiName: 'Customer LTV',
+    domain: 'customers',
+    categoryLabel: 'Retention & LTV',
+    title: 'Vintage Cohort Decay & Expansion Trajectory',
+    summary:
+      'Enterprise accounts expand to 118% Net Retention at Day 90. Self-serve stabilizes at 54% after a Day 45 cliff.',
+    aiReasoning: 'Cohort decay highlights vintage expansion vs churn half-life.',
+    aiConfidenceScore: 97.8,
+    selectedGraphType: 'cohort-decay-curve',
+    availableGraphOptions: [
+      {
+        type: 'cohort-decay-curve',
+        label: 'Cohorts',
+        isAiRecommended: true,
+        reasoning: 'Decay curve across customer vintage.',
+      },
+      {
+        type: 'waterfall-decomposition',
+        label: 'Step',
+        isAiRecommended: false,
+        reasoning: 'LTV breakdown.',
+      },
+    ],
+    headlineMetrics: [
+      { label: 'Enterprise NRR', value: '118.2%', delta: '+4.5%', trend: 'up' },
+      { label: 'Day 90 LTV', value: '$4,820', delta: '+$610', trend: 'up' },
+      { label: 'Day 45 Churn', value: '14.8%', delta: 'Self-serve', trend: 'down' },
+      { label: 'Payback', value: '3.4 mos', delta: '-0.6 mos', trend: 'up' },
+    ],
+    cohortData: [
+      { period: 'Day 0', cohortA: 100, cohortB: 100, cohortC: 100 },
+      { period: 'Day 15', cohortA: 97, cohortB: 88, cohortC: 84 },
+      { period: 'Day 30', cohortA: 96, cohortB: 78, cohortC: 72 },
+      { period: 'Day 45', cohortA: 98, cohortB: 64, cohortC: 61 },
+      { period: 'Day 60', cohortA: 104, cohortB: 59, cohortC: 54 },
+      { period: 'Day 90', cohortA: 112, cohortB: 56, cohortC: 49 },
+      { period: 'Day 120', cohortA: 118, cohortB: 54, cohortC: 46 },
+    ],
+    actionableInsights: [
+      'Enterprise expansion accelerates after Day 45 onboarding integrations.',
+      'Targeted onboarding prompts at Day 20 could protect ~$34K MRR.',
+    ],
+  },
+  {
+    id: 'insight-operations-flow',
+    kpiId: 'kpi-order-fsm',
+    kpiName: 'Fulfillment Flow',
+    domain: 'operations',
+    categoryLabel: 'Operations Velocity',
+    title: 'Order State-Flow Conservation & Bottleneck Funnel',
+    summary:
+      '420,000 orders processed with 100% row conservation. Allocation dwell peaks at 18.4 min during 14:00–16:00 syncs.',
+    aiReasoning: 'Funnel maps stage conversion and dwell bottlenecks.',
+    aiConfidenceScore: 98.6,
+    selectedGraphType: 'state-flow-funnel',
+    availableGraphOptions: [
+      {
+        type: 'state-flow-funnel',
+        label: 'Flow',
+        isAiRecommended: true,
+        reasoning: 'Stage conversion and dwell times.',
+      },
+      {
+        type: 'anomaly-ribbon',
+        label: 'Throughput',
+        isAiRecommended: false,
+        reasoning: 'Hourly volume view.',
+      },
+    ],
+    headlineMetrics: [
+      { label: 'Processed', value: '420,000', delta: '100% Conserved', trend: 'up' },
+      { label: 'Completion', value: '99.85%', delta: '0 Skips', trend: 'up' },
+      { label: 'Peak Dwell', value: '18.4 min', delta: 'Allocation', trend: 'down' },
+      { label: 'DLQ Queue', value: '42 rows', delta: 'Recovered', trend: 'neutral' },
+    ],
+    stateFlowData: [
+      { id: 'sf-1', name: 'Order Placed', count: 420000, ratePct: 100, avgDwellMinutes: 0.8, anomalyCount: 0, status: 'optimal', notes: 'Raw checkouts received' },
+      { id: 'sf-2', name: 'Payment Verified', count: 419958, ratePct: 99.99, avgDwellMinutes: 1.4, anomalyCount: 42, status: 'normal', notes: '42 delayed webhooks recovered' },
+      { id: 'sf-3', name: 'Warehouse Allocated', count: 419820, ratePct: 99.96, avgDwellMinutes: 18.4, anomalyCount: 138, status: 'bottleneck', notes: 'Lock contention during 14:00 batch sync' },
+      { id: 'sf-4', name: 'Shipped', count: 419400, ratePct: 99.86, avgDwellMinutes: 42.0, anomalyCount: 0, status: 'normal', notes: 'Dock hand-off verified' },
+      { id: 'sf-5', name: 'Delivered', count: 419380, ratePct: 99.85, avgDwellMinutes: 1840.0, anomalyCount: 20, status: 'optimal', notes: 'Recipient signed' },
+    ],
+    actionableInsights: [
+      'Switching to delta syncs will eliminate the 18-minute allocation bottleneck.',
+      'Zero illegal state transitions detected across the entire pipeline.',
+    ],
+  },
+  {
+    id: 'insight-sales-anomalies',
+    kpiId: 'kpi-daily-anomalies',
+    kpiName: 'Sales Velocity',
+    domain: 'anomalies',
+    categoryLabel: 'Outlier Detection',
+    title: 'Dynamic Confidence Band Ribbon (±2σ)',
+    summary:
+      '+$27.7K unexpected surge on Oct 18 (+142% above forecast band), driven by viral social referral.',
+    aiReasoning: 'Confidence ribbon shows deviations past ±2σ bounds.',
+    aiConfidenceScore: 96.9,
+    selectedGraphType: 'anomaly-ribbon',
+    availableGraphOptions: [
+      {
+        type: 'anomaly-ribbon',
+        label: 'Ribbon',
+        isAiRecommended: true,
+        reasoning: 'Outliers vs forecast boundaries.',
+      },
+      {
+        type: 'waterfall-decomposition',
+        label: 'Attribution',
+        isAiRecommended: false,
+        reasoning: 'Category breakdown.',
+      },
+    ],
+    headlineMetrics: [
+      { label: 'Outlier Peak', value: '$84,200', delta: '+142%', trend: 'up' },
+      { label: 'Upper Band', value: '$56,500', delta: '+2.0σ', trend: 'neutral' },
+      { label: 'Model Fit', value: '95.4%', delta: 'Prophet', trend: 'up' },
+      { label: 'Driver', value: 'Viral Post', delta: 'Social', trend: 'up' },
+    ],
+    anomalyData: [
+      { date: 'Oct 12', actual: 42000, expectedLower: 34000, expectedUpper: 50000, isAnomaly: false },
+      { date: 'Oct 13', actual: 44500, expectedLower: 35000, expectedUpper: 51000, isAnomaly: false },
+      { date: 'Oct 14', actual: 43200, expectedLower: 35000, expectedUpper: 51500, isAnomaly: false },
+      { date: 'Oct 15', actual: 48000, expectedLower: 36000, expectedUpper: 53000, isAnomaly: false },
+      { date: 'Oct 16', actual: 51200, expectedLower: 38000, expectedUpper: 55000, isAnomaly: false },
+      { date: 'Oct 17', actual: 53800, expectedLower: 39000, expectedUpper: 56000, isAnomaly: false },
+      { date: 'Oct 18', actual: 84200, expectedLower: 39000, expectedUpper: 56500, isAnomaly: true, anomalyDelta: '+$27,700 over limit', anomalyCause: 'TikTok creator feature surge' },
+      { date: 'Oct 19', actual: 61000, expectedLower: 40000, expectedUpper: 57000, isAnomaly: false },
+      { date: 'Oct 20', actual: 49500, expectedLower: 38000, expectedUpper: 55000, isAnomaly: false },
+      { date: 'Oct 21', actual: 46800, expectedLower: 37000, expectedUpper: 54000, isAnomaly: false },
+      { date: 'Oct 22', actual: 47200, expectedLower: 37000, expectedUpper: 54000, isAnomaly: false },
+    ],
+    actionableInsights: [
+      'Traffic surged 3.4K visitors in 4 hours from an unscheduled creator feature.',
+      '2 high-margin SKUs stocked out, leaving ~$12K in unfilled demand.',
+    ],
+  },
+];

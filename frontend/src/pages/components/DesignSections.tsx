@@ -3,7 +3,16 @@ import {
   Bot, Database, Workflow, ShieldCheck, FileCode2, Play, Plus, Settings,
   Sparkles, Search, Bell, Trash2, Layers, Filter, Terminal, type LucideIcon,
 } from 'lucide-react';
-import { DropdownArrow, Select, Dropdown, type SelectOption, type DropdownItem } from '../../components/ui';
+import {
+  DropdownArrow,
+  Select,
+  Dropdown,
+  AuraLoader,
+  type SelectOption,
+  type DropdownItem,
+  type AuraLoaderSize,
+  type AuraLoaderVariant,
+} from '../../components/ui';
 
 /** Brand tokens (single source of truth for this page). */
 export const C = {
@@ -521,4 +530,215 @@ export function DropdownsSection() {
     </Section>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* 07 · Custom Loaders (3 Creative Agent-First Variants)               */
+/* ------------------------------------------------------------------ */
+const LOADER_VARIANTS_META: {
+  id: AuraLoaderVariant;
+  badge: string;
+  title: string;
+  concept: string;
+  bestFor: string;
+}[] = [
+  {
+    id: 'orbital-synapse',
+    badge: 'Variant I',
+    title: 'Orbital Agent Synapse',
+    concept:
+      'A semantic <progress> conic-gradient trail surrounded by 3 orbiting agent satellites (Planner, Builder, Independent Audit) around a central AI core.',
+    bestFor:
+      'Multi-agent orchestration, UIOP batch synthesis, and initial prompt decomposition.',
+  },
+  {
+    id: 'star-schema-weaver',
+    badge: 'Variant II',
+    title: 'Kimball Star-Schema Weaver',
+    concept:
+      'Four corner Dimension nodes (D1–D4) stream animated Cinnamon & Black Forest foreign-key packets into a central rotated Fact Hub encircled by a <progress> ring.',
+    bestFor:
+      'Warehouse compilation, DDL generation, and canvas DAG layout synthesis.',
+  },
+  {
+    id: 'ledger-reconciler',
+    badge: 'Variant III',
+    title: 'Quantum Ledger Reconciler',
+    concept:
+      'Pairs a semantic <progress> verification ring with a 5-bar source-vs-mart telemetry equalizer locked at Δ 0.00% variance.',
+    bestFor:
+      'Independent Audit Agent verification, KPI parity checks, and data quality gates.',
+  },
+];
+
+export function LoadersSection() {
+  const [size, setSize] = useState<AuraLoaderSize>('md');
+  const [mode, setMode] = useState<'indeterminate' | 'determinate'>('indeterminate');
+  const [progressVal, setProgressVal] = useState<number>(68);
+  const [surface, setSurface] = useState<'light' | 'dark'>('light');
+
+  const isDark = surface === 'dark';
+
+  return (
+    <Section
+      id="loaders"
+      eyebrow="07 · Custom Loaders"
+      title="Three creative Agent-First loader variants (semantic <progress>)"
+    >
+      {/* Interactive Controls Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+        <div className="space-y-0.5">
+          <div className="text-xs font-bold" style={{ color: C.evergreen }}>
+            Interactive Loader Playground
+          </div>
+          <p className="text-[11px] text-slate-500">
+            Built on native semantic <code className="font-mono text-[#064C1C]">&lt;progress&gt;</code> elements with CSS <code className="font-mono">@property</code> conic gradients and reduced-motion support.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Mode Toggle: Indeterminate vs Determinate */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setMode('indeterminate')}
+              style={
+                mode === 'indeterminate'
+                  ? { background: C.blackForest, color: C.porcelain }
+                  : { color: C.evergreen }
+              }
+              className="px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer"
+            >
+              Indeterminate
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('determinate')}
+              style={
+                mode === 'determinate'
+                  ? { background: C.cinnamon, color: C.porcelain }
+                  : { color: C.evergreen }
+              }
+              className="px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer"
+            >
+              Determinate ({progressVal}%)
+            </button>
+          </div>
+
+          {mode === 'determinate' && (
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={progressVal}
+              onChange={(e) => setProgressVal(Number(e.target.value))}
+              aria-label="Loader determinate percentage"
+              className="w-28 accent-[#064C1C] cursor-pointer"
+            />
+          )}
+
+          {/* Size Switcher */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full border border-slate-200">
+            {(['sm', 'md', 'lg'] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setSize(s)}
+                style={
+                  size === s
+                    ? { background: C.evergreen, color: C.porcelain }
+                    : { color: C.evergreen }
+                }
+                className="px-2.5 py-1 rounded-full text-xs font-mono font-bold uppercase transition-all cursor-pointer"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+
+          {/* Surface Switcher */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setSurface('light')}
+              style={
+                surface === 'light'
+                  ? { background: C.blackForest, color: C.porcelain }
+                  : { color: C.evergreen }
+              }
+              className="px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer"
+            >
+              Porcelain
+            </button>
+            <button
+              type="button"
+              onClick={() => setSurface('dark')}
+              style={
+                surface === 'dark'
+                  ? { background: C.evergreen, color: C.porcelain }
+                  : { color: C.evergreen }
+              }
+              className="px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer"
+            >
+              Evergreen Dark
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 3 Creative Variant Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {LOADER_VARIANTS_META.map((item) => (
+          <div
+            key={item.id}
+            className="rounded-2xl border border-slate-200 bg-white overflow-hidden flex flex-col shadow-xs"
+          >
+            {/* Stage Preview Canvas */}
+            <div
+              style={{
+                backgroundColor: isDark ? C.evergreen : C.porcelain,
+              }}
+              className="min-h-[240px] p-6 flex items-center justify-center border-b border-slate-200 transition-colors"
+            >
+              <AuraLoader
+                variant={item.id}
+                size={size}
+                value={mode === 'determinate' ? progressVal : undefined}
+                onDark={isDark}
+              />
+            </div>
+
+            {/* Variant Spec & Rationale */}
+            <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span
+                    style={{ backgroundColor: `${C.cinnamon}18`, color: C.cinnamon }}
+                    className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                  >
+                    {item.badge}
+                  </span>
+                  <code className="font-mono text-[11px] text-slate-400">
+                    variant=&quot;{item.id}&quot;
+                  </code>
+                </div>
+                <h3 className="text-sm font-bold" style={{ color: C.evergreen }}>
+                  {item.title}
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {item.concept}
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+                <span className="font-bold text-[#064C1C]">Best for: </span>
+                {item.bestFor}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 

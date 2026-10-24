@@ -52,14 +52,14 @@ export function AuditCenterPage() {
             type="button"
             onClick={() => void runValidation()}
             disabled={isValidating}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer disabled:opacity-50"
-            title="Re-run independent audit"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer disabled:opacity-50"
+            title="Re-analyze data and generate fresh insights"
           >
             <RotateCcw
               size={13}
               className={isValidating ? "animate-spin text-[#D66F14]" : ""}
             />
-            <span>{isValidating ? "Checking…" : "Re-run Audit"}</span>
+            <span>{isValidating ? "Analyzing…" : "Refresh Insights"}</span>
           </button>
 
           <button

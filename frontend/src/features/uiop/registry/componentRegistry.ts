@@ -35,6 +35,19 @@ export const APPROVED_PANEL_COMPONENTS = {
     stageId: z.string().optional(),
     showSqlPreview: z.boolean().default(true),
   }),
+  DynamicInsightsPanel: z.object({
+    focusDomain: z
+      .enum(['sales', 'customers', 'operations', 'anomalies'])
+      .optional(),
+    initialGraphType: z
+      .enum([
+        'waterfall-decomposition',
+        'cohort-decay-curve',
+        'state-flow-funnel',
+        'anomaly-ribbon',
+      ])
+      .optional(),
+  }),
 } as const;
 
 export type ApprovedComponentName = keyof typeof APPROVED_PANEL_COMPONENTS;

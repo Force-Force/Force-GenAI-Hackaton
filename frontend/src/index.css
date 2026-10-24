@@ -144,3 +144,170 @@
 .react-flow__attribution {
   background: transparent;
 }
+
+/* ---------------------------------------------------------------------------
+ * AuraBI Custom Loaders — Modern Web Guidance (`spinner` & `progress-ring`)
+ * Uses semantic `<progress>`, `@property` conic-gradient trails,
+ * `background-clip: border-area` with `mask-image` fallback, and
+ * `prefers-reduced-motion: reduce`.
+ * ------------------------------------------------------------------------- */
+@property --arc-start {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@property --arc-end {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@property --progress-dash-animation {
+  syntax: "*";
+  inherits: false;
+  initial-value: , aura-progress-dash 2.8s ease-in-out infinite;
+}
+
+@property --value {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+progress.aura-spinner:indeterminate::-webkit-progress-bar,
+progress.aura-spinner:indeterminate::-webkit-progress-value,
+progress.aura-progress-ring::-webkit-progress-bar,
+progress.aura-progress-ring::-webkit-progress-value {
+  display: none;
+  background: none;
+}
+
+progress.aura-spinner:indeterminate::-moz-progress-bar,
+progress.aura-progress-ring::-moz-progress-bar {
+  display: none;
+  background: none;
+}
+
+progress.aura-spinner:indeterminate::slider-fill,
+progress.aura-progress-ring::slider-fill {
+  display: none;
+  background: none;
+}
+
+progress.aura-spinner:indeterminate {
+  --_from: calc(90deg + var(--arc-start, 0deg));
+  --_to: calc(90deg + var(--arc-end, 158deg));
+  --size: 56px;
+  --thickness: 4px;
+  --spinner-color: #064C1C;
+  --track-color: rgba(51, 65, 57, 0.14);
+  --spinner-duration: 1.45s;
+  --_used-spinner-duration: var(--spinner-duration);
+
+  position: relative;
+  display: block;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  appearance: none;
+
+  background: conic-gradient(
+      from var(--_from),
+      var(--spinner-color) calc(var(--_to) - var(--_from)),
+      transparent 0
+    )
+    var(--track-color);
+
+  @supports (background-clip: border-area) {
+    background-clip: border-area;
+    border: var(--thickness) solid transparent;
+    background-origin: border-box;
+  }
+
+  @supports not (background-clip: border-area) {
+    --clip-boundary: calc(100% - var(--thickness));
+    mask-image: radial-gradient(
+      farthest-side,
+      transparent var(--clip-boundary),
+      black var(--clip-boundary)
+    );
+    border: 0;
+  }
+
+  animation:
+    aura-progress-spin var(--_used-spinner-duration) linear infinite
+    var(--progress-dash-animation, );
+}
+
+progress.aura-progress-ring {
+  --size: 56px;
+  --thickness: 4px;
+  --track-color: rgba(51, 65, 57, 0.14);
+  --fill-color: #064C1C;
+  --value: attr(value type(<number>));
+
+  display: block;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  appearance: none;
+  transition: --value 0s ease-in-out;
+
+  background: conic-gradient(
+    var(--fill-color) calc(var(--value) * 1%),
+    var(--track-color) 0
+  );
+
+  @supports (background-clip: border-area) {
+    background-clip: border-area;
+    border: var(--thickness) solid transparent;
+    background-origin: border-box;
+  }
+
+  @supports not (background-clip: border-area) {
+    mask-image: radial-gradient(
+      transparent calc(50% - var(--thickness)),
+      black calc(50% - var(--thickness) + 0.5px)
+    );
+    border: 0;
+  }
+}
+
+progress.aura-progress-ring[value="100"] {
+  --fill-color: #064C1C;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  progress.aura-progress-ring {
+    transition-duration: 0.4s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  progress.aura-spinner:indeterminate {
+    --_used-spinner-duration: 6s;
+  }
+}
+
+@keyframes aura-progress-spin {
+  to {
+    rotate: 1turn;
+  }
+}
+
+@keyframes aura-progress-dash {
+  from {
+    --arc-start: 0deg;
+    --arc-end: 3deg;
+  }
+  50% {
+    --arc-start: 100deg;
+    --arc-end: 358deg;
+  }
+  to {
+    --arc-start: 360deg;
+    --arc-end: 363deg;
+  }
+}
+

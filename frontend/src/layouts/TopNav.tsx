@@ -1,4 +1,4 @@
-import { Bot, ShieldCheck, Palette, FileText } from 'lucide-react';
+import { Bot, Sparkles, Palette, FileText } from 'lucide-react';
 import { Badge } from '../components/ui';
 import { useWorkspaceStore } from '../features/workspace/store/workspaceStore';
 import { navigateTo } from '../utils/navigation';
@@ -75,11 +75,11 @@ export function TopNav() {
             void runValidation();
             navigateTo('/audit');
           }}
-          aria-label="Independent Audit Center"
+          aria-label="AI Dynamic Insights Dashboard"
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/20 hover:border-[#064C1C] hover:text-[#064C1C] transition-colors cursor-pointer"
         >
-          <ShieldCheck size={13} />
-          <span>Audit Center</span>
+          <Sparkles size={13} className="text-[#064C1C]" />
+          <span>Insights Dashboard</span>
         </button>
       </div>
     </header>

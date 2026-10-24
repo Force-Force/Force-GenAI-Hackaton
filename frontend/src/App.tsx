@@ -24,7 +24,13 @@ function resolveRoute() {
     hash === '#audit' ||
     path === '/validate' ||
     hash === '#/validate' ||
-    hash === '#validate'
+    hash === '#validate' ||
+    path === '/insights' ||
+    hash === '#/insights' ||
+    hash === '#insights' ||
+    path === '/dashboard' ||
+    hash === '#/dashboard' ||
+    hash === '#dashboard'
   ) {
     return 'audit';
   }
