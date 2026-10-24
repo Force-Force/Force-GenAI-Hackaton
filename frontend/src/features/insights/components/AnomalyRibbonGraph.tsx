@@ -1,7 +1,14 @@
-import { useState } from 'react';
-import { motion } from 'motion/react';
-import { AlertTriangle, Sparkles } from 'lucide-react';
-import { cn } from '../../../utils/cn';
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Area,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from 'recharts';
+import { AlertTriangle } from 'lucide-react';
 import type { AnomalyPoint } from '../types';
 
 interface AnomalyRibbonGraphProps {
@@ -9,46 +16,14 @@ interface AnomalyRibbonGraphProps {
 }
 
 export function AnomalyRibbonGraph({ data }: AnomalyRibbonGraphProps) {
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(6); // Default highlight the anomaly at Oct 18
+  // Transform data for Recharts stacked Area (transparent base + ribbon band)
+  const chartData = data.map((item) => ({
+    ...item,
+    bandBottom: item.expectedLower,
+    bandHeight: item.expectedUpper - item.expectedLower,
+  }));
 
-  const width = 640;
-  const height = 240;
-  const paddingX = 48;
-  const paddingY = 24;
-
-  const maxVal = 95000;
-  const minVal = 25000;
-
-  const getX = (idx: number) => paddingX + (idx / (data.length - 1)) * (width - paddingX * 2);
-  const getY = (val: number) => height - paddingY - ((val - minVal) / (maxVal - minVal)) * (height - paddingY * 2);
-
-  // Upper boundary curve
-  const upperPath = data.reduce((acc, curr, idx) => {
-    const x = getX(idx);
-    const y = getY(curr.expectedUpper);
-    return idx === 0 ? `M ${x} ${y}` : `${acc} L ${x} ${y}`;
-  }, '');
-
-  // Lower boundary reversed to form a polygon ribbon
-  const lowerPathReversed = data
-    .slice()
-    .reverse()
-    .map((curr, revIdx) => {
-      const idx = data.length - 1 - revIdx;
-      const x = getX(idx);
-      const y = getY(curr.expectedLower);
-      return `L ${x} ${y}`;
-    })
-    .join(' ');
-
-  const ribbonArea = `${upperPath} ${lowerPathReversed} Z`;
-
-  // Actual values line
-  const actualLine = data.reduce((acc, curr, idx) => {
-    const x = getX(idx);
-    const y = getY(curr.actual);
-    return idx === 0 ? `M ${x} ${y}` : `${acc} L ${x} ${y}`;
-  }, '');
+  const anomalyPoint = data.find((p) => p.isAnomaly);
 
   return (
     <div className="w-full space-y-3">
@@ -73,116 +48,140 @@ export function AnomalyRibbonGraph({ data }: AnomalyRibbonGraphProps) {
         </span>
       </div>
 
-      {/* Responsive SVG Chart Surface */}
-      <div className="w-full bg-[#FDFFFC] rounded-2xl border border-[#334139]/12 p-4 sm:p-6 shadow-2xs overflow-hidden">
-        <div className="relative w-full aspect-[2.6/1] min-h-[220px]">
-          <svg
-            viewBox={`0 0 ${width} ${height}`}
-            className="w-full h-full overflow-visible"
-            preserveAspectRatio="none"
-          >
-            {/* Confidence Band Shaded Ribbon */}
-            <motion.path
-              d={ribbonArea}
-              fill="#334139"
-              fillOpacity="0.08"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8 }}
-            />
-
-            {/* Upper Expected Boundary */}
-            <path d={upperPath} fill="none" stroke="#334139" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.3" />
-
-            {/* Actual Values Line */}
-            <motion.path
-              d={actualLine}
-              fill="none"
-              stroke="#064C1C"
-              strokeWidth="2.5"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 1 }}
-            />
-
-            {/* Data Points */}
-            {data.map((point, idx) => {
-              const x = getX(idx);
-              const y = getY(point.actual);
-              const isHovered = hoveredIdx === idx;
-
-              return (
-                <g key={point.date} onMouseEnter={() => setHoveredIdx(idx)} onMouseLeave={() => setHoveredIdx(null)}>
-                  {/* Vertical Hover Guideline */}
-                  {isHovered && (
-                    <line x1={x} y1={paddingY} x2={x} y2={height - paddingY} stroke="#334139" strokeOpacity="0.25" strokeDasharray="2 2" />
-                  )}
-
-                  {/* Anomaly Highlight Pulse */}
-                  {point.isAnomaly && (
-                    <circle cx={x} cy={y} r={isHovered ? 12 : 8} fill="#f43f5e" fillOpacity="0.25" className="animate-ping" />
-                  )}
-
-                  {/* Point Circle */}
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r={point.isAnomaly ? 6 : isHovered ? 5 : 3.5}
-                    fill={point.isAnomaly ? '#e11d48' : '#FDFFFC'}
-                    stroke={point.isAnomaly ? '#fff' : '#064C1C'}
-                    strokeWidth={point.isAnomaly ? '2' : '2'}
-                    className="cursor-pointer transition-all"
-                  />
-
-                  {/* X-Axis Date */}
-                  <text
-                    x={x}
-                    y={height - 6}
-                    fontSize="11"
-                    fontFamily="monospace"
-                    fill="#334139"
-                    opacity={isHovered ? '0.9' : '0.55'}
-                    textAnchor="middle"
-                  >
-                    {point.date}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-
-          {/* Anomaly Tooltip Callout */}
-          {hoveredIdx !== null && (
-            <div
-              style={{ left: `${(hoveredIdx / (data.length - 1)) * 75 + 10}%` }}
-              className="absolute top-2 z-20 p-3 rounded-xl bg-[#1E2D24] text-[#FDFFFC] text-xs shadow-lg max-w-[240px] pointer-events-none animate-fadeIn space-y-1"
+      {/* Real Recharts ComposedChart with Shaded Band Ribbon */}
+      <div className="w-full bg-[#FDFFFC] rounded-lg border border-[#334139]/15 p-2 sm:p-3 shadow-2xs">
+        <div className="w-full h-56">
+          <ResponsiveContainer width="100%" height="100%" minWidth={300} minHeight={200} initialDimension={{ width: 600, height: 220 }}>
+            <ComposedChart
+              data={chartData}
+              margin={{ top: 16, right: 24, left: 0, bottom: 10 }}
             >
-              <div className="font-mono text-[11px] font-bold text-white/60 border-b border-white/10 pb-1 flex items-center justify-between">
-                <span>{data[hoveredIdx].date} Reading</span>
-                {data[hoveredIdx].isAnomaly && (
-                  <span className="text-rose-400 font-bold flex items-center gap-1">
-                    <AlertTriangle size={11} /> Outlier
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center justify-between font-mono">
-                <span>Actual:</span>
-                <span className="font-bold text-sm text-[#FDFFFC]">${data[hoveredIdx].actual.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center justify-between text-[11px] text-white/70 font-mono">
-                <span>Upper Limit:</span>
-                <span>${data[hoveredIdx].expectedUpper.toLocaleString()}</span>
-              </div>
-              {data[hoveredIdx].anomalyCause && (
-                <p className="text-[11px] text-amber-300 pt-1 border-t border-white/10 leading-snug">
-                  Cause: {data[hoveredIdx].anomalyCause}
-                </p>
-              )}
-            </div>
-          )}
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="#334139"
+                strokeOpacity="0.12"
+              />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 11, fill: '#334139', fontFamily: 'monospace' }}
+                tickLine={false}
+                axisLine={{ stroke: '#334139', strokeOpacity: 0.2 }}
+                interval={0}
+              />
+              <YAxis
+                domain={[25000, 95000]}
+                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}K`}
+                tick={{ fontSize: 10, fill: '#334139', opacity: 0.7, fontFamily: 'monospace' }}
+                tickLine={false}
+                axisLine={false}
+                width={48}
+              />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload || !payload.length) return null;
+                  const item = payload[0].payload as typeof chartData[0];
+                  return (
+                    <div className="p-2.5 rounded-lg bg-[#1E2D24] text-[#FDFFFC] text-xs shadow-md space-y-1 min-w-[190px]">
+                      <div className="font-mono text-[11px] font-bold text-white/70 border-b border-white/10 pb-1 flex items-center justify-between">
+                        <span>{item.date} Reading</span>
+                        {item.isAnomaly && (
+                          <span className="text-rose-400 font-bold flex items-center gap-1">
+                            <AlertTriangle size={11} /> Outlier
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between font-mono">
+                        <span>Actual Volume:</span>
+                        <span className="font-bold text-sm text-[#FDFFFC]">
+                          ${item.actual.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10.5px] text-white/70 font-mono">
+                        <span>Expected Band:</span>
+                        <span>
+                          ${(item.expectedLower / 1000).toFixed(0)}K – ${(item.expectedUpper / 1000).toFixed(0)}K
+                        </span>
+                      </div>
+                      {item.anomalyCause && (
+                        <p className="text-[10px] text-amber-300 pt-1 border-t border-white/10 leading-snug">
+                          {item.anomalyCause}
+                        </p>
+                      )}
+                    </div>
+                  );
+                }}
+              />
+              <Area
+                dataKey="bandBottom"
+                stackId="band"
+                stroke="none"
+                fill="transparent"
+                isAnimationActive={false}
+              />
+              <Area
+                dataKey="bandHeight"
+                stackId="band"
+                stroke="#334139"
+                strokeDasharray="3 3"
+                strokeOpacity={0.3}
+                fill="#334139"
+                fillOpacity={0.08}
+                isAnimationActive={true}
+              />
+              <Line
+                type="monotone"
+                dataKey="actual"
+                stroke="#064C1C"
+                strokeWidth={2.5}
+                dot={(props) => {
+                  const { cx, cy, payload } = props;
+                  if (!cx || !cy) return null;
+                  const isAnomaly = payload.isAnomaly;
+
+                  if (isAnomaly) {
+                    return (
+                      <g key={`dot-${payload.date}`}>
+                        <circle cx={cx} cy={cy} r={7} fill="#f43f5e" fillOpacity={0.3} className="animate-ping" />
+                        <circle cx={cx} cy={cy} r={5} fill="#e11d48" stroke="#FDFFFC" strokeWidth={2} />
+                      </g>
+                    );
+                  }
+                  return (
+                    <circle
+                      key={`dot-${payload.date}`}
+                      cx={cx}
+                      cy={cy}
+                      r={3.5}
+                      fill="#FDFFFC"
+                      stroke="#064C1C"
+                      strokeWidth={2}
+                    />
+                  );
+                }}
+                activeDot={{ r: 6, fill: '#064C1C', stroke: '#FDFFFC', strokeWidth: 2 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
+
+        {/* Tableau Outlier Inspection Shelf */}
+        {anomalyPoint && (
+          <div className="flex items-center justify-between pt-2 border-t border-[#334139]/10 text-xs select-none">
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
+                {anomalyPoint.date}
+              </span>
+              <span className="text-[#1E2D24] font-medium">
+                Peak Velocity: ${anomalyPoint.actual.toLocaleString()}
+              </span>
+            </div>
+            <div className="font-mono text-[11px] text-[#D66F14] font-semibold hidden sm:inline">
+              {anomalyPoint.anomalyDelta || '+$27.7K Outlier'}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

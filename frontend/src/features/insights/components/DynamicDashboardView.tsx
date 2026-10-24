@@ -43,8 +43,8 @@ export function DynamicDashboardView() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Executive Summary Metric Strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* 1. Executive Summary Metric Ribbon */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         <div className="p-4 rounded-2xl bg-white border border-[#334139]/12 shadow-2xs space-y-1">
           <span className="text-xs font-medium text-[#334139]/60">Net Realized Revenue</span>
           <div className="text-xl sm:text-2xl font-mono font-bold text-[#1E2D24]">$1.15M</div>
@@ -195,7 +195,7 @@ export function DynamicDashboardView() {
         </div>
       </div>
 
-      {/* 3. Main Content: Enhanced 2-Column Responsive Card Grid */}
+      {/* 3. Main Content: Responsive Card Grid or Table Ledger */}
       {displayMode === 'ai-dashboard' ? (
         filteredInsights.length > 0 ? (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 sm:gap-6 items-start">
@@ -235,3 +235,4 @@ export function DynamicDashboardView() {
     </div>
   );
 }
+

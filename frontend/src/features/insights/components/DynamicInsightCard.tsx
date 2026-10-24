@@ -22,14 +22,14 @@ export function DynamicInsightCard({ insight }: DynamicInsightCardProps) {
 
   return (
     <article className="p-5 sm:p-6 rounded-2xl md:rounded-3xl bg-white border border-[#334139]/15 shadow-sm space-y-5 transition-all hover:border-[#064C1C]/35 flex flex-col justify-between">
-      {/* 1. Header: Domain Pill, KPI, Title, and Adaptive Graph Selector */}
+      {/* 1. Header: Category Pill, KPI, Title, and Adaptive Graph Selector */}
       <div className="space-y-3 border-b border-[#334139]/10 pb-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-[#064C1C]/10 text-[#064C1C] uppercase tracking-wider">
               {insight.categoryLabel}
             </span>
-            <span className="font-mono text-xs text-[#334139]/55">
+            <span className="font-mono text-xs text-[#334139]/60">
               KPI: {insight.kpiName}
             </span>
           </div>
@@ -65,13 +65,13 @@ export function DynamicInsightCard({ insight }: DynamicInsightCardProps) {
           {insight.title}
         </h3>
 
-        {/* High-Impact 1-Sentence Summary */}
+        {/* Narrative Summary */}
         <p className="text-sm text-[#334139]/85 leading-relaxed font-medium">
           {insight.summary}
         </p>
       </div>
 
-      {/* 2. Dynamic Non-Standard Graph Rendering */}
+      {/* 2. Recharts Dynamic Graph Rendering */}
       <div className="pt-1 pb-1">
         {activeGraphType === 'waterfall-decomposition' && insight.waterfallData && (
           <WaterfallGraph data={insight.waterfallData} />
@@ -114,7 +114,7 @@ export function DynamicInsightCard({ insight }: DynamicInsightCardProps) {
         ))}
       </div>
 
-      {/* 4. Actionable Key Drivers with MD-sized bullets */}
+      {/* 4. Actionable Key Drivers */}
       <div className="pt-3 border-t border-[#334139]/10 space-y-2">
         <h4 className="text-xs font-bold uppercase tracking-wider text-[#334139]/60 font-mono flex items-center gap-1.5">
           <Layers size={13} className="text-[#064C1C]" />
@@ -135,3 +135,4 @@ export function DynamicInsightCard({ insight }: DynamicInsightCardProps) {
     </article>
   );
 }
+
