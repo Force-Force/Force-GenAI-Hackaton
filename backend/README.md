@@ -34,9 +34,25 @@ cp .env.example .env
 
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-pip install -e ".[dev,mcp]"
+python -m pip install -r requirements.txt
 ```
+
+The `requirements.txt` file includes the complete runtime and test dependency
+set. Use `python -m pytest` to run tests and
+`python scripts/evaluate_scout_intent.py` for the reproducible Scout Intent
+evaluation.
+
+**Windows PowerShell**
+
+```powershell
+py -3 -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+For the complete cross-platform setup and troubleshooting guide, see
+[docs/DEVOPS_DOCKER.md](docs/DEVOPS_DOCKER.md).
 
 ### 3. Migrations
 
@@ -133,12 +149,11 @@ Connect to: `ws://<host>:8000/api/v1/ws/pipelines/{pipeline_id}`
 | `chat.message` | New chat message |
 | `agent_task.updated` | Master delegated a task |
 
-## MCP server (IDE, optionnel)
+## MCP server
 
-```bash
-pip install -e ".[mcp]"
-fastmcp run app/mcp/server.py:mcp
-```
+The current project does not define an `mcp` optional dependency or include an
+`app/mcp/server.py` entry point. Do not run the old `pip install -e ".[mcp]"`
+command; use the REST and WebSocket APIs documented above.
 
 ## Manual MVP test
 

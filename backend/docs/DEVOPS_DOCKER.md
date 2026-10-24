@@ -36,6 +36,85 @@ Install the following on the host:
 
 The host does not need Python or PostgreSQL for the Docker workflow.
 
+## 2.1 Local Python virtual environment
+
+For development, tests, the Scout Intent evaluation, and running the API without
+Docker, use the repository virtual environment:
+
+### Linux and macOS
+
+From the repository root:
+
+```bash
+python3 --version
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+If `python3 -m venv` fails on Debian/Ubuntu, install the venv package:
+
+```bash
+sudo apt update
+sudo apt install -y python3-venv
+```
+
+### Windows PowerShell
+
+From the repository root:
+
+```powershell
+py --version
+py -3 -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+If PowerShell blocks activation for the current user, run PowerShell as the
+developer account and use:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+.venv\Scripts\Activate.ps1
+```
+
+`requirements.txt` contains both runtime and test dependencies. Verify the
+installation with:
+
+```bash
+python -m pytest
+python scripts/evaluate_scout_intent.py
+```
+
+Leave the environment with `deactivate`. The `.venv/` directory is ignored by
+Git and must not be committed.
+
+### Confirm the active interpreter
+
+These commands must resolve to the repository venv, not the system Python:
+
+```bash
+python -c "import sys; print(sys.executable)"
+python -c "import fastapi, sqlalchemy, pydantic_settings; print('dependencies ok')"
+```
+
+If the path does not contain `.venv`, activate the environment again or invoke
+the interpreter explicitly as `.venv/bin/python` on Linux/macOS.
+
+### Local API startup
+
+After PostgreSQL is available and `.env` is configured:
+
+```bash
+python -m alembic upgrade head
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+The local process uses `DATABASE_URL` from `.env`. For Docker, the API must use
+the Compose hostname `db`, not `localhost`.
+
 ## 3. First-time setup
 
 From the repository root:
