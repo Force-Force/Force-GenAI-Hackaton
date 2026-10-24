@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, type ChangeEvent } from 'react';
-import { ArrowUp, Sparkles, Workflow, Palette, Plus, X, FileText, Mic, Square } from 'lucide-react';
+import { ArrowUp, Sparkles, Workflow, Palette, Plus, X, FileText, Mic, Square, Database, Globe, Boxes, Layers } from 'lucide-react';
 import { useChatStore } from '../features/chat/store/chatStore';
 import { usePipelineStore } from '../features/workspace/store/pipelineStore';
 import { parseCsv } from '../utils/parsers/csvParser';
@@ -7,6 +7,7 @@ import { parseSqlDdl } from '../utils/parsers/sqlDdlParser';
 import type { Column, PipelineNode, SourceFormat } from '../types/pipeline';
 import { navigateTo } from '../utils/navigation';
 import { cn } from '../utils/cn';
+import { ImportDataModal, type ImportModalTab } from '../features/sources/components/ImportDataModal';
 
 interface AttachedResource {
   id: string;
@@ -28,8 +29,34 @@ const TYPICAL_PROMPTS = [
 export function AgentEntryPage() {
   const [prompt, setPrompt] = useState('');
   const [attachedResources, setAttachedResources] = useState<AttachedResource[]>([]);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importModalTab, setImportModalTab] = useState<ImportModalTab>('files');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const openImportModal = (tab: ImportModalTab = 'files') => {
+    setImportModalTab(tab);
+    setIsImportModalOpen(true);
+  };
+
+  const handleImportModalSuccess = (resource: {
+    id: string;
+    name: string;
+    columns: Column[];
+    format: SourceFormat;
+    fileName?: string;
+  }) => {
+    setAttachedResources((prev) => [
+      ...prev,
+      {
+        id: resource.id,
+        name: resource.name,
+        columns: resource.columns,
+        format: resource.format,
+        fileName: resource.fileName || resource.name,
+      },
+    ]);
+  };
 
   const [isFocused, setIsFocused] = useState(false);
   const [promptIndex, setPromptIndex] = useState(0);
@@ -292,7 +319,7 @@ export function AgentEntryPage() {
   return (
     <div
       style={{ backgroundColor: '#FDFFFC' }}
-      className="min-h-screen flex flex-col font-sans text-[#1E2D24] selection:bg-[#064C1C]/15 antialiased"
+      className="min-h-screen flex flex-col font-sans text-[#334139] selection:bg-[#064C1C]/15 antialiased"
     >
       {/* 
         Blended Top Bar:
@@ -308,7 +335,7 @@ export function AgentEntryPage() {
           >
             <Sparkles size={15} />
           </div>
-          <span className="font-bold text-base tracking-tight text-[#1E2D24]">
+          <span className="font-bold text-base tracking-tight text-[#334139]">
             AuraBI
           </span>
           <span
@@ -323,7 +350,7 @@ export function AgentEntryPage() {
         <nav className="flex items-center gap-2">
           <button
             onClick={() => navigateTo('/workspace')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#1E2D24] hover:bg-[#334139]/5 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
             aria-label="Open Workspace Canvas"
           >
             <Workflow size={13} />
@@ -331,7 +358,7 @@ export function AgentEntryPage() {
           </button>
           <button
             onClick={() => navigateTo('/components')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#1E2D24] hover:bg-[#334139]/5 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
             aria-label="View Design System Components"
           >
             <Palette size={13} />
@@ -344,7 +371,7 @@ export function AgentEntryPage() {
       <main className="flex-1 flex flex-col items-center justify-center px-4 md:px-6 max-w-3xl mx-auto w-full -mt-10">
         {/* "Welcome to AuraBI" Heading placed on top of the prompt rectangle */}
         <div className="text-center mb-8 space-y-2">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1E2D24]">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#334139]">
             Welcome to AuraBI
           </h1>
           <p className="text-sm md:text-base text-[#334139]/80 max-w-md mx-auto leading-relaxed">
@@ -403,7 +430,7 @@ export function AgentEntryPage() {
               rows={3}
               disabled={isGenerating}
               aria-label="Agent prompt input"
-              className="w-full bg-transparent resize-none outline-none text-[#1E2D24] text-sm md:text-base leading-relaxed font-sans relative z-10"
+              className="w-full bg-transparent resize-none outline-none text-[#334139] text-sm md:text-base leading-relaxed font-sans relative z-10"
             />
 
             {/* Dynamic animated prompt directly in the prompt text zone */}
@@ -448,7 +475,7 @@ export function AgentEntryPage() {
                 </div>
 
                 <div className="flex flex-col">
-                  <span className="text-xs font-bold text-[#1E2D24]">
+                  <span className="text-xs font-bold text-[#334139]">
                     Listening for voice prompt...
                   </span>
                   <span className="text-[11px] text-[#334139]/80 font-mono">
@@ -476,7 +503,7 @@ export function AgentEntryPage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#1E2D24] border border-[#334139]/15 transition-all cursor-pointer shadow-2xs group"
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#064C1C] border border-[#334139]/15 transition-all cursor-pointer shadow-2xs group"
                 title="Upload resource schema or data file (.csv, .sql, .json)"
                 aria-label="Upload resource"
               >
@@ -499,7 +526,7 @@ export function AgentEntryPage() {
                   'w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-2xs',
                   isListening
                     ? 'bg-[#D66F14] text-[#FDFFFC] ring-4 ring-[#D66F14]/25 animate-pulse'
-                    : 'bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#1E2D24] border border-[#334139]/15'
+                    : 'bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#064C1C] border border-[#334139]/15'
                 )}
                 title={isListening ? 'Stop recording voice' : 'Start voice prompt (dictate)'}
                 aria-label={isListening ? 'Stop recording voice' : 'Start voice recording'}
@@ -523,7 +550,88 @@ export function AgentEntryPage() {
             </div>
           </div>
         </form>
+
+        {/* Source Import Buttons directly below the prompt box */}
+        <div className="w-full mt-5 flex flex-col items-center gap-3">
+          <div className="flex items-center gap-2 text-xs font-medium text-[#334139]/70">
+            <span>Or link sources through Zetaris unified SQL:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {/* Database Button */}
+            <button
+              type="button"
+              onClick={() => openImportModal('databases')}
+              className={cn(
+                'inline-flex items-center justify-center gap-2 px-5.5 py-2.5 text-sm font-semibold rounded-full border transition-all cursor-pointer shadow-2xs',
+                isImportModalOpen && importModalTab === 'databases'
+                  ? 'bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]'
+                  : 'bg-transparent text-[#334139] border-[#334139]/30 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] active:bg-[#064C1C] active:text-[#FDFFFC] active:border-[#064C1C]'
+              )}
+              aria-label="Connect database sources"
+            >
+              <Database size={16} />
+              <span>Databases</span>
+            </button>
+
+            {/* Files Button */}
+            <button
+              type="button"
+              onClick={() => openImportModal('files')}
+              className={cn(
+                'inline-flex items-center justify-center gap-2 px-5.5 py-2.5 text-sm font-semibold rounded-full border transition-all cursor-pointer shadow-2xs',
+                isImportModalOpen && importModalTab === 'files'
+                  ? 'bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]'
+                  : 'bg-transparent text-[#334139] border-[#334139]/30 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] active:bg-[#064C1C] active:text-[#FDFFFC] active:border-[#064C1C]'
+              )}
+              aria-label="Import data files"
+            >
+              <Boxes size={16} />
+              <span>Files</span>
+            </button>
+
+            {/* Web APIs Button */}
+            <button
+              type="button"
+              onClick={() => openImportModal('api')}
+              className={cn(
+                'inline-flex items-center justify-center gap-2 px-5.5 py-2.5 text-sm font-semibold rounded-full border transition-all cursor-pointer shadow-2xs',
+                isImportModalOpen && importModalTab === 'api'
+                  ? 'bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]'
+                  : 'bg-transparent text-[#334139] border-[#334139]/30 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] active:bg-[#064C1C] active:text-[#FDFFFC] active:border-[#064C1C]'
+              )}
+              aria-label="Configure REST API endpoints"
+            >
+              <Globe size={16} />
+              <span>Web APIs</span>
+            </button>
+
+            {/* Zetaris Virtual Layer Button */}
+            <button
+              type="button"
+              onClick={() => openImportModal('zetaris')}
+              className={cn(
+                'inline-flex items-center justify-center gap-2 px-5.5 py-2.5 text-sm font-semibold rounded-full border transition-all cursor-pointer shadow-2xs',
+                isImportModalOpen && importModalTab === 'zetaris'
+                  ? 'bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]'
+                  : 'bg-transparent text-[#334139] border-[#334139]/30 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] active:bg-[#064C1C] active:text-[#FDFFFC] active:border-[#064C1C]'
+              )}
+              aria-label="Inspect Zetaris Virtual Layer"
+            >
+              <Layers size={16} />
+              <span>Zetaris Virtual Layer</span>
+            </button>
+          </div>
+        </div>
       </main>
+
+      {/* Source Import & Virtualization Modal */}
+      <ImportDataModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        initialTab={importModalTab}
+        onImportSuccess={handleImportModalSuccess}
+      />
 
       {/* Subtle, blended footer */}
       <footer className="w-full py-4 text-center text-[11px] font-mono text-[#334139]/50 bg-transparent shrink-0">

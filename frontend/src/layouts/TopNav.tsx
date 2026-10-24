@@ -30,7 +30,7 @@ export function TopNav() {
           <div className="bg-[#064C1C] p-1.5 rounded-lg text-white">
             <Boxes size={18} />
           </div>
-          <span className="font-sans font-black text-slate-900 tracking-tight">AuraBI</span>
+          <span className="font-sans font-black text-[#334139] tracking-tight">AuraBI</span>
         </div>
         <span className="text-slate-300">/</span>
         <input

@@ -117,7 +117,7 @@ export interface PipelineGraph {
 export interface DataSource {
   id: string;
   name: string;
-  type: 'postgresql' | 'snowflake' | 'salesforce' | 'csv' | 'stripe';
+  type: SourceFormat;
   status: 'connected' | 'disconnected';
   tableCount: number;
   description: string;
