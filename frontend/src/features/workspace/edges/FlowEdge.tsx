@@ -35,9 +35,8 @@ function FlowEdgeImpl({
     borderRadius: 16,
   });
 
-  const relationship = (data as PipelineEdgeData | undefined)?.relationship;
-  const isFk = relationship === 'foreign_key';
-  const color = isFk ? '#06B6D4' : '#6366F1';
+  // All links between nodes use the cinnamon color (#D66F14)
+  const color = '#D66F14';
 
   return (
     <>

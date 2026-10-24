@@ -38,7 +38,8 @@ export function PipelineCanvas() {
 
   return (
     <div
-      className="w-full h-full bg-slate-50 relative"
+      style={{ backgroundColor: '#FDFFFC' }}
+      className="w-full h-full relative"
       tabIndex={0}
       role="application"
       aria-label="ETL pipeline canvas. Use arrow keys to move between nodes, Enter to open a datamart, Delete to remove the selected node."
@@ -55,36 +56,37 @@ export function PipelineCanvas() {
         onNodeClick={(_, node: Node) => selectNode(node.id)}
         onPaneClick={() => selectNode(null)}
         fitView
+        fitViewOptions={{ padding: 0.25 }}
         minZoom={0.2}
         maxZoom={2}
         proOptions={{ hideAttribution: true }}
       >
         <Background
           variant={BackgroundVariant.Dots}
-          gap={24}
-          size={1.5}
-          color="#CBD5E1"
+          gap={20}
+          size={2}
+          color="rgba(51, 65, 57, 0.3)"
         />
         <Controls />
         <MiniMap
           pannable
           zoomable
-          className="!bg-white !border !border-slate-200"
-          maskColor="rgba(241, 245, 249, 0.6)"
+          className="!bg-[#FDFFFC] !border !border-[#334139]/20 !rounded-xl shadow-xs"
+          maskColor="rgba(51, 65, 57, 0.08)"
         />
       </ReactFlow>
 
       {nodes.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="bg-white/95 border border-slate-200 p-8 rounded-xl max-w-md shadow-xl text-center">
-            <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-full w-14 h-14 flex items-center justify-center mx-auto text-indigo-600 mb-4">
+          <div className="bg-[#FDFFFC]/95 border border-[#334139]/20 p-8 rounded-2xl max-w-md shadow-xl text-center">
+            <div className="bg-[#064C1C]/10 border border-[#064C1C]/20 p-4 rounded-full w-14 h-14 flex items-center justify-center mx-auto text-[#064C1C] mb-4">
               <Orbit className="animate-spin" size={28} />
             </div>
-            <h3 className="font-sans font-bold text-slate-900 text-md">
+            <h3 className="font-sans font-bold text-[#334139] text-base">
               No Pipeline Yet
             </h3>
-            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-              Ask the AI architect on the left to design a pipeline, or add nodes from the toolbar above.
+            <p className="text-xs text-[#334139]/70 mt-2 leading-relaxed">
+              Use the prompt bar below to ask AuraBI to architect, connect, and transform your pipeline.
             </p>
           </div>
         </div>

@@ -1,5 +1,5 @@
-import { Boxes, ShieldCheck, FileCode2, RotateCcw, PanelLeft, PanelRight, Palette } from 'lucide-react';
-import { Badge, Button } from '../components/ui';
+import { Sparkles, ShieldCheck, FileCode2, RotateCcw, Palette } from 'lucide-react';
+import { Badge } from '../components/ui';
 import { useWorkspaceStore } from '../features/workspace/store/workspaceStore';
 import { usePipelineStore } from '../features/workspace/store/pipelineStore';
 import { navigateTo } from '../utils/navigation';
@@ -12,77 +12,83 @@ export function TopNav() {
   const openExport = useWorkspaceStore((s) => s.openExport);
   const clearValidations = useWorkspaceStore((s) => s.clearValidations);
 
-  const leftCollapsed = useWorkspaceStore((s) => s.leftCollapsed);
-  const rightCollapsed = useWorkspaceStore((s) => s.rightCollapsed);
-  const setLeftCollapsed = useWorkspaceStore((s) => s.setLeftCollapsed);
-  const setRightCollapsed = useWorkspaceStore((s) => s.setRightCollapsed);
-
   const resetWorkspace = usePipelineStore((s) => s.resetWorkspace);
 
   return (
-    <header className="flex items-center justify-between px-4 h-14 bg-white border-b border-slate-200 shrink-0">
+    <header className="w-full flex items-center justify-between px-6 py-4 bg-transparent shrink-0 z-20 pointer-events-auto">
       <div className="flex items-center gap-3 min-w-0">
         <div
           onClick={() => navigateTo('/')}
-          className="flex items-center gap-2 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2.5 shrink-0 cursor-pointer hover:opacity-85 transition-opacity"
           aria-label="Return to Agent Home"
         >
-          <div className="bg-[#064C1C] p-1.5 rounded-lg text-white">
-            <Boxes size={18} />
+          <div
+            style={{ backgroundColor: '#064C1C' }}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#FDFFFC] shadow-xs"
+          >
+            <Sparkles size={15} />
           </div>
-          <span className="font-sans font-black text-[#334139] tracking-tight">AuraBI</span>
+          <span className="font-bold text-base tracking-tight text-[#334139]">
+            AuraBI
+          </span>
+          <span
+            style={{ backgroundColor: '#D66F14' }}
+            className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full text-white uppercase tracking-wider ml-1"
+          >
+            Agent First
+          </span>
         </div>
-        <span className="text-slate-300">/</span>
+        <span className="text-[#334139]/30">/</span>
         <input
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
           aria-label="Project name"
-          className="text-sm font-semibold text-slate-700 bg-transparent outline-none focus:bg-slate-50 rounded px-2 py-1 min-w-0 truncate hover:bg-slate-50 transition-colors"
+          className="text-sm font-semibold text-[#334139] bg-transparent outline-none focus:bg-[#334139]/5 rounded-lg px-2.5 py-1 min-w-0 truncate hover:bg-[#334139]/5 transition-colors border border-transparent focus:border-[#334139]/20"
         />
         {isValid === true && <Badge tone="success">Valid</Badge>}
         {isValid === false && <Badge tone="danger">Errors</Badge>}
       </div>
 
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          aria-pressed={!leftCollapsed}
-          onClick={() => setLeftCollapsed(!leftCollapsed)}
-          aria-label={leftCollapsed ? 'Show chat panel' : 'Hide chat panel'}
-        >
-          <PanelLeft size={15} />
-        </Button>
-        <Button
-          variant="ghost"
-          aria-pressed={!rightCollapsed}
-          onClick={() => setRightCollapsed(!rightCollapsed)}
-          aria-label={rightCollapsed ? 'Show inspector panel' : 'Hide inspector panel'}
-        >
-          <PanelRight size={15} />
-        </Button>
-        <span className="w-px h-5 bg-slate-200 mx-1" />
-        <Button
-          variant="secondary"
+        <button
+          type="button"
           onClick={() => navigateTo('/components')}
           aria-label="View components palette"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
         >
-          <Palette size={13} /> Components
-        </Button>
-        <Button
-          variant="secondary"
+          <Palette size={13} />
+          <span className="hidden sm:inline">Design Tokens</span>
+        </button>
+        <button
+          type="button"
           onClick={() => {
             resetWorkspace();
             clearValidations();
           }}
+          aria-label="Reset workspace"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
         >
-          <RotateCcw size={13} /> Reset
-        </Button>
-        <Button variant="secondary" onClick={() => void runValidation()}>
-          <ShieldCheck size={13} /> Validate
-        </Button>
-        <Button variant="primary" onClick={openExport}>
-          <FileCode2 size={13} /> Compile DDL
-        </Button>
+          <RotateCcw size={13} />
+          <span className="hidden sm:inline">Reset</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => void runValidation()}
+          aria-label="Validate pipeline graph"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/20 hover:border-[#064C1C] hover:text-[#064C1C] transition-colors cursor-pointer"
+        >
+          <ShieldCheck size={13} />
+          <span>Validate</span>
+        </button>
+        <button
+          type="button"
+          onClick={openExport}
+          aria-label="Compile and export DDL"
+          className="flex items-center gap-1.5 px-4.5 py-1.5 rounded-full text-xs font-bold bg-[#064C1C] hover:brightness-110 text-[#FDFFFC] transition-all cursor-pointer shadow-xs"
+        >
+          <FileCode2 size={13} />
+          <span>Compile DDL</span>
+        </button>
       </div>
     </header>
   );

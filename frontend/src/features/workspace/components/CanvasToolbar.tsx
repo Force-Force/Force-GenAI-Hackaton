@@ -1,16 +1,17 @@
 import { PlusCircle, LayoutGrid, Maximize2, Minimize2, Code2 } from 'lucide-react';
-import { Button } from '../../../components/ui';
 import { usePipelineStore } from '../store/pipelineStore';
 import { useAutoLayout } from '../hooks/useAutoLayout';
 import { genId } from '../../../utils/graph';
+import { cn } from '../../../utils/cn';
 import type { PipelineNode } from '../../../types/pipeline';
 
 interface CanvasToolbarProps {
-  isFullscreen: boolean;
-  onToggleFullscreen: () => void;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
+  className?: string;
 }
 
-export function CanvasToolbar({ isFullscreen, onToggleFullscreen }: CanvasToolbarProps) {
+export function CanvasToolbar({ isFullscreen = false, onToggleFullscreen, className }: CanvasToolbarProps) {
   const addNode = usePipelineStore((s) => s.addNode);
   const autoLayout = useAutoLayout();
 
@@ -54,24 +55,51 @@ export function CanvasToolbar({ isFullscreen, onToggleFullscreen }: CanvasToolba
   };
 
   return (
-    <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-white/95 border border-slate-200 p-2 rounded-lg shadow-sm">
-      <Button variant="primary" onClick={addResource} aria-label="Add resource node">
-        <PlusCircle size={12} /> Resource
-      </Button>
-      <Button variant="success" onClick={addProcessing} aria-label="Add processing node">
-        <Code2 size={12} /> Processing
-      </Button>
-      <Button variant="secondary" onClick={autoLayout} aria-label="Auto-layout the graph">
-        <LayoutGrid size={12} /> Auto Layout
-      </Button>
-      <Button
-        variant="secondary"
-        onClick={onToggleFullscreen}
-        aria-label={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+    <div
+      style={{ backgroundColor: '#FDFFFC' }}
+      className={cn(
+        'absolute top-16 left-6 z-20 flex items-center gap-2 border border-[#334139]/20 p-1.5 rounded-full shadow-sm backdrop-blur-xs',
+        className
+      )}
+    >
+      <button
+        type="button"
+        onClick={addResource}
+        aria-label="Add resource node"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#064C1C] hover:bg-[#D66F14] text-[#FDFFFC] transition-colors cursor-pointer shadow-2xs"
       >
-        {isFullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-        {isFullscreen ? 'Exit' : 'Full Screen'}
-      </Button>
+        <PlusCircle size={13} />
+        <span>Resource</span>
+      </button>
+      <button
+        type="button"
+        onClick={addProcessing}
+        aria-label="Add processing node"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#334139] hover:bg-[#D66F14] text-[#FDFFFC] transition-colors cursor-pointer shadow-2xs"
+      >
+        <Code2 size={13} />
+        <span>Processing</span>
+      </button>
+      <button
+        type="button"
+        onClick={autoLayout}
+        aria-label="Auto-layout the graph"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/25 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] transition-colors cursor-pointer"
+      >
+        <LayoutGrid size={13} />
+        <span>Auto Layout</span>
+      </button>
+      {onToggleFullscreen && (
+        <button
+          type="button"
+          onClick={onToggleFullscreen}
+          aria-label={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/25 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] transition-colors cursor-pointer"
+        >
+          {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+          <span>{isFullscreen ? 'Exit' : 'Full Screen'}</span>
+        </button>
+      )}
     </div>
   );
 }
