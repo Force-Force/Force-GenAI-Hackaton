@@ -1,5 +1,6 @@
-import { PlusCircle, LayoutGrid, Maximize2, Minimize2, Code2 } from 'lucide-react';
+import { PlusCircle, LayoutGrid, Maximize2, Minimize2, Code2, SlidersHorizontal } from 'lucide-react';
 import { usePipelineStore } from '../store/pipelineStore';
+import { useWorkspaceStore } from '../store/workspaceStore';
 import { useAutoLayout } from '../hooks/useAutoLayout';
 import { genId } from '../../../utils/graph';
 import { cn } from '../../../utils/cn';
@@ -14,6 +15,8 @@ interface CanvasToolbarProps {
 export function CanvasToolbar({ isFullscreen = false, onToggleFullscreen, className }: CanvasToolbarProps) {
   const addNode = usePipelineStore((s) => s.addNode);
   const autoLayout = useAutoLayout();
+  const rightCollapsed = useWorkspaceStore((s) => s.rightCollapsed);
+  const setRightCollapsed = useWorkspaceStore((s) => s.setRightCollapsed);
 
   const addResource = () => {
     const id = genId('resource');
@@ -59,10 +62,34 @@ export function CanvasToolbar({ isFullscreen = false, onToggleFullscreen, classN
       aria-label="Canvas actions toolbar"
       style={{ backgroundColor: '#FDFFFC' }}
       className={cn(
-        'absolute right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2 border border-[#334139]/20 p-2 rounded-2xl shadow-md backdrop-blur-xs',
+        'absolute top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2 border border-[#334139]/20 p-2 rounded-2xl shadow-md backdrop-blur-xs transition-all duration-300 ease-in-out',
+        !rightCollapsed ? 'right-[332px] sm:right-[364px] md:right-[396px]' : 'right-4',
         className
       )}
     >
+      {/* Node Details (Sidebar Toggle) */}
+      <div className="relative group flex items-center">
+        <button
+          type="button"
+          onClick={() => setRightCollapsed(!rightCollapsed)}
+          aria-label={!rightCollapsed ? 'Close node details' : 'Open node details'}
+          className={cn(
+            'w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-2xs',
+            !rightCollapsed
+              ? 'bg-[#064C1C] text-[#FDFFFC]'
+              : 'bg-transparent text-[#334139] hover:bg-[#064C1C] hover:text-[#FDFFFC]'
+          )}
+        >
+          <SlidersHorizontal size={18} />
+        </button>
+        <div className="absolute right-full mr-3 px-2.5 py-1 rounded-lg bg-[#334139] text-[#FDFFFC] text-xs font-semibold whitespace-nowrap shadow-md opacity-0 translate-x-1.5 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150 z-50">
+          {!rightCollapsed ? 'Close Details' : 'Node Details'}
+          <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 bg-[#334139] rotate-45" />
+        </div>
+      </div>
+
+      <div className="w-5 h-px bg-[#334139]/15 my-0.5" />
+
       {/* Add Resource */}
       <div className="relative group flex items-center">
         <button

@@ -10,6 +10,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Orbit } from 'lucide-react';
 import { usePipelineStore } from '../store/pipelineStore';
+import { useWorkspaceStore } from '../store/workspaceStore';
 import { useGraphKeyboardNav } from '../hooks/useGraphKeyboardNav';
 import { nodeTypes } from '../nodes/nodeRegistry';
 import { edgeTypes } from '../edges/edgeRegistry';
@@ -23,6 +24,7 @@ export function PipelineCanvas() {
   const onEdgesChange = usePipelineStore((s) => s.onEdgesChange);
   const onConnect = usePipelineStore((s) => s.onConnect);
   const selectNode = usePipelineStore((s) => s.selectNode);
+  const setRightCollapsed = useWorkspaceStore((s) => s.setRightCollapsed);
 
   const onKeyDown = useGraphKeyboardNav();
 
@@ -53,7 +55,10 @@ export function PipelineCanvas() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onNodeClick={(_, node: Node) => selectNode(node.id)}
+        onNodeClick={(_, node: Node) => {
+          selectNode(node.id);
+          setRightCollapsed(false);
+        }}
         onPaneClick={() => selectNode(null)}
         fitView
         fitViewOptions={{ padding: 0.25 }}

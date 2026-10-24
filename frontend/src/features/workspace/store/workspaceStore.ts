@@ -98,7 +98,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       activeTab: 'canvas',
 
       leftCollapsed: false,
-      rightCollapsed: false,
+      rightCollapsed: true,
       leftSize: 25,
       rightSize: 22,
       isFullscreen: false,

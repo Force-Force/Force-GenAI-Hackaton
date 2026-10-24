@@ -305,16 +305,16 @@ export function AiThoughtPanel() {
             <div
               key={block.id}
               className={cn(
-                'rounded-xl border transition-all overflow-hidden bg-white/90 shadow-2xs',
+                'rounded-xl transition-all overflow-hidden',
                 block.status === 'running'
-                  ? 'border-[#D66F14]/40 bg-[#D66F14]/5'
-                  : 'border-[#334139]/15 hover:border-[#334139]/30',
+                  ? 'bg-[#D66F14]/5'
+                  : 'hover:bg-[#334139]/[0.03]',
               )}
             >
               {/* Bullet Point Header */}
               <div
                 onClick={() => toggleBlock(block.id)}
-                className="w-full px-3 py-2.5 flex items-start gap-2 cursor-pointer select-none"
+                className="w-full px-2.5 py-1.5 flex items-start gap-2 cursor-pointer select-none"
               >
                 {/* Primary Bullet Marker */}
                 <span
@@ -328,7 +328,7 @@ export function AiThoughtPanel() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1.5">
-                    <h3 className="font-bold text-[#334139] text-[11.5px] truncate">
+                    <h3 className="font-bold text-[#334139] text-[12px] truncate">
                       {block.title}
                     </h3>
                     <div className="flex items-center gap-1 shrink-0 text-[#334139]/45">
@@ -343,10 +343,10 @@ export function AiThoughtPanel() {
 
               {/* Sub-sections: Execution steps & Thought process */}
               {!isCollapsed && (
-                <div className="px-3 pb-3 pt-0 space-y-2.5">
+                <div className="px-2.5 pb-2.5 pt-0 space-y-2">
                   {/* Under which: Execution steps */}
-                  <div className="pt-2 border-t border-[#334139]/10">
-                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#334139]/70 flex items-center gap-1.5 mb-1.5">
+                  <div className="pt-1">
+                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#334139]/70 flex items-center gap-1.5 mb-1">
                       <PlayCircle size={11} className="text-[#064C1C]" />
                       <span>Execution steps:</span>
                     </div>
@@ -360,7 +360,7 @@ export function AiThoughtPanel() {
                           >
                             <span className="text-[#334139]/40 mt-0.5 shrink-0">•</span>
                             {isCodeExecution ? (
-                              <code className="font-mono text-[10.5px] text-[#064C1C] font-semibold bg-[#064C1C]/8 px-1.5 py-0.5 rounded border border-[#064C1C]/15 truncate">
+                              <code className="font-mono text-[10.5px] text-[#064C1C] font-semibold bg-[#064C1C]/8 px-1.5 py-0.5 rounded truncate">
                                 {step}
                               </code>
                             ) : (
@@ -373,8 +373,8 @@ export function AiThoughtPanel() {
                   </div>
 
                   {/* Under which: Thought process */}
-                  <div className="pt-2 border-t border-[#334139]/10">
-                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#D66F14] flex items-center gap-1.5 mb-1.5">
+                  <div className="pt-1">
+                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#D66F14] flex items-center gap-1.5 mb-1">
                       <Brain size={11} className="text-[#D66F14]" />
                       <span>Thought process:</span>
                     </div>
@@ -393,7 +393,7 @@ export function AiThoughtPanel() {
 
                   {/* Action Apply Button if available */}
                   {block.action && (
-                    <div className="pt-2 border-t border-[#334139]/10 flex items-center justify-between gap-2">
+                    <div className="pt-1.5 flex items-center justify-between gap-2">
                       <span className="text-[10px] font-mono text-[#334139]/70 truncate">
                         Action: <strong className="text-[#334139]">{block.action.type}</strong>
                       </span>
