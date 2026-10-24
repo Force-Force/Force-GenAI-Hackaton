@@ -1,4 +1,10 @@
 import { create } from "zustand";
+import type {
+  UiopEnvelope,
+  UiopExecutionReport,
+} from "../../../contracts/uiop";
+import { synthesizeUiopFromPrompt } from "../../uiop/adapter/promptToUiopAdapter";
+import { executeUiop } from "../../uiop/runtime/uiopRuntime";
 import { usePipelineStore } from "../../workspace/store/pipelineStore";
 import { genId } from "../../../utils/graph";
 import type { AgentTask, ChatMessage } from "../types";
@@ -8,6 +14,7 @@ interface ChatState {
   isGenerating: boolean;
   appendMessage: (message: ChatMessage) => void;
   sendMessage: (text: string) => Promise<void>;
+  applyUiop: (envelope: UiopEnvelope) => UiopExecutionReport;
   submitProcessingCode: (
     nodeId: string,
     language: "sql" | "python",
@@ -22,12 +29,17 @@ function now(): string {
   });
 }
 
-function assistant(text: string, tasks: AgentTask[] = []): ChatMessage {
+function assistant(
+  text: string,
+  uiop: UiopEnvelope | null = null,
+  tasks: AgentTask[] = [],
+): ChatMessage {
   return {
     id: genId("ai"),
     sender: "assistant",
     timestamp: now(),
     text,
+    uiop,
     tasks,
   };
 }
@@ -36,7 +48,8 @@ const WELCOME: ChatMessage = {
   id: "welcome",
   sender: "assistant",
   timestamp: now(),
-  text: "### Welcome to AuraBI Workspace\n\nI am your AI Data Architect, served by the backend. Ask me to design pipelines, add tables, or connect nodes.",
+  text: "### Welcome to AuraBI Workspace\n\nI am your AI Data Architect powered by the **UI Operations Protocol (UIOP v1.0)**. Ask me to design pipelines, add tables, connect lineage, update plans, or propose clarifying questions.",
+  uiop: null,
 };
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -58,12 +71,29 @@ export const useChatStore = create<ChatState>((set, get) => ({
     };
     set((s) => ({ messages: [...s.messages, userMsg], isGenerating: true }));
 
+    const synthesized = synthesizeUiopFromPrompt(trimmed);
     get().appendMessage(
-      assistant(
-        "### Backend Not Connected\n\nThe backend chat integration is being upgraded to the new UIOP protocol. Your message was recorded locally.",
-      ),
+      assistant(synthesized.replyMarkdown, synthesized.envelope),
     );
     set({ isGenerating: false });
+  },
+
+  applyUiop: (envelope) => {
+    const report = executeUiop(envelope, { allowRebase: true });
+    if (report.ok) {
+      get().appendMessage(
+        assistant(
+          `### UIOP Batch Applied (rev #${report.newRevision})\n\n${report.summary.map((s) => `- ${s}`).join("\n")}`,
+        ),
+      );
+    } else {
+      get().appendMessage(
+        assistant(
+          `### UIOP Batch Rejected\n\n${report.errors.map((e) => `- **${e.code}**: ${e.message}`).join("\n")}`,
+        ),
+      );
+    }
+    return report;
   },
 
   submitProcessingCode: async (nodeId, language, code) => {

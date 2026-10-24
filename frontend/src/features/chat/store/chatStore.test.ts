@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useChatStore } from "./chatStore";
 import { usePipelineStore } from "../../workspace/store/pipelineStore";
 import { useWorkspaceStore } from "../../workspace/store/workspaceStore";
+import { usePlanStore } from "../../uiop/store/planStore";
 import type { ProcessingNode } from "../../../types/pipeline";
 
 describe("chatStore", () => {
@@ -10,6 +11,7 @@ describe("chatStore", () => {
       nodes: [],
       edges: [],
     });
+    usePlanStore.getState().resetProtocolState();
     useChatStore.setState({
       messages: [],
       isGenerating: false,
@@ -27,15 +29,27 @@ describe("chatStore", () => {
     expect(useChatStore.getState().isGenerating).toBe(false);
   });
 
-  it("records user message and appends offline notice while backend is disconnected", async () => {
-    await useChatStore.getState().sendMessage("Hello AI");
+  it("records user message and synthesizes a UIOP envelope from prompt", async () => {
+    await useChatStore.getState().sendMessage("Add a new dimension table");
 
     const msgs = useChatStore.getState().messages;
     expect(msgs).toHaveLength(2);
     expect(msgs[0].sender).toBe("user");
-    expect(msgs[0].text).toBe("Hello AI");
+    expect(msgs[0].text).toBe("Add a new dimension table");
     expect(msgs[1].sender).toBe("assistant");
-    expect(msgs[1].text).toContain("Backend Not Connected");
+    expect(msgs[1].uiop).toBeDefined();
+    expect(msgs[1].uiop?.protocol).toBe("uiop");
+    expect(msgs[1].uiop?.version).toBe("1.0");
+  });
+
+  it("applies synthesized UIOP batch when applyUiop is called", async () => {
+    await useChatStore.getState().sendMessage("Add a new dimension table");
+    const assistantMsg = useChatStore.getState().messages[1];
+    expect(assistantMsg.uiop).toBeTruthy();
+
+    const report = useChatStore.getState().applyUiop(assistantMsg.uiop!);
+    expect(report.ok).toBe(true);
+    expect(usePipelineStore.getState().nodes.length).toBeGreaterThan(0);
   });
 
   it("submits processing code and prompts Master Agent review", async () => {

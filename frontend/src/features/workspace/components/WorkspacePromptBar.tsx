@@ -1,4 +1,10 @@
-import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 'react';
+import {
+  useState,
+  useRef,
+  useEffect,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import {
   Mic,
   ArrowUpRight,
@@ -11,11 +17,11 @@ import {
   Sparkles,
   Link2,
   Search,
-} from 'lucide-react';
-import { useChatStore } from '../../chat/store/chatStore';
-import { usePipelineStore } from '../store/pipelineStore';
-import { cn } from '../../../utils/cn';
-import type { PipelineNode } from '../../../types/pipeline';
+} from "lucide-react";
+import { useChatStore } from "../../chat/store/chatStore";
+import { usePipelineStore } from "../store/pipelineStore";
+import { cn } from "../../../utils/cn";
+import type { PipelineNode } from "../../../types/pipeline";
 
 export interface WorkspacePromptBarProps {
   className?: string;
@@ -34,45 +40,45 @@ interface QuickChip {
 function getQuickChips(contextNode: PipelineNode | null): QuickChip[] {
   if (contextNode) {
     const label = contextNode.data.label;
-    if (contextNode.data.category === 'resource') {
+    if (contextNode.data.category === "resource") {
       return [
         {
-          id: 'col',
+          id: "col",
           label: `Add column to @${label}`,
           promptText: `Add a new column to @${label} for tracking updated timestamps`,
           icon: Plus,
         },
         {
-          id: 'sql',
+          id: "sql",
           label: `Transform @${label} with SQL`,
           promptText: `Create a SQL transformation node to cleanse and filter @${label}`,
           icon: Sparkles,
         },
         {
-          id: 'audit',
+          id: "audit",
           label: `Explain @${label} schema`,
           promptText: `Explain the schema role and downstream lineage of @${label}`,
           icon: Search,
         },
       ];
     }
-    if (contextNode.data.category === 'processing') {
-      const targetLang = contextNode.data.language === 'sql' ? 'Python' : 'SQL';
+    if (contextNode.data.category === "processing") {
+      const targetLang = contextNode.data.language === "sql" ? "Python" : "SQL";
       return [
         {
-          id: 'opt',
+          id: "opt",
           label: `Optimize @${label}`,
           promptText: `Optimize the transformation logic in @${label} for pushdown performance`,
           icon: Sparkles,
         },
         {
-          id: 'conv',
+          id: "conv",
           label: `Rewrite @${label} in ${targetLang}`,
           promptText: `Convert the @${label} script into ${targetLang}`,
           icon: Code2,
         },
         {
-          id: 'explain',
+          id: "explain",
           label: `Explain @${label}`,
           promptText: `Explain step-by-step what the transformation in @${label} does`,
           icon: Search,
@@ -81,19 +87,19 @@ function getQuickChips(contextNode: PipelineNode | null): QuickChip[] {
     }
     return [
       {
-        id: 'mart-table',
+        id: "mart-table",
         label: `Add table to @${label}`,
         promptText: `Add a conformed dimension table inside @${label}`,
         icon: Plus,
       },
       {
-        id: 'mart-link',
+        id: "mart-link",
         label: `Connect into @${label}`,
         promptText: `Connect upstream transformation outputs into @${label}`,
         icon: Link2,
       },
       {
-        id: 'mart-audit',
+        id: "mart-audit",
         label: `Audit @${label} schema`,
         promptText: `Review the dimensional star schema inside @${label}`,
         icon: Search,
@@ -103,27 +109,28 @@ function getQuickChips(contextNode: PipelineNode | null): QuickChip[] {
 
   return [
     {
-      id: 'add-source',
-      label: 'Add source table',
-      promptText: 'Add a new PostgreSQL source table to the pipeline',
+      id: "add-source",
+      label: "Add source table",
+      promptText: "Add a new PostgreSQL source table to the pipeline",
       icon: Plus,
     },
     {
-      id: 'add-sql',
-      label: 'Generate SQL transform',
-      promptText: 'Create a SQL transformation node to cleanse and join staging data',
+      id: "add-sql",
+      label: "Generate SQL transform",
+      promptText:
+        "Create a SQL transformation node to cleanse and join staging data",
       icon: Sparkles,
     },
     {
-      id: 'connect-dag',
-      label: 'Connect lineage',
-      promptText: 'Connect the unlinked nodes across the pipeline DAG',
+      id: "connect-dag",
+      label: "Connect lineage",
+      promptText: "Connect the unlinked nodes across the pipeline DAG",
       icon: Link2,
     },
     {
-      id: 'explain-dag',
-      label: 'Explain lineage',
-      promptText: 'Explain the current pipeline architecture and data lineage',
+      id: "explain-dag",
+      label: "Explain lineage",
+      promptText: "Explain the current pipeline architecture and data lineage",
       icon: Search,
     },
   ];
@@ -131,27 +138,31 @@ function getQuickChips(contextNode: PipelineNode | null): QuickChip[] {
 
 const PROPOSAL_QUICK_CHIPS: QuickChip[] = [
   {
-    id: 'prop-kpi',
-    label: 'Add Customer LTV KPI',
-    promptText: 'Add an automated verification check for Customer Lifetime Value (LTV)',
+    id: "prop-kpi",
+    label: "Add Customer LTV KPI",
+    promptText:
+      "Add an automated verification check for Customer Lifetime Value (LTV)",
     icon: Plus,
   },
   {
-    id: 'prop-tol',
-    label: 'Enforce strict 0 tolerance',
-    promptText: 'Enforce strict zero tolerance (±0.00%) across all financial mart measures',
+    id: "prop-tol",
+    label: "Enforce strict 0 tolerance",
+    promptText:
+      "Enforce strict zero tolerance (±0.00%) across all financial mart measures",
     icon: Sparkles,
   },
   {
-    id: 'prop-scd2',
-    label: 'Add SCD-2 customer addresses',
-    promptText: 'Include customer address and territory mutations in the SCD Type-2 timeline',
+    id: "prop-scd2",
+    label: "Add SCD-2 customer addresses",
+    promptText:
+      "Include customer address and territory mutations in the SCD Type-2 timeline",
     icon: Plus,
   },
   {
-    id: 'prop-part',
-    label: 'Partition by region & date',
-    promptText: 'Partition the fact_daily_revenue mart table by both date_key and region_code',
+    id: "prop-part",
+    label: "Partition by region & date",
+    promptText:
+      "Partition the fact_daily_revenue mart table by both date_key and region_code",
     icon: Link2,
   },
 ];
@@ -162,10 +173,10 @@ export function WorkspacePromptBar({
   placeholder,
   onSend,
 }: WorkspacePromptBarProps = {}) {
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
-  const [interimTranscript, setInterimTranscript] = useState('');
+  const [interimTranscript, setInterimTranscript] = useState("");
   const [detachedNodeId, setDetachedNodeId] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -190,7 +201,7 @@ export function WorkspacePromptBar({
 
   const activeContextNode: PipelineNode | null =
     isWorkspaceMode && selectedNodeId && selectedNodeId !== detachedNodeId
-      ? nodes.find((n) => n.id === selectedNodeId) ?? null
+      ? (nodes.find((n) => n.id === selectedNodeId) ?? null)
       : null;
 
   const quickChips = getQuickChips(activeContextNode);
@@ -200,7 +211,7 @@ export function WorkspacePromptBar({
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-    textarea.style.height = 'auto';
+    textarea.style.height = "auto";
     const scrollHeight = textarea.scrollHeight;
     textarea.style.height = `${Math.min(Math.max(scrollHeight, 24), 200)}px`;
   }, [prompt]);
@@ -220,13 +231,15 @@ export function WorkspacePromptBar({
 
   const startVoiceInput = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRecognition = typeof window !== 'undefined'
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-      : null;
+    const SpeechRecognition =
+      typeof window !== "undefined"
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any).SpeechRecognition ||
+          (window as any).webkitSpeechRecognition
+        : null;
 
     if (!SpeechRecognition) {
-      alert('Voice dictation is not supported by your current browser.');
+      alert("Voice dictation is not supported by your current browser.");
       return;
     }
 
@@ -234,12 +247,12 @@ export function WorkspacePromptBar({
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognition.lang = "en-US";
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       recognition.onresult = (event: any) => {
-        let finalStr = '';
-        let interimStr = '';
+        let finalStr = "";
+        let interimStr = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             finalStr += event.results[i][0].transcript;
@@ -266,7 +279,7 @@ export function WorkspacePromptBar({
       recognitionRef.current = recognition;
       setIsListening(true);
       setVoiceDuration(0);
-      setInterimTranscript('');
+      setInterimTranscript("");
 
       timerRef.current = setInterval(() => {
         setVoiceDuration((d) => d + 1);
@@ -286,7 +299,7 @@ export function WorkspacePromptBar({
     }
     if (timerRef.current) clearInterval(timerRef.current);
     setIsListening(false);
-    setInterimTranscript('');
+    setInterimTranscript("");
   };
 
   const toggleListening = () => {
@@ -321,24 +334,29 @@ export function WorkspacePromptBar({
     } else {
       void sendMessage(finalPrompt);
     }
-    setPrompt('');
+    setPrompt("");
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = "auto";
     }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
   };
 
-  const isPositionedExternally = className?.includes('relative') || className?.includes('static');
+  const isPositionedExternally =
+    className?.includes("relative") || className?.includes("static");
 
-  const renderNodeCategoryIcon = (category: PipelineNode['data']['category']) => {
-    if (category === 'resource') return <Database size={11} className="text-[#064C1C]" />;
-    if (category === 'processing') return <Code2 size={11} className="text-[#D66F14]" />;
+  const renderNodeCategoryIcon = (
+    category: PipelineNode["data"]["category"],
+  ) => {
+    if (category === "resource")
+      return <Database size={11} className="text-[#064C1C]" />;
+    if (category === "processing")
+      return <Code2 size={11} className="text-[#D66F14]" />;
     return <Boxes size={11} className="text-[#334139]" />;
   };
 
@@ -346,8 +364,8 @@ export function WorkspacePromptBar({
     <div
       className={cn(
         isPositionedExternally
-          ? 'w-full pointer-events-auto'
-          : 'fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-40 pointer-events-none',
+          ? "w-full pointer-events-auto"
+          : "fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-40 pointer-events-none",
         className,
       )}
     >
@@ -367,7 +385,9 @@ export function WorkspacePromptBar({
                 <div className="w-0.5 bg-[#D66F14] rounded-full animate-soundwave-4" />
               </div>
               <span className="font-semibold truncate max-w-[280px]">
-                {interimTranscript ? `"${interimTranscript}"` : `Listening... 0:${voiceDuration.toString().padStart(2, '0')}`}
+                {interimTranscript
+                  ? `"${interimTranscript}"`
+                  : `Listening... 0:${voiceDuration.toString().padStart(2, "0")}`}
               </span>
             </div>
             <button
@@ -380,20 +400,19 @@ export function WorkspacePromptBar({
           </div>
         )}
 
-        {/* Quick Prompt Suggestion Chips (with md size bullets) */}
+        {/* Quick Prompt Suggestion Chips */}
         {!isListening && !isDeactivated && chipsToDisplay.length > 0 && (
-          <div className="flex flex-wrap items-center justify-center gap-1.5 px-2">
+          <div className="flex flex-wrap items-center justify-center gap-2 px-2">
             {chipsToDisplay.map((chip) => {
               return (
                 <button
                   key={chip.id}
                   type="button"
                   onClick={() => handleChipClick(chip.promptText)}
-                  style={{ backgroundColor: '#FDFFFC' }}
-                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold text-[#334139] border border-[#334139]/18 hover:border-[#064C1C] hover:text-[#064C1C] shadow-2xs transition-all cursor-pointer"
+                  style={{ backgroundColor: "#FDFFFC" }}
+                  className="inline-flex items-center px-4 py-2 rounded-full text-xs sm:text-sm font-medium text-[#1E2D24] border border-[#334139]/20 hover:border-[#064C1C] hover:text-[#064C1C] hover:bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer select-none"
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#064C1C] shrink-0" />
-                  <span className="truncate max-w-[220px]">{chip.label}</span>
+                  <span>{chip.label}</span>
                 </button>
               );
             })}
@@ -403,12 +422,12 @@ export function WorkspacePromptBar({
         {/* Prompt Input Bar: Optional Selected Node Context Pill + Voice on LEFT, Multiline Text in CENTER, Slanted Arrow on RIGHT */}
         <form
           onSubmit={handleSubmit}
-          style={{ backgroundColor: '#FDFFFC' }}
+          style={{ backgroundColor: "#FDFFFC" }}
           className={cn(
-            'w-full flex flex-col gap-1.5 px-3 py-2.5 rounded-2xl md:rounded-3xl border border-[#334139]/20 shadow-lg transition-all',
+            "w-full flex flex-col gap-1.5 px-3 py-2.5 rounded-2xl md:rounded-3xl border border-[#334139]/20 shadow-lg transition-all",
             isDeactivated
-              ? 'opacity-70 bg-[#FDFFFC]/80 cursor-not-allowed border-[#334139]/15'
-              : 'focus-within:border-[#064C1C] focus-within:ring-2 focus-within:ring-[#064C1C]/15',
+              ? "opacity-70 bg-[#FDFFFC]/80 cursor-not-allowed border-[#334139]/15"
+              : "focus-within:border-[#064C1C] focus-within:ring-2 focus-within:ring-[#064C1C]/15",
           )}
         >
           {/* Selected Node Context Pill */}
@@ -443,17 +462,29 @@ export function WorkspacePromptBar({
               onClick={toggleListening}
               disabled={isDeactivated}
               className={cn(
-                'w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0 mb-0.5',
+                "w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0 mb-0.5",
                 isDeactivated
-                  ? 'opacity-40 cursor-not-allowed bg-slate-100 text-[#334139]/40 border border-[#334139]/10'
+                  ? "opacity-40 cursor-not-allowed bg-slate-100 text-[#334139]/40 border border-[#334139]/10"
                   : isListening
-                  ? 'bg-[#D66F14] text-[#FDFFFC] ring-4 ring-[#D66F14]/25 animate-pulse cursor-pointer'
-                  : 'bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#064C1C] border border-[#334139]/15 cursor-pointer',
+                    ? "bg-[#D66F14] text-[#FDFFFC] ring-4 ring-[#D66F14]/25 animate-pulse cursor-pointer"
+                    : "bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#064C1C] border border-[#334139]/15 cursor-pointer",
               )}
-              title={isDeactivated ? 'Voice input paused while agent responds' : isListening ? 'Stop recording voice' : 'Start voice prompt'}
-              aria-label={isListening ? 'Stop recording voice' : 'Start voice input'}
+              title={
+                isDeactivated
+                  ? "Voice input paused while agent responds"
+                  : isListening
+                    ? "Stop recording voice"
+                    : "Start voice prompt"
+              }
+              aria-label={
+                isListening ? "Stop recording voice" : "Start voice input"
+              }
             >
-              {isListening ? <Square size={12} className="fill-current" /> : <Mic size={16} />}
+              {isListening ? (
+                <Square size={12} className="fill-current" />
+              ) : (
+                <Mic size={16} />
+              )}
             </button>
 
             {/* Central Multiline Auto-Growing Textarea (No Scrollbar) */}
@@ -466,21 +497,22 @@ export function WorkspacePromptBar({
               disabled={isDeactivated}
               placeholder={
                 isDeactivated
-                  ? (placeholder || 'AI is responding... Please wait')
+                  ? placeholder || "AI is responding... Please wait"
                   : activeContextNode
-                  ? `Ask AuraBI about @${activeContextNode.data.label}... (Shift+Enter for new line)`
-                  : (placeholder || 'Ask AuraBI to build, transform, or analyze your pipeline... (Shift+Enter for new line)')
+                    ? `Ask AuraBI about @${activeContextNode.data.label}... (Shift+Enter for new line)`
+                    : placeholder ||
+                      "Ask AuraBI to build, transform, or analyze your pipeline... (Shift+Enter for new line)"
               }
               aria-label="Workspace prompt input"
               style={{
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
               }}
               className={cn(
-                'flex-1 bg-transparent border-none outline-none text-sm text-[#334139] font-sans px-2 py-1.5 min-w-0 resize-none max-h-[200px] overflow-y-auto leading-relaxed whitespace-pre-wrap selection:bg-[#064C1C]/15 no-scrollbar',
+                "flex-1 bg-transparent border-none outline-none text-sm text-[#334139] font-sans px-2 py-1.5 min-w-0 resize-none max-h-[200px] overflow-y-auto leading-relaxed whitespace-pre-wrap selection:bg-[#064C1C]/15 no-scrollbar",
                 isDeactivated
-                  ? 'placeholder:text-[#334139]/30 cursor-not-allowed'
-                  : 'placeholder:text-[#334139]/40',
+                  ? "placeholder:text-[#334139]/30 cursor-not-allowed"
+                  : "placeholder:text-[#334139]/40",
               )}
             />
 
@@ -489,10 +521,15 @@ export function WorkspacePromptBar({
               type="submit"
               disabled={!prompt.trim() || isDeactivated}
               style={{
-                backgroundColor: prompt.trim() && !isDeactivated ? '#064C1C' : '#334139',
+                backgroundColor:
+                  prompt.trim() && !isDeactivated ? "#064C1C" : "#334139",
               }}
               className="w-9 h-9 rounded-full flex items-center justify-center text-[#FDFFFC] transition-all hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 shadow-xs mb-0.5 cursor-pointer"
-              title={isDeactivated ? 'Send deactivated while agent responds' : 'Send prompt to agent'}
+              title={
+                isDeactivated
+                  ? "Send deactivated while agent responds"
+                  : "Send prompt to agent"
+              }
               aria-label="Send prompt"
             >
               <ArrowUpRight size={18} />

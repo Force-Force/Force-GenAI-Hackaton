@@ -1,0 +1,572 @@
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import type {
+  KpiDefinition,
+  PlanStage,
+  QuestionProposeParams,
+  ReasoningPhase,
+  ReportUpdateParams,
+  UiopExecutionReport,
+} from "../../../contracts/uiop";
+import { persistStateStorage } from "../../../store/persistStorage";
+
+export interface ActiveUiopPanel {
+  id: string;
+  component: string;
+  title: string;
+  open: boolean;
+  config: Record<string, unknown>;
+}
+
+export interface ClarifyingQuestion extends QuestionProposeParams {
+  id: string;
+}
+
+export const INITIAL_KPIS: KpiDefinition[] = [
+  {
+    id: "net-recognized-revenue",
+    name: "Net Recognized Revenue",
+    category: "Finance",
+    formula: "SUM(gross_amount - tax_amount - refund_amount)",
+    sourceSystem: "Stripe + Postgres Ledger",
+    targetMart: "fact_daily_revenue",
+    sourceLedgerValue: "$4,829,140.50",
+    martOutputValue: "$4,829,140.50",
+    variance: "$0.00 (0.00%)",
+    tolerance: "±0.00%",
+    description:
+      "Reconciles net settled revenue across Stripe webhooks and operational orders against the central revenue fact table.",
+  },
+  {
+    id: "gross-merchandise-volume",
+    name: "Gross Merchandise Volume (GMV)",
+    category: "Finance",
+    formula: "SUM(gross_volume)",
+    sourceSystem: "stg_raw_transactions",
+    targetMart: "v_bi_executive_sales",
+    sourceLedgerValue: "$5,412,800.00",
+    martOutputValue: "$5,412,800.00",
+    variance: "$0.00 (0.00%)",
+    tolerance: "±0.00%",
+    description:
+      "Verifies zero dollar leakage between raw bronze ingestion and the federated Zetaris executive BI view.",
+  },
+  {
+    id: "idempotent-charge-parity",
+    name: "Idempotent Charge Parity",
+    category: "Integrity",
+    formula: "COUNT(DISTINCT charge_id) - COUNT(charge_id)",
+    sourceSystem: "Stripe Webhook Stream",
+    targetMart: "transform_orders_clean",
+    sourceLedgerValue: "142,890 txns",
+    martOutputValue: "142,890 txns",
+    variance: "0 dupes (0.00%)",
+    tolerance: "Strict 0",
+    description:
+      "Ensures retried payment webhooks produce zero duplicate order rows in the cleansed transformation layer.",
+  },
+  {
+    id: "active-customer-360",
+    name: "Active Customer 360 Cohort",
+    category: "Customer",
+    formula: "COUNT(DISTINCT customer_id) WHERE is_current = TRUE",
+    sourceSystem: "stg_customer_events",
+    targetMart: "dim_customer_360",
+    sourceLedgerValue: "28,450 entities",
+    martOutputValue: "28,450 entities",
+    variance: "0 orphans",
+    tolerance: "0 orphans",
+    description:
+      "Audits SCD Type-2 timeline windows to guarantee every active customer has exactly one current dimension record.",
+  },
+  {
+    id: "net-aov",
+    name: "Net Average Order Value (AOV)",
+    category: "Finance",
+    formula: "SUM(net_volume) / SUM(transaction_count)",
+    sourceSystem: "Operational Ledger",
+    targetMart: "fact_daily_revenue",
+    sourceLedgerValue: "$33.80",
+    martOutputValue: "$33.80",
+    variance: "$0.00 (0.00%)",
+    tolerance: "±0.01%",
+    description:
+      "Cross-checks unit economics ratio stability before and after currency normalization.",
+  },
+];
+
+export const INITIAL_REASONING_PHASES: ReasoningPhase[] = [
+  {
+    id: "phase-1",
+    stepIndex: 1,
+    title: "Phase 1: Source Discovery & Schema Profiling",
+    scripts: [
+      "executing source_catalog_inspector.py...",
+      "executing postgres_foreign_keys_profiler.sql...",
+    ],
+    reasoning:
+      "Identified transactional PostgreSQL cluster and Stripe payment event payloads. Detected candidate primary keys on customer_id and idempotency tokens on stripe_charge_id. Selected zero-copy federation via Zetaris gateway to avoid physical replication.",
+  },
+  {
+    id: "phase-2",
+    stepIndex: 2,
+    title: "Phase 2: Dimensional Modeling & Trade-off Analysis",
+    scripts: ["executing star_schema_generator.sql..."],
+    reasoning:
+      "Evaluated Inmon 3NF against Kimball Star Schema. Selected a central fact table (fact_daily_revenue) joined to conformed dimensions (dim_customer_360, dim_product_sku) with SCD Type-2 history tracking.",
+  },
+  {
+    id: "phase-3",
+    stepIndex: 3,
+    title: "Phase 3: Pre-flight Verification & DDL Compilation",
+    scripts: [
+      "executing nullability_constraints_verifier.py...",
+      "executing ddl_syntax_compiler.sql...",
+    ],
+    reasoning:
+      "Verified foreign key referential integrity between dimension surrogate keys and fact measures. Compiled ANSI SQL-92 DDL with partitioned date keys.",
+  },
+  {
+    id: "phase-4",
+    stepIndex: 4,
+    title: "Phase 4: KPI Verification & Reconciliation Setup",
+    scripts: [
+      "executing configure_kpi_reconciliation.py...",
+      "executing compile_ledger_assertions.sql...",
+    ],
+    reasoning:
+      "Configured automated verification checks for your selected KPIs and established a financial reconciliation table comparing source ledgers against target marts.",
+  },
+];
+
+export const INITIAL_PLAN_STAGES: PlanStage[] = [
+  {
+    id: "stage-1",
+    number: "01",
+    title: "Raw Source Ingestion & Bronze Staging",
+    category: "Ingestion",
+    description:
+      "Virtualize and extract raw transaction streams from operational databases into an immutable staging zone.",
+    tables: [
+      "stg_raw_transactions",
+      "stg_customer_events",
+      "stg_inventory_levels",
+    ],
+    technologies: ["PostgreSQL", "Stripe API", "Zetaris Connector"],
+  },
+  {
+    id: "stage-2",
+    number: "02",
+    title: "Data Cleansing, Deduplication & SCD-2",
+    category: "Transformation",
+    description:
+      "Resolve surrogate foreign keys, deduplicate idempotency tokens, and maintain SCD Type-2 historical timeline records.",
+    tables: [
+      "transform_orders_clean",
+      "transform_scd2_customers",
+      "transform_currency_norm",
+    ],
+    technologies: ["SQL dbt", "PySpark", "DuckDB Engine"],
+  },
+  {
+    id: "stage-3",
+    number: "03",
+    title: "Curated Dimensional Star Schema",
+    category: "Data Mart",
+    description:
+      "Assemble Kimball dimensional model with high-velocity fact measures surrounded by conformed dimensions.",
+    tables: [
+      "fact_daily_revenue",
+      "dim_customer_360",
+      "dim_product_sku",
+      "dim_calendar",
+    ],
+    technologies: ["Snowflake Lakehouse", "Star Schema DDL"],
+  },
+  {
+    id: "stage-4",
+    number: "04",
+    title: "Unified Zetaris SQL Virtualization Endpoint",
+    category: "Virtualization",
+    description:
+      "Publish federated SQL views with zero-copy caching, role-based column masking, and sub-second BI aggregations.",
+    tables: ["v_bi_executive_sales", "v_customer_retention_cohorts"],
+    technologies: ["Zetaris Gateway", "ANSI SQL-92"],
+  },
+  {
+    id: "stage-5",
+    number: "05",
+    title: "Independent KPI Verification & Reconciliation",
+    category: "Verification",
+    description:
+      "Automatically verifies your selected KPIs against raw source data to ensure numbers reconcile before pipeline deployment.",
+    tables: ["audit_kpi_reconciliation_ledger", "audit_variance_assertions"],
+    technologies: ["Automated Verifier", "Zero-Variance Assertions"],
+  },
+];
+
+export const INITIAL_CLARIFYING_QUESTIONS: ClarifyingQuestion[] = [
+  {
+    id: "scd-strategy",
+    question: "How should historical customer profile mutations be preserved?",
+    context: "Customer addresses and tiers change over time.",
+    options: [
+      {
+        id: "scd-2",
+        label: "SCD Type 2 (valid_from / valid_to)",
+        description:
+          "Maintains full historical records for point-in-time auditability and cohort analysis.",
+        isRecommended: true,
+      },
+      {
+        id: "scd-1",
+        label: "SCD Type 1 (Overwrite in place)",
+        description:
+          "Overwrites existing fields with the latest values. Lowest storage footprint, no history.",
+      },
+      {
+        id: "append-only",
+        label: "Immutable Event Log",
+        description:
+          "Stores every change as an append-only delta event with monotonic sequence IDs.",
+      },
+    ],
+  },
+  {
+    id: "ingestion-frequency",
+    question: "What is the required data freshness SLA for revenue reporting?",
+    context:
+      "Determines whether the pipeline runs on a micro-batch schedule or continuous stream.",
+    options: [
+      {
+        id: "microbatch-15m",
+        label: "15-Minute Micro-batch",
+        description: "Balances low latency with warehouse compute efficiency.",
+        isRecommended: true,
+      },
+      {
+        id: "hourly-batch",
+        label: "Hourly Batch Sync",
+        description:
+          "Cost-optimized scheduled ingestion with predictable compute windows.",
+      },
+      {
+        id: "streaming-realtime",
+        label: "Real-Time CDC (< 30s)",
+        description:
+          "Continuous Change Data Capture with always-on streaming workers.",
+      },
+    ],
+  },
+  {
+    id: "data-quality-strategy",
+    question: "How should schema drift and malformed records be handled?",
+    context:
+      "Defines error boundaries when external APIs introduce unexpected nulls or types.",
+    options: [
+      {
+        id: "quarantine-dlq",
+        label: "Quarantine to Dead-Letter Queue",
+        description:
+          "Routes failed rows to a quarantine table without halting the pipeline.",
+        isRecommended: true,
+      },
+      {
+        id: "strict-fail",
+        label: "Strict Fail-Fast",
+        description:
+          "Immediately halts execution and alerts engineers on any constraint violation.",
+      },
+      {
+        id: "impute-defaults",
+        label: "Auto-Coalesce Defaults",
+        description:
+          "Replaces missing values with fallback constants and logs an audit warning.",
+      },
+    ],
+  },
+  {
+    id: "audit-presentation-format",
+    question: "How would you like your KPI verification results presented?",
+    context:
+      "Choose the presentation format that best fits your workflow and team.",
+    options: [
+      {
+        id: "reconciliation-table",
+        label: "Financial Reconciliation Table",
+        description:
+          "Side-by-side ledger vs. mart balance sheet with exact variance and match checks.",
+        isRecommended: true,
+      },
+      {
+        id: "cohort-drift-matrix",
+        label: "Cohort & Distribution Drift Matrix",
+        description:
+          "Tracks customer cohort counts and historical SCD-2 timelines across dimensions.",
+      },
+      {
+        id: "checksum-parity-log",
+        label: "Checksum & Row Parity Log",
+        description:
+          "Row counts and parity verification across each pipeline stage.",
+      },
+    ],
+  },
+];
+
+export const INITIAL_COMPILED_SQL = `-- AuraBI Auto-Compiled Warehouse DDL
+-- Dialect: ANSI SQL-92 / Zetaris Virtualization Gateway
+
+-- Stage 01: Bronze Staging Table
+CREATE TABLE stg_raw_transactions (
+    transaction_id VARCHAR(64) PRIMARY KEY,
+    customer_id VARCHAR(64) NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'USD',
+    event_timestamp TIMESTAMP NOT NULL,
+    ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Stage 02: Cleaned & Normalized Orders
+CREATE TABLE transform_orders_clean (
+    order_id VARCHAR(64) PRIMARY KEY,
+    customer_id VARCHAR(64) NOT NULL,
+    gross_amount DECIMAL(14,2) NOT NULL,
+    tax_amount DECIMAL(14,2) DEFAULT 0.00,
+    net_amount DECIMAL(14,2) NOT NULL,
+    is_valid_transaction BOOLEAN DEFAULT TRUE
+);
+
+-- Stage 02 & 03: Conformed SCD Type-2 Customer Dimension
+CREATE TABLE dim_customer_360 (
+    customer_key BIGINT PRIMARY KEY,
+    customer_id VARCHAR(64) NOT NULL,
+    customer_name VARCHAR(255),
+    tier VARCHAR(50),
+    valid_from TIMESTAMP NOT NULL,
+    valid_to TIMESTAMP,
+    is_current BOOLEAN DEFAULT TRUE
+);
+
+-- Stage 03: Central Fact Table
+CREATE TABLE fact_daily_revenue (
+    revenue_key BIGINT PRIMARY KEY,
+    date_key INT NOT NULL,
+    customer_key BIGINT REFERENCES dim_customer_360(customer_key),
+    gross_volume DECIMAL(18,2) NOT NULL,
+    net_volume DECIMAL(18,2) NOT NULL,
+    transaction_count INT NOT NULL
+);
+
+-- Stage 04: Zetaris SQL Virtualization Endpoint
+CREATE OR REPLACE VIEW v_bi_executive_sales AS
+SELECT 
+    d.date_key,
+    c.customer_name,
+    c.tier,
+    f.gross_volume,
+    f.net_volume,
+    f.transaction_count
+FROM fact_daily_revenue f
+JOIN dim_customer_360 c ON f.customer_key = c.customer_key
+WHERE c.is_current = TRUE;
+
+-- Stage 05: Independent Audit Agent Reconciliation Assertions (Author-Isolated)
+CREATE OR REPLACE VIEW audit_kpi_reconciliation_ledger AS
+SELECT
+    'Net Recognized Revenue' AS kpi_name,
+    (SELECT SUM(amount) FROM stg_raw_transactions) AS source_ledger_total,
+    (SELECT SUM(net_volume) FROM fact_daily_revenue) AS mart_output_total,
+    (SELECT SUM(amount) FROM stg_raw_transactions) - (SELECT SUM(net_volume) FROM fact_daily_revenue) AS variance_delta;
+`;
+
+export interface PlanAndProtocolState {
+  // Protocol tracking
+  workspaceId: string;
+  revision: number;
+  processedMessageIds: string[];
+  executionHistory: UiopExecutionReport[];
+
+  // Plan state
+  planId: string;
+  planTitle: string;
+  planPrompt: string | null;
+  planSummary: string;
+  stages: PlanStage[];
+  reasoningPhases: ReasoningPhase[];
+  kpis: KpiDefinition[];
+  selectedKpiIds: string[];
+  compiledSql: string;
+
+  // Proposed clarifying questions state
+  questions: ClarifyingQuestion[];
+  selectedAnswers: Record<string, string>;
+
+  // Dynamic UIOP panels & reports
+  panels: ActiveUiopPanel[];
+  reports: Record<string, ReportUpdateParams>;
+
+  // Direct store actions
+  setAnswer: (questionId: string, optionId: string) => void;
+  proposeQuestion: (question: ClarifyingQuestion) => void;
+  removeQuestion: (questionId: string) => void;
+  toggleKpiSelection: (kpiId: string) => void;
+  addKpi: (kpi: KpiDefinition, select?: boolean) => void;
+  setPlanPrompt: (prompt: string | null) => void;
+  togglePanelOpen: (panelId: string, open?: boolean) => void;
+  removePanel: (panelId: string) => void;
+  commitUiopState: (patch: Partial<PlanAndProtocolState>) => void;
+  resetProtocolState: () => void;
+}
+
+export const usePlanStore = create<PlanAndProtocolState>()(
+  persist(
+    (set) => ({
+      workspaceId: "workspace_01",
+      revision: 1,
+      processedMessageIds: [],
+      executionHistory: [],
+
+      planId: "plan_default_01",
+      planTitle: "Retail Lakehouse Master Pipeline",
+      planPrompt: null,
+      planSummary:
+        "A 5-stage architectural blueprint featuring Bronze raw staging, Silver SCD Type-2 transformations, a Kimball Star Schema warehouse, Zetaris SQL virtualization, and an author-isolated Independent Audit Agent.",
+      stages: INITIAL_PLAN_STAGES,
+      reasoningPhases: INITIAL_REASONING_PHASES,
+      kpis: INITIAL_KPIS,
+      selectedKpiIds: [
+        "net-recognized-revenue",
+        "gross-merchandise-volume",
+        "idempotent-charge-parity",
+        "active-customer-360",
+      ],
+      compiledSql: INITIAL_COMPILED_SQL,
+
+      questions: INITIAL_CLARIFYING_QUESTIONS,
+      selectedAnswers: {
+        "scd-strategy": "scd-2",
+        "ingestion-frequency": "microbatch-15m",
+        "data-quality-strategy": "quarantine-dlq",
+        "audit-presentation-format": "reconciliation-table",
+      },
+
+      panels: [],
+      reports: {},
+
+      setAnswer: (questionId, optionId) =>
+        set((s) => ({
+          selectedAnswers: { ...s.selectedAnswers, [questionId]: optionId },
+        })),
+
+      proposeQuestion: (question) =>
+        set((s) => {
+          const exists = s.questions.some((q) => q.id === question.id);
+          const defaultAnswer =
+            question.selectedOptionId ??
+            question.options.find((o) => o.isRecommended)?.id ??
+            question.options[0]?.id;
+          return {
+            questions: exists
+              ? s.questions.map((q) => (q.id === question.id ? question : q))
+              : [...s.questions, question],
+            selectedAnswers: defaultAnswer
+              ? { ...s.selectedAnswers, [question.id]: defaultAnswer }
+              : s.selectedAnswers,
+          };
+        }),
+
+      removeQuestion: (questionId) =>
+        set((s) => ({
+          questions: s.questions.filter((q) => q.id !== questionId),
+        })),
+
+      toggleKpiSelection: (kpiId) =>
+        set((s) => {
+          if (s.selectedKpiIds.includes(kpiId)) {
+            return {
+              selectedKpiIds:
+                s.selectedKpiIds.length > 1
+                  ? s.selectedKpiIds.filter((id) => id !== kpiId)
+                  : s.selectedKpiIds,
+            };
+          }
+          return { selectedKpiIds: [...s.selectedKpiIds, kpiId] };
+        }),
+
+      addKpi: (kpi, select = true) =>
+        set((s) => ({
+          kpis: [...s.kpis.filter((k) => k.id !== kpi.id), kpi],
+          selectedKpiIds:
+            select && !s.selectedKpiIds.includes(kpi.id)
+              ? [...s.selectedKpiIds, kpi.id]
+              : s.selectedKpiIds,
+        })),
+
+      setPlanPrompt: (prompt) => set({ planPrompt: prompt }),
+
+      togglePanelOpen: (panelId, open) =>
+        set((s) => ({
+          panels: s.panels.map((p) =>
+            p.id === panelId ? { ...p, open: open ?? !p.open } : p,
+          ),
+        })),
+
+      removePanel: (panelId) =>
+        set((s) => ({
+          panels: s.panels.filter((p) => p.id !== panelId),
+        })),
+
+      commitUiopState: (patch) => set((s) => ({ ...s, ...patch })),
+
+      resetProtocolState: () =>
+        set({
+          revision: 1,
+          processedMessageIds: [],
+          executionHistory: [],
+          planId: "plan_default_01",
+          planTitle: "Retail Lakehouse Master Pipeline",
+          planPrompt: null,
+          stages: INITIAL_PLAN_STAGES,
+          reasoningPhases: INITIAL_REASONING_PHASES,
+          kpis: INITIAL_KPIS,
+          selectedKpiIds: [
+            "net-recognized-revenue",
+            "gross-merchandise-volume",
+            "idempotent-charge-parity",
+            "active-customer-360",
+          ],
+          compiledSql: INITIAL_COMPILED_SQL,
+          questions: INITIAL_CLARIFYING_QUESTIONS,
+          selectedAnswers: {
+            "scd-strategy": "scd-2",
+            "ingestion-frequency": "microbatch-15m",
+            "data-quality-strategy": "quarantine-dlq",
+            "audit-presentation-format": "reconciliation-table",
+          },
+          panels: [],
+          reports: {},
+        }),
+    }),
+    {
+      name: "aura-bi.uiop-plan.v1",
+      storage: createJSONStorage(() => persistStateStorage),
+      partialize: (s) => ({
+        revision: s.revision,
+        planId: s.planId,
+        planTitle: s.planTitle,
+        planPrompt: s.planPrompt,
+        planSummary: s.planSummary,
+        stages: s.stages,
+        reasoningPhases: s.reasoningPhases,
+        kpis: s.kpis,
+        selectedKpiIds: s.selectedKpiIds,
+        compiledSql: s.compiledSql,
+        questions: s.questions,
+        selectedAnswers: s.selectedAnswers,
+        panels: s.panels,
+        reports: s.reports,
+      }),
+    },
+  ),
+);

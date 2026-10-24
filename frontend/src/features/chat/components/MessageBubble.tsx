@@ -1,5 +1,6 @@
 import { Bot, User } from "lucide-react";
 import { cn } from "../../../utils/cn";
+import { UiopBatchCard } from "../../uiop/components/UiopBatchCard";
 import type { ChatMessage } from "../types";
 import { AgentTaskList } from "./AgentTaskList";
 import { Markdown } from "./Markdown";
@@ -37,6 +38,7 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
       >
         <Markdown inverted={!isAI}>{message.text}</Markdown>
 
+        {isAI && message.uiop && <UiopBatchCard envelope={message.uiop} />}
         {isAI && message.tasks && message.tasks.length > 0 && (
           <AgentTaskList tasks={message.tasks} />
         )}

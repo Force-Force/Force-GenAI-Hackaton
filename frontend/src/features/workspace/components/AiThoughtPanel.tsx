@@ -15,6 +15,7 @@ import {
 import { useChatStore } from "../../chat/store/chatStore";
 import { usePipelineStore } from "../store/pipelineStore";
 import { Markdown } from "../../chat/components/Markdown";
+import { UiopBatchCard } from "../../uiop/components/UiopBatchCard";
 import { cn } from "../../../utils/cn";
 import type { PipelineNode } from "../../../types/pipeline";
 
@@ -721,9 +722,10 @@ export function AiThoughtPanel() {
                     )}
                   </div>
 
-                  {/* AI Reply Body (Markdown) */}
+                  {/* AI Reply Body (Markdown + UIOP Batch Card) */}
                   <div className="rounded-2xl rounded-tl-xs border border-[#334139]/15 bg-[#FDFFFC] p-3.5 text-[12px] text-[#334139] shadow-2xs space-y-3">
                     <Markdown>{msg.text}</Markdown>
+                    {msg.uiop && <UiopBatchCard envelope={msg.uiop} />}
                   </div>
                 </div>
               );
