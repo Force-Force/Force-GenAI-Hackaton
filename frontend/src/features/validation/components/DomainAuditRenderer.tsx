@@ -102,10 +102,10 @@ export function DomainAuditRenderer({
       {/* Section Header & Domain Switcher (Matching PlanProposalPage style) */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-[#334139]/12">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-[#334139]">
+          <span className="text-sm font-bold text-[#334139]">
             Audit Findings
           </span>
-          <span className="text-[11px] text-[#334139]/50 font-mono">
+          <span className="text-xs text-[#334139]/60 font-mono">
             {activeDomain === "finance"
               ? "Reconciliation Table"
               : "Row Conservation & Transitions"}

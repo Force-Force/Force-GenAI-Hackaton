@@ -70,12 +70,12 @@ export function ReconciliationTable({
               placeholder="Search audited KPIs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-1.5 rounded-full text-xs bg-[#FDFFFC] border border-[#334139]/20 text-[#334139] placeholder-[#334139]/40 focus:outline-none focus:border-[#064C1C] w-48 sm:w-56"
+              className="pl-8 pr-3 py-1.5 rounded-full text-xs sm:text-sm bg-[#FDFFFC] border border-[#334139]/20 text-[#334139] placeholder-[#334139]/40 focus:outline-none focus:border-[#064C1C] w-48 sm:w-60"
             />
           </div>
 
           {/* Filter Pills */}
-          <div className="flex items-center gap-1 bg-[#334139]/[0.05] p-0.5 rounded-full text-xs font-medium">
+          <div className="flex items-center gap-1 bg-[#334139]/[0.05] p-0.5 rounded-full text-xs sm:text-sm font-medium">
             <button
               type="button"
               onClick={() => setFilter("all")}
@@ -98,7 +98,7 @@ export function ReconciliationTable({
                   : "text-[#334139]/60 hover:text-[#064C1C]",
               )}
             >
-              <Check size={12} strokeWidth={2.5} className="text-[#064C1C]" />
+              <Check size={13} strokeWidth={2.5} className="text-[#064C1C]" />
               <span>Reconciled ({reconciledCount})</span>
             </button>
             <button
@@ -111,7 +111,7 @@ export function ReconciliationTable({
                   : "text-[#334139]/60 hover:text-rose-700",
               )}
             >
-              <AlertTriangle size={12} className="text-rose-600" />
+              <AlertTriangle size={13} className="text-rose-600" />
               <span>Variances ({varianceCount})</span>
             </button>
           </div>
@@ -123,11 +123,11 @@ export function ReconciliationTable({
             type="button"
             onClick={onToggleSimulatedVariance}
             disabled={isSimulating}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-[#334139]/20 text-[#334139] hover:bg-[#334139]/5 transition-colors cursor-pointer shrink-0"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-[#334139]/20 text-[#334139] hover:bg-[#334139]/5 transition-colors cursor-pointer shrink-0"
             title="Toggle simulated ledger variance to test independent audit detection"
           >
             <RefreshCw
-              size={12}
+              size={13}
               className={cn(isSimulating && "animate-spin text-[#064C1C]")}
             />
             <span>
@@ -141,8 +141,8 @@ export function ReconciliationTable({
 
       {/* Main Financial Reconciliation Table */}
       <div className="overflow-x-auto no-scrollbar w-full rounded-2xl border border-[#334139]/15 bg-white shadow-2xs">
-        <table className="w-full text-left border-separate border-spacing-0 text-xs">
-          <thead className="bg-[#FDFFFC] text-[#334139]/70 font-mono text-[10px] uppercase tracking-wider">
+        <table className="w-full text-left border-separate border-spacing-0 text-xs sm:text-sm">
+          <thead className="bg-[#FDFFFC] text-[#334139]/70 font-mono text-xs uppercase tracking-wider">
             <tr>
               <th
                 scope="col"
@@ -216,21 +216,21 @@ export function ReconciliationTable({
                         }
                       >
                         {isExpanded ? (
-                          <ChevronUp size={13} />
+                          <ChevronUp size={14} />
                         ) : (
-                          <ChevronDown size={13} />
+                          <ChevronDown size={14} />
                         )}
                       </button>
                       <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-[#1E2D24]">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-[#1E2D24]">
                             {item.kpiName}
                           </span>
-                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-[#334139]/[0.06] text-[#334139]/70 font-semibold">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#334139]/[0.06] text-[#334139]/70 font-semibold">
                             {item.category}
                           </span>
                         </div>
-                        <div className="font-mono text-[10px] font-normal text-[#334139]/55 mt-0.5">
+                        <div className="font-mono text-xs font-normal text-[#334139]/60 mt-0.5">
                           {item.formula}
                         </div>
                       </div>
@@ -238,10 +238,10 @@ export function ReconciliationTable({
 
                     {/* Expandable Assertion Box */}
                     {isExpanded && (
-                      <div className="mt-2.5 p-3 rounded-xl bg-[#FDFFFC] border border-[#334139]/15 text-[11px] font-normal text-[#334139] space-y-2">
+                      <div className="mt-2.5 p-3.5 rounded-xl bg-[#FDFFFC] border border-[#334139]/15 text-xs font-normal text-[#334139] space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-[10px] font-bold text-[#064C1C] flex items-center gap-1">
-                            <Scale size={11} />
+                          <span className="font-mono text-xs font-bold text-[#064C1C] flex items-center gap-1.5">
+                            <Scale size={13} />
                             Auditor SQL Assertion
                           </span>
                           <button
@@ -249,22 +249,22 @@ export function ReconciliationTable({
                             onClick={() =>
                               handleCopySql(item.id, item.assertionSql)
                             }
-                            className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold text-[#334139]/60 hover:text-[#064C1C] cursor-pointer"
+                            className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-[#334139]/60 hover:text-[#064C1C] cursor-pointer"
                           >
                             {copiedId === item.id ? (
-                              <Check size={11} className="text-[#064C1C]" />
+                              <Check size={12} className="text-[#064C1C]" />
                             ) : (
-                              <Copy size={11} />
+                              <Copy size={12} />
                             )}
                             <span>
                               {copiedId === item.id ? "Copied" : "Copy SQL"}
                             </span>
                           </button>
                         </div>
-                        <pre className="p-2 rounded-lg bg-[#334139]/[0.05] font-mono text-[10px] leading-relaxed overflow-x-auto no-scrollbar">
+                        <pre className="p-2.5 rounded-lg bg-[#334139]/[0.05] font-mono text-xs leading-relaxed overflow-x-auto no-scrollbar">
                           {item.assertionSql}
                         </pre>
-                        <div className="flex items-center justify-between text-[10px] text-[#334139]/50 font-mono">
+                        <div className="flex items-center justify-between text-xs text-[#334139]/55 font-mono">
                           <span>SLA Tolerance: {item.tolerance}</span>
                           <span>Timestamp: {item.lastAuditedAt}</span>
                         </div>
@@ -274,30 +274,30 @@ export function ReconciliationTable({
 
                   {/* 1. Source Ledger Totals */}
                   <td className="py-3.5 px-4 font-mono text-[#334139] align-top">
-                    <div className="font-bold text-xs">
+                    <div className="font-bold text-sm">
                       {item.sourceLedger.formatted}
                     </div>
-                    <div className="text-[10px] text-[#334139]/50 mt-0.5">
+                    <div className="text-xs text-[#334139]/55 mt-0.5">
                       {item.sourceLedger.system}
                     </div>
                   </td>
 
                   {/* 2. Warehouse Totals */}
                   <td className="py-3.5 px-4 font-mono text-[#334139] align-top">
-                    <div className="font-bold text-xs">
+                    <div className="font-bold text-sm">
                       {item.warehouse.formatted}
                     </div>
-                    <div className="text-[10px] text-[#334139]/50 mt-0.5">
+                    <div className="text-xs text-[#334139]/55 mt-0.5">
                       {item.warehouse.layer}
                     </div>
                   </td>
 
                   {/* 3. Mart KPI Totals */}
                   <td className="py-3.5 px-4 font-mono text-[#334139] align-top">
-                    <div className="font-bold text-xs">
+                    <div className="font-bold text-sm">
                       {item.martKpi.formatted}
                     </div>
-                    <div className="text-[10px] text-[#334139]/50 mt-0.5">
+                    <div className="text-xs text-[#334139]/55 mt-0.5">
                       {item.martKpi.target}
                     </div>
                   </td>
@@ -306,14 +306,14 @@ export function ReconciliationTable({
                   <td className="py-3.5 px-4 align-top">
                     <div
                       className={cn(
-                        "inline-flex flex-col items-start px-2 py-0.5 rounded-lg border font-mono text-xs font-bold",
+                        "inline-flex flex-col items-start px-2.5 py-1 rounded-lg border font-mono text-xs sm:text-sm font-bold",
                         isZero
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-rose-50 text-rose-700 border-rose-300 shadow-2xs",
                       )}
                     >
                       <span>{item.varianceFormatted}</span>
-                      <span className="text-[9px] font-normal opacity-75">
+                      <span className="text-[10px] font-normal opacity-80">
                         {isZero ? "Zero Variance" : "Discrepancy"}
                       </span>
                     </div>
@@ -322,13 +322,13 @@ export function ReconciliationTable({
                   {/* 5. Audit Verdict */}
                   <td className="py-3.5 px-4 text-right align-top">
                     {isZero ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100/70 text-emerald-800 font-mono text-[10px] font-bold">
-                        <Check size={11} strokeWidth={3} />
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100/70 text-emerald-800 font-mono text-xs font-bold">
+                        <Check size={12} strokeWidth={3} />
                         PASS
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 font-mono text-[10px] font-bold">
-                        <AlertTriangle size={11} />
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-rose-100 text-rose-800 font-mono text-xs font-bold">
+                        <AlertTriangle size={12} />
                         FLAGGED
                       </span>
                     )}

@@ -395,13 +395,13 @@ export function PlanProposalPage() {
             >
               {/* User Prompt Editorial Lead */}
               <section className="space-y-2">
-                <div className="flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center justify-between gap-2 text-sm">
                   {isSimulating ? (
                     <div className="flex items-center gap-2 text-[#D66F14] font-medium">
-                      <Loader2 size={13} className="animate-spin shrink-0" />
+                      <Loader2 size={14} className="animate-spin shrink-0" />
                       <span>Analyzing… {formatElapsed(elapsed)}</span>
                       <span className="text-[#334139]/40">·</span>
-                      <span className="text-[#334139]/65 font-normal">
+                      <span className="text-[#334139]/70 font-normal">
                         {liveStep === 0 && "Decomposing architectural prompt"}
                         {liveStep === 1 && "Profiling sources & foreign keys"}
                         {liveStep === 2 && "Modeling dimensional star schema"}
@@ -413,14 +413,14 @@ export function PlanProposalPage() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 text-[#064C1C] font-medium">
-                      <Check size={13} strokeWidth={3} className="shrink-0" />
+                      <Check size={14} strokeWidth={3} className="shrink-0" />
                       <span>
                         {questionsFinished
                           ? "Architecture blueprint & KPI audit contract synthesized"
                           : "KPI selection & architectural decisions required"}
                       </span>
                       <span className="text-[#334139]/40">·</span>
-                      <span className="text-[#334139]/55 font-normal">
+                      <span className="text-[#334139]/65 font-normal">
                         {questionsFinished
                           ? `${selectedKpis.length} KPIs verified by Independent Audit Agent`
                           : `${questions.length} decisions pending`}
@@ -436,19 +436,19 @@ export function PlanProposalPage() {
 
               {/* 1. Kept: Cool AI Thought Process Timeline */}
               {liveStep >= 1 && (
-                <section className="space-y-2">
+                <section className="space-y-2.5">
                   <div className="flex items-center justify-between pb-1 border-b border-[#334139]/12">
                     <div className="flex items-center gap-2">
                       <div
                         style={{ backgroundColor: "#064C1C" }}
                         className="w-5 h-5 rounded-md flex items-center justify-center text-[#FDFFFC]"
                       >
-                        <Bot size={12} />
+                        <Bot size={13} />
                       </div>
-                      <span className="text-xs font-bold text-[#334139]">
+                      <span className="text-sm font-bold text-[#334139]">
                         AI Thought Process
                       </span>
-                      <span className="text-[11px] text-[#334139]/50">
+                      <span className="text-xs text-[#334139]/60">
                         {visiblePhases.length} of {reasoningPhases.length}{" "}
                         phases
                       </span>
@@ -457,9 +457,9 @@ export function PlanProposalPage() {
                     <button
                       type="button"
                       onClick={toggleAllPhases}
-                      className="inline-flex items-center gap-1 text-[11px] text-[#334139]/55 hover:text-[#334139] transition-colors cursor-pointer py-0.5 px-1.5 rounded hover:bg-[#334139]/5"
+                      className="inline-flex items-center gap-1 text-xs text-[#334139]/65 hover:text-[#334139] transition-colors cursor-pointer py-0.5 px-2 rounded hover:bg-[#334139]/5 font-medium"
                     >
-                      <ChevronsUpDown size={12} />
+                      <ChevronsUpDown size={13} />
                       <span>
                         {allPhasesCollapsed ? "Expand all" : "Collapse all"}
                       </span>
@@ -507,11 +507,11 @@ export function PlanProposalPage() {
                               className="flex items-start justify-between gap-2 py-1.5 pr-1 -ml-1 pl-1 rounded-lg hover:bg-[#334139]/[0.04] cursor-pointer select-none"
                             >
                               <div className="min-w-0 flex-1">
-                                <h3 className="text-xs font-semibold text-[#334139] leading-snug">
+                                <h3 className="text-sm font-semibold text-[#334139] leading-snug">
                                   {phase.title}
                                 </h3>
                                 {!open && (
-                                  <p className="text-[10.5px] text-[#334139]/55 mt-0.5">
+                                  <p className="text-xs text-[#334139]/60 mt-0.5">
                                     {phase.scripts.length} script
                                     {phase.scripts.length > 1 ? "s" : ""}{" "}
                                     executed
@@ -521,16 +521,16 @@ export function PlanProposalPage() {
 
                               <span className="text-[#334139]/45 mt-0.5 shrink-0">
                                 {open ? (
-                                  <ChevronDown size={13} />
+                                  <ChevronDown size={14} />
                                 ) : (
-                                  <ChevronRight size={13} />
+                                  <ChevronRight size={14} />
                                 )}
                               </span>
                             </div>
 
                             {/* Expanded Scripts & Reasoning */}
                             {open && (
-                              <div className="pb-3 pt-0.5 space-y-2.5 text-xs">
+                              <div className="pb-3 pt-0.5 space-y-2.5 text-sm">
                                 <ul className="space-y-1 rounded-lg bg-[#334139]/[0.05] px-3 py-2">
                                   {phase.scripts.map((script, idx) => {
                                     const scriptRunning =
@@ -539,16 +539,16 @@ export function PlanProposalPage() {
                                     return (
                                       <li
                                         key={script}
-                                        className="flex items-center gap-2 text-[11px] font-mono text-[#334139]"
+                                        className="flex items-center gap-2 text-xs font-mono text-[#334139]"
                                       >
                                         {scriptRunning ? (
                                           <Loader2
-                                            size={11}
+                                            size={12}
                                             className="animate-spin text-[#D66F14] shrink-0"
                                           />
                                         ) : (
                                           <Check
-                                            size={11}
+                                            size={12}
                                             strokeWidth={3}
                                             className="text-[#334139]/40 shrink-0"
                                           />
@@ -559,7 +559,7 @@ export function PlanProposalPage() {
                                   })}
                                 </ul>
 
-                                <p className="text-xs leading-relaxed text-[#334139]/80">
+                                <p className="text-sm leading-relaxed text-[#334139]/85">
                                   {phase.reasoning}
                                 </p>
                               </div>
@@ -577,10 +577,10 @@ export function PlanProposalPage() {
                 <section className="space-y-3 pt-1 animate-fadeIn">
                   <div className="flex items-center justify-between pb-1 border-b border-[#334139]/12">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-[#334139]">
+                      <span className="text-sm font-bold text-[#334139]">
                         Architectural Decisions Required
                       </span>
-                      <span className="text-[11px] text-[#334139]/50 font-mono">
+                      <span className="text-xs text-[#334139]/60 font-mono">
                         Question {activeQuestionIndex + 1} of {questions.length}
                       </span>
                     </div>
@@ -594,7 +594,7 @@ export function PlanProposalPage() {
                             type="button"
                             onClick={() => setActiveQuestionIndex(idx)}
                             className={cn(
-                              "w-2 h-2 rounded-full transition-all cursor-pointer",
+                              "w-2.5 h-2.5 rounded-full transition-all cursor-pointer",
                               activeQuestionIndex === idx
                                 ? "bg-[#064C1C] scale-125"
                                 : "bg-[#334139]/20 hover:bg-[#334139]/40",
@@ -607,7 +607,7 @@ export function PlanProposalPage() {
                       <button
                         type="button"
                         onClick={handleSkipAllQuestions}
-                        className="text-[11px] font-semibold text-[#D66F14] hover:underline cursor-pointer"
+                        className="text-xs font-semibold text-[#D66F14] hover:underline cursor-pointer"
                       >
                         Skip all
                       </button>
@@ -615,23 +615,23 @@ export function PlanProposalPage() {
                   </div>
 
                   {/* Active Question Box */}
-                  <div className="p-4 md:p-5 rounded-2xl bg-white border border-[#334139]/15 shadow-2xs space-y-3">
-                    <div className="space-y-1">
+                  <div className="p-5 md:p-6 rounded-2xl bg-white border border-[#334139]/15 shadow-2xs space-y-3.5">
+                    <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-[#D66F14]">
+                        <span className="font-mono text-sm font-bold text-[#D66F14]">
                           0{activeQuestionIndex + 1}
                         </span>
-                        <h3 className="text-sm font-bold text-[#334139]">
+                        <h3 className="text-base md:text-lg font-bold text-[#334139]">
                           {currentQuestion.question}
                         </h3>
                       </div>
-                      <p className="text-xs text-[#334139]/60 leading-relaxed pl-5">
+                      <p className="text-sm md:text-[15px] text-[#334139]/70 leading-relaxed pl-6">
                         {currentQuestion.context}
                       </p>
                     </div>
 
                     {/* Options Pills */}
-                    <div className="pl-5 flex flex-wrap items-center gap-2.5 pt-1">
+                    <div className="pl-6 flex flex-wrap items-center gap-2.5 pt-1">
                       {currentQuestion.options.map((opt) => {
                         const isSelected =
                           selectedAnswers[currentQuestion.id] === opt.id;
@@ -669,10 +669,10 @@ export function PlanProposalPage() {
                           (o) => o.id === selectedAnswers[currentQuestion.id],
                         ) || currentQuestion.options[0];
                       return (
-                        <p className="pl-5 text-xs text-[#334139]/65 leading-relaxed">
+                        <p className="pl-6 text-sm text-[#334139]/75 leading-relaxed">
                           {activeOption.description}
                           {activeOption.isRecommended && (
-                            <span className="ml-1.5 text-[11px] font-medium text-[#D66F14]">
+                            <span className="ml-1.5 text-xs font-semibold text-[#D66F14]">
                               · Recommended
                             </span>
                           )}
@@ -681,7 +681,7 @@ export function PlanProposalPage() {
                     })()}
 
                     {/* Stepper Navigation: Previous, Skip, Next */}
-                    <div className="flex items-center justify-between pt-2 border-t border-[#334139]/10 text-xs">
+                    <div className="flex items-center justify-between pt-2.5 border-t border-[#334139]/10 text-xs sm:text-sm">
                       <div>
                         {!isFirstQuestion && (
                           <button
@@ -691,9 +691,9 @@ export function PlanProposalPage() {
                                 Math.max(prev - 1, 0),
                               )
                             }
-                            className="inline-flex items-center gap-1 font-semibold text-[#334139]/70 hover:text-[#334139] transition-colors cursor-pointer px-2 py-1 rounded"
+                            className="inline-flex items-center gap-1 font-semibold text-[#334139]/70 hover:text-[#334139] transition-colors cursor-pointer px-2.5 py-1.5 rounded"
                           >
-                            <ChevronLeft size={13} />
+                            <ChevronLeft size={14} />
                             <span>Previous</span>
                           </button>
                         )}
@@ -703,9 +703,9 @@ export function PlanProposalPage() {
                         <button
                           type="button"
                           onClick={handleSkipQuestion}
-                          className="inline-flex items-center gap-1 font-semibold text-[#334139]/50 hover:text-[#334139] transition-colors cursor-pointer px-2.5 py-1 rounded"
+                          className="inline-flex items-center gap-1 font-semibold text-[#334139]/60 hover:text-[#334139] transition-colors cursor-pointer px-3 py-1.5 rounded"
                         >
-                          <SkipForward size={12} />
+                          <SkipForward size={13} />
                           <span>
                             {isLastQuestion ? "Skip & Finish" : "Skip"}
                           </span>
@@ -714,14 +714,14 @@ export function PlanProposalPage() {
                         <button
                           type="button"
                           onClick={handleNextQuestion}
-                          className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full font-bold bg-[#064C1C] hover:bg-[#1E2D24] text-[#FDFFFC] transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-full font-bold bg-[#064C1C] hover:bg-[#1E2D24] text-[#FDFFFC] transition-colors cursor-pointer"
                         >
                           <span>
                             {isLastQuestion
                               ? "Confirm & Generate Blueprint"
                               : "Next"}
                           </span>
-                          <ChevronRight size={13} />
+                          <ChevronRight size={14} />
                         </button>
                       </div>
                     </div>
@@ -733,40 +733,40 @@ export function PlanProposalPage() {
               {questionsFinished && (
                 <section className="space-y-3 animate-fadeIn">
                   {/* Status header indicating decisions were resolved */}
-                  <div className="flex items-center justify-between text-xs px-1">
+                  <div className="flex items-center justify-between text-sm px-1">
                     <span className="flex items-center gap-1.5 text-[#064C1C] font-semibold">
-                      <Check size={14} strokeWidth={3} />
+                      <Check size={15} strokeWidth={3} />
                       Decisions & {selectedKpis.length} KPI audit contracts
                       applied to final blueprint
                     </span>
                     <button
                       type="button"
                       onClick={() => setQuestionsFinished(false)}
-                      className="text-[11px] font-semibold text-[#334139]/60 hover:text-[#334139] underline cursor-pointer"
+                      className="text-xs font-semibold text-[#334139]/70 hover:text-[#334139] underline cursor-pointer"
                     >
                       Modify decisions
                     </button>
                   </div>
 
                   {/* Blueprint Card */}
-                  <div className="p-5 rounded-2xl md:rounded-3xl bg-white border border-[#334139]/15 shadow-sm hover:border-[#064C1C]/40 transition-all space-y-4">
+                  <div className="p-6 rounded-2xl md:rounded-3xl bg-white border border-[#334139]/15 shadow-sm hover:border-[#064C1C]/40 transition-all space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="space-y-2 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#064C1C]/10 text-[#064C1C] uppercase tracking-wider">
+                          <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-[#064C1C]/10 text-[#064C1C] uppercase tracking-wider">
                             Architectural Blueprint
                           </span>
-                          <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#064C1C]/10 text-[#064C1C] uppercase tracking-wider inline-flex items-center gap-1">
-                            <ShieldCheck size={11} />
+                          <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-[#064C1C]/10 text-[#064C1C] uppercase tracking-wider inline-flex items-center gap-1">
+                            <ShieldCheck size={13} />
                             {selectedKpis.length} Verified KPIs
                           </span>
                         </div>
 
-                        <h3 className="text-base font-bold text-[#334139] leading-snug">
+                        <h3 className="text-lg md:text-xl font-bold text-[#334139] leading-snug">
                           Retail Lakehouse Master Pipeline
                         </h3>
 
-                        <p className="text-xs text-[#334139]/70 leading-relaxed max-w-xl">
+                        <p className="text-sm md:text-[15px] text-[#334139]/75 leading-relaxed max-w-xl">
                           Kimball star schema architecture connecting raw
                           PostgreSQL & Stripe streams into curated analytics
                           marts with automated KPI reconciliation.
@@ -774,16 +774,16 @@ export function PlanProposalPage() {
                       </div>
 
                       {/* View Plan & Audit Buttons: Toggles the 48% - 50% wide docked side panel */}
-                      <div className="flex flex-wrap items-center gap-2 shrink-0 sm:self-center">
+                      <div className="flex flex-wrap items-center gap-2.5 shrink-0 sm:self-center">
                         <button
                           type="button"
                           onClick={() => {
                             setPanelTab("audit");
                             setIsPanelOpen(true);
                           }}
-                          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold border border-[#D66F14]/40 bg-[#D66F14]/10 text-[#D66F14] hover:bg-[#D66F14] hover:text-[#FDFFFC] transition-all cursor-pointer"
+                          className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-full text-xs sm:text-sm font-bold border border-[#D66F14]/40 bg-[#D66F14]/10 text-[#D66F14] hover:bg-[#D66F14] hover:text-[#FDFFFC] transition-all cursor-pointer"
                         >
-                          <Scale size={13} />
+                          <Scale size={14} />
                           <span>Audit & KPIs ({selectedKpis.length})</span>
                         </button>
 
@@ -791,18 +791,18 @@ export function PlanProposalPage() {
                           type="button"
                           onClick={() => setIsPanelOpen(!isPanelOpen)}
                           className={cn(
-                            "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer shadow-sm",
+                            "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-sm",
                             isPanelOpen
                               ? "bg-[#334139] text-[#FDFFFC] hover:bg-[#1E2D24]"
                               : "bg-[#064C1C] text-[#FDFFFC] hover:bg-[#1E2D24]",
                           )}
                         >
-                          <Eye size={14} />
+                          <Eye size={15} />
                           <span>
                             {isPanelOpen ? "Close Plan View" : "View Plan"}
                           </span>
                           <ChevronRight
-                            size={14}
+                            size={15}
                             className={cn(
                               "transition-transform",
                               isPanelOpen ? "rotate-90" : "",
@@ -869,10 +869,10 @@ export function PlanProposalPage() {
                     <Bot size={16} />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-sm font-bold text-[#334139] truncate">
+                    <h2 className="text-base font-bold text-[#334139] truncate">
                       Pipeline Architecture Plan
                     </h2>
-                    <p className="text-[11px] text-[#334139]/60 font-mono truncate">
+                    <p className="text-xs text-[#334139]/60 font-mono truncate">
                       Retail Lakehouse Master Pipeline · 5 Stages · Isolated
                       Audit Agent
                     </p>
@@ -897,7 +897,7 @@ export function PlanProposalPage() {
                     type="button"
                     onClick={() => setPanelTab("overview")}
                     className={cn(
-                      "pb-2.5 text-xs font-bold border-b-2 -mb-px transition-colors cursor-pointer",
+                      "pb-2.5 text-xs sm:text-sm font-bold border-b-2 -mb-px transition-colors cursor-pointer",
                       panelTab === "overview"
                         ? "border-[#064C1C] text-[#064C1C]"
                         : "border-transparent text-[#334139]/50 hover:text-[#334139]",
@@ -909,20 +909,20 @@ export function PlanProposalPage() {
                     type="button"
                     onClick={() => setPanelTab("audit")}
                     className={cn(
-                      "pb-2.5 text-xs font-bold border-b-2 -mb-px transition-colors cursor-pointer inline-flex items-center gap-1.5",
+                      "pb-2.5 text-xs sm:text-sm font-bold border-b-2 -mb-px transition-colors cursor-pointer inline-flex items-center gap-1.5",
                       panelTab === "audit"
                         ? "border-[#064C1C] text-[#064C1C]"
                         : "border-transparent text-[#334139]/50 hover:text-[#334139]",
                     )}
                   >
-                    <ShieldCheck size={13} className="text-[#D66F14]" />
+                    <ShieldCheck size={14} className="text-[#D66F14]" />
                     <span>Audit & KPIs ({selectedKpis.length})</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setPanelTab("ddl")}
                     className={cn(
-                      "pb-2.5 text-xs font-bold border-b-2 -mb-px transition-colors cursor-pointer",
+                      "pb-2.5 text-xs sm:text-sm font-bold border-b-2 -mb-px transition-colors cursor-pointer",
                       panelTab === "ddl"
                         ? "border-[#064C1C] text-[#064C1C]"
                         : "border-transparent text-[#334139]/50 hover:text-[#334139]",
@@ -937,17 +937,17 @@ export function PlanProposalPage() {
                   <button
                     type="button"
                     onClick={handleCopySql}
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
                     title="Copy compiled DDL to clipboard"
                   >
                     {copiedFormat === "sql" ? (
                       <Check
-                        size={12}
+                        size={13}
                         strokeWidth={3}
                         className="text-[#064C1C]"
                       />
                     ) : (
-                      <Copy size={12} />
+                      <Copy size={13} />
                     )}
                     <span>{copiedFormat === "sql" ? "Copied" : "Copy"}</span>
                   </button>
@@ -955,35 +955,35 @@ export function PlanProposalPage() {
                   <button
                     type="button"
                     onClick={handleExportSql}
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
                     title="Export as .sql file"
                   >
-                    <Download size={12} />
+                    <Download size={13} />
                     <span>.SQL</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={handleExportJson}
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
                     title="Export as .json specification"
                   >
-                    <Download size={12} />
+                    <Download size={13} />
                     <span>.JSON</span>
                   </button>
                 </div>
               </div>
 
               {/* Panel Scrollable Body */}
-              <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-4 custom-scrollbar text-xs">
+              <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-4 custom-scrollbar text-sm">
                 {panelTab === "overview" && (
                   <div className="space-y-4">
-                    <div className="p-3.5 rounded-2xl bg-[#064C1C]/5 border border-[#064C1C]/20 text-xs text-[#064C1C] space-y-1">
-                      <span className="font-bold flex items-center gap-1.5">
-                        <Check size={14} strokeWidth={3} />
+                    <div className="p-4 rounded-2xl bg-[#064C1C]/5 border border-[#064C1C]/20 text-[#064C1C] space-y-1.5">
+                      <span className="font-bold flex items-center gap-1.5 text-sm md:text-[15px]">
+                        <Check size={16} strokeWidth={3} />
                         Automated Schema & Independent Audit Verification Passed
                       </span>
-                      <p className="text-[11.5px] text-[#334139]/75 leading-relaxed">
+                      <p className="text-xs sm:text-sm text-[#334139]/80 leading-relaxed">
                         Surrogate keys, nullability checks, Zetaris
                         virtualization mappings, and {selectedKpis.length} KPI
                         reconciliation contracts have been verified.
@@ -992,21 +992,21 @@ export function PlanProposalPage() {
 
                     <div className="divide-y divide-[#334139]/10">
                       {stages.map((stage) => (
-                        <div key={stage.id} className="py-3.5 space-y-1.5">
+                        <div key={stage.id} className="py-4 space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="font-mono text-xs font-bold text-[#064C1C]">
                               STAGE {stage.number}
                             </span>
-                            <span className="text-[10px] font-mono uppercase tracking-wider text-[#D66F14]">
+                            <span className="text-xs font-mono uppercase tracking-wider text-[#D66F14] font-semibold">
                               {stage.category}
                             </span>
                           </div>
 
-                          <h4 className="font-bold text-sm text-[#334139]">
+                          <h4 className="font-bold text-base text-[#334139]">
                             {stage.title}
                           </h4>
 
-                          <p className="text-xs text-[#334139]/75 leading-relaxed">
+                          <p className="text-sm text-[#334139]/80 leading-relaxed">
                             {stage.description}
                           </p>
 
@@ -1014,12 +1014,12 @@ export function PlanProposalPage() {
                             {stage.tables.map((t) => (
                               <code
                                 key={t}
-                                className="px-2 py-0.5 rounded bg-[#334139]/[0.06] font-mono text-[10.5px] text-[#334139]"
+                                className="px-2.5 py-0.5 rounded bg-[#334139]/[0.06] font-mono text-xs text-[#334139]"
                               >
                                 {t}
                               </code>
                             ))}
-                            <span className="text-[11px] text-[#334139]/45 pl-1">
+                            <span className="text-xs text-[#334139]/50 pl-1">
                               {stage.technologies.join(" · ")}
                             </span>
                           </div>
@@ -1032,17 +1032,17 @@ export function PlanProposalPage() {
                 {panelTab === "audit" && (
                   <div className="space-y-5">
                     {/* Automated Verification Summary */}
-                    <div className="p-4 rounded-2xl bg-[#334139]/[0.03] border border-[#334139]/15 space-y-2.5">
+                    <div className="p-4 rounded-2xl bg-[#334139]/[0.03] border border-[#334139]/15 space-y-2">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="inline-flex items-center gap-1.5 font-mono text-[10.5px] font-bold uppercase tracking-wider text-[#064C1C]">
-                          <ShieldCheck size={13} />
+                        <span className="inline-flex items-center gap-1.5 font-mono text-xs font-bold uppercase tracking-wider text-[#064C1C]">
+                          <ShieldCheck size={14} />
                           Automated KPI Verification
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-mono text-[10px] font-bold">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-mono text-xs font-bold">
                           Independent Check
                         </span>
                       </div>
-                      <p className="text-xs text-[#334139]/80 leading-relaxed">
+                      <p className="text-sm text-[#334139]/85 leading-relaxed">
                         To ensure numbers are accurate and trustworthy, an
                         independent audit check reconciles your selected KPIs
                         directly against raw source records before any reports
@@ -1051,16 +1051,16 @@ export function PlanProposalPage() {
                     </div>
 
                     {/* Interactive KPI Selection inside the Panel */}
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <span className="font-mono text-[10.5px] font-bold uppercase tracking-wider text-[#334139]/60">
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#334139]/70">
                           Selected KPIs Under Audit ({selectedKpis.length})
                         </span>
-                        <span className="text-[10.5px] text-[#334139]/50">
+                        <span className="text-xs text-[#334139]/55">
                           Click to toggle KPI inclusion
                         </span>
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {kpis.map((kpi) => {
                           const active = selectedKpiIds.includes(kpi.id);
                           return (
@@ -1069,16 +1069,16 @@ export function PlanProposalPage() {
                               type="button"
                               onClick={() => toggleKpiSelection(kpi.id)}
                               className={cn(
-                                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border transition-all cursor-pointer",
+                                "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-all cursor-pointer",
                                 active
-                                  ? "bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]"
-                                  : "bg-[#FDFFFC] text-[#334139]/70 border-[#334139]/20 hover:border-[#334139]/50",
+                                  ? "bg-[#064C1C] text-[#FDFFFC] border-[#064C1C] shadow-2xs"
+                                  : "bg-[#FDFFFC] text-[#334139]/80 border-[#334139]/20 hover:border-[#334139]/50",
                               )}
                             >
                               {active ? (
-                                <Check size={11} strokeWidth={3} />
+                                <Check size={12} strokeWidth={3} />
                               ) : (
-                                <Plus size={11} />
+                                <Plus size={12} />
                               )}
                               <span>{kpi.name}</span>
                             </button>
@@ -1088,10 +1088,10 @@ export function PlanProposalPage() {
                     </div>
 
                     {/* Domain-Suited Presentation: Financial Reconciliation Table (with sticky column & row headers) */}
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-xs font-bold text-[#1E2D24] flex items-center gap-1.5">
-                          <Scale size={13} className="text-[#064C1C]" />
+                        <h3 className="text-sm font-bold text-[#1E2D24] flex items-center gap-1.5">
+                          <Scale size={14} className="text-[#064C1C]" />
                           <span>
                             {selectedAnswers["audit-presentation-format"] ===
                             "cohort-drift-matrix"
@@ -1102,42 +1102,42 @@ export function PlanProposalPage() {
                                 : "Audit Findings: Financial Reconciliation Table"}
                           </span>
                         </h3>
-                        <span className="font-mono text-[10px] text-[#064C1C] font-bold">
+                        <span className="font-mono text-xs text-[#064C1C] font-bold">
                           All {selectedKpis.length} KPIs Reconciled
                         </span>
                       </div>
 
                       <div className="overflow-x-auto no-scrollbar w-full [container-type:inline-size] rounded-2xl border border-[#334139]/15 bg-[#FDFFFC]">
-                        <table className="w-full text-left border-separate border-spacing-0 text-[11px]">
+                        <table className="w-full text-left border-separate border-spacing-0 text-xs">
                           <thead className="sticky top-0 z-10 bg-[#FDFFFC]">
-                            <tr className="font-mono text-[10px] uppercase tracking-wider text-[#334139]/60">
+                            <tr className="font-mono text-xs uppercase tracking-wider text-[#334139]/70">
                               <th
                                 scope="col"
-                                className="py-2.5 px-3 border-b border-[#334139]/15 bg-[#FDFFFC] sticky left-0 z-20"
+                                className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] sticky left-0 z-20"
                               >
                                 KPI Metric
                               </th>
                               <th
                                 scope="col"
-                                className="py-2.5 px-3 border-b border-[#334139]/15 bg-[#FDFFFC]"
+                                className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC]"
                               >
                                 Source Ledger (Raw)
                               </th>
                               <th
                                 scope="col"
-                                className="py-2.5 px-3 border-b border-[#334139]/15 bg-[#FDFFFC]"
+                                className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC]"
                               >
                                 Warehouse Mart (Built)
                               </th>
                               <th
                                 scope="col"
-                                className="py-2.5 px-3 border-b border-[#334139]/15 bg-[#FDFFFC]"
+                                className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC]"
                               >
                                 Variance (Δ)
                               </th>
                               <th
                                 scope="col"
-                                className="py-2.5 px-3 border-b border-[#334139]/15 bg-[#FDFFFC] text-right"
+                                className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] text-right"
                               >
                                 Audit Verdict
                               </th>
@@ -1151,38 +1151,38 @@ export function PlanProposalPage() {
                               >
                                 <th
                                   scope="row"
-                                  className="py-3 px-3 border-b border-[#334139]/10 font-semibold text-[#1E2D24] bg-[#FDFFFC] sticky left-0 z-10 align-top"
+                                  className="py-3.5 px-3.5 border-b border-[#334139]/10 font-semibold text-[#1E2D24] bg-[#FDFFFC] sticky left-0 z-10 align-top"
                                 >
-                                  <div>{kpi.name}</div>
-                                  <div className="font-mono text-[9.5px] font-normal text-[#334139]/55 mt-0.5">
+                                  <div className="text-sm font-bold text-[#1E2D24]">{kpi.name}</div>
+                                  <div className="font-mono text-xs font-normal text-[#334139]/60 mt-0.5">
                                     {kpi.formula}
                                   </div>
                                 </th>
-                                <td className="py-3 px-3 border-b border-[#334139]/10 font-mono text-[#334139] align-top">
-                                  <div className="font-bold">
+                                <td className="py-3.5 px-3.5 border-b border-[#334139]/10 font-mono text-[#334139] align-top">
+                                  <div className="font-bold text-sm">
                                     {kpi.sourceLedgerValue}
                                   </div>
-                                  <div className="text-[9.5px] text-[#334139]/50">
+                                  <div className="text-xs text-[#334139]/55 mt-0.5">
                                     {kpi.sourceSystem}
                                   </div>
                                 </td>
-                                <td className="py-3 px-3 border-b border-[#334139]/10 font-mono text-[#334139] align-top">
-                                  <div className="font-bold">
+                                <td className="py-3.5 px-3.5 border-b border-[#334139]/10 font-mono text-[#334139] align-top">
+                                  <div className="font-bold text-sm">
                                     {kpi.martOutputValue}
                                   </div>
-                                  <div className="text-[9.5px] text-[#334139]/50">
+                                  <div className="text-xs text-[#334139]/55 mt-0.5">
                                     {kpi.targetMart}
                                   </div>
                                 </td>
-                                <td className="py-3 px-3 border-b border-[#334139]/10 font-mono text-[#064C1C] font-bold align-top">
-                                  <div>{kpi.variance}</div>
-                                  <div className="text-[9.5px] font-normal text-[#334139]/50">
+                                <td className="py-3.5 px-3.5 border-b border-[#334139]/10 font-mono text-[#064C1C] font-bold align-top">
+                                  <div className="text-sm">{kpi.variance}</div>
+                                  <div className="text-xs font-normal text-[#334139]/55 mt-0.5">
                                     SLA: {kpi.tolerance}
                                   </div>
                                 </td>
-                                <td className="py-3 px-3 border-b border-[#334139]/10 text-right align-top">
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-mono text-[10px] font-bold">
-                                    <Check size={10} strokeWidth={3} />
+                                <td className="py-3.5 px-3.5 border-b border-[#334139]/10 text-right align-top">
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-mono text-xs font-bold">
+                                    <Check size={11} strokeWidth={3} />
                                     PASS
                                   </span>
                                 </td>
@@ -1196,19 +1196,19 @@ export function PlanProposalPage() {
                 )}
 
                 {panelTab === "ddl" && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-[11px] text-[#334139]/60 font-mono">
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between text-xs text-[#334139]/70 font-mono">
                       <span>Dialect: ANSI SQL-92 / Zetaris</span>
                       <button
                         type="button"
                         onClick={handleCopySql}
-                        className="hover:text-[#064C1C] underline cursor-pointer"
+                        className="hover:text-[#064C1C] underline cursor-pointer font-semibold"
                       >
                         Copy All
                       </button>
                     </div>
 
-                    <pre className="p-4 rounded-2xl bg-[#334139]/[0.05] text-[#334139] font-mono text-[11px] leading-relaxed overflow-x-auto custom-scrollbar">
+                    <pre className="p-4 rounded-2xl bg-[#334139]/[0.05] text-[#334139] font-mono text-xs leading-relaxed overflow-x-auto no-scrollbar">
                       {compiledSql}
                     </pre>
                   </div>
@@ -1220,7 +1220,7 @@ export function PlanProposalPage() {
                 <button
                   type="button"
                   onClick={() => setIsPanelOpen(false)}
-                  className="px-4 py-2 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
+                  className="px-4.5 py-2 rounded-full text-xs sm:text-sm font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
                 >
                   Close
                 </button>
@@ -1230,7 +1230,7 @@ export function PlanProposalPage() {
                   onClick={handleApprovePlan}
                   disabled={isApproving}
                   style={{ backgroundColor: "#064C1C" }}
-                  className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-xs font-bold text-[#FDFFFC] hover:opacity-90 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#FDFFFC] hover:opacity-90 transition-all cursor-pointer shadow-md disabled:opacity-50"
                 >
                   <span>
                     {isApproving

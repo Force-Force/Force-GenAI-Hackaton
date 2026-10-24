@@ -26,38 +26,38 @@ export function AgentTaskList({ tasks }: { tasks: AgentTask[] }) {
 
   return (
     <div className="mt-3 border-t border-slate-200 pt-2.5">
-      <div className="flex items-center justify-between gap-1.5 mb-1.5">
-        <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wide">
-          <Workflow size={12} className="text-indigo-600" />
+      <div className="flex items-center justify-between gap-1.5 mb-2">
+        <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-600 uppercase tracking-wide">
+          <Workflow size={13} className="text-indigo-600" />
           <span>Delegated Builder Agents ({builderTasks.length})</span>
         </div>
         {auditorTasksCount > 0 && (
-          <span className="text-[9px] font-mono font-semibold text-[#064C1C] bg-[#064C1C]/10 px-1.5 py-0.5 rounded">
+          <span className="text-[10px] font-mono font-semibold text-[#064C1C] bg-[#064C1C]/10 px-2 py-0.5 rounded">
             Auditor Isolated
           </span>
         )}
       </div>
 
       {builderTasks.length > 0 ? (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {builderTasks.map((task) => (
             <div
               key={task.id}
-              className="flex items-start justify-between gap-2 bg-slate-50 border border-slate-200 rounded p-2"
+              className="flex items-start justify-between gap-2.5 bg-slate-50 border border-slate-200 rounded-lg p-2.5"
             >
               <div className="min-w-0">
-                <div className="text-[11px] font-mono font-bold text-slate-800">
+                <div className="text-xs font-mono font-bold text-slate-800">
                   {task.agent_role}
                 </div>
                 {task.instruction && (
-                  <div className="text-[10.5px] text-slate-500 mt-0.5 line-clamp-2">
+                  <div className="text-xs text-slate-600 mt-0.5 line-clamp-2 leading-relaxed">
                     {task.instruction}
                   </div>
                 )}
               </div>
               <span
                 className={cn(
-                  "shrink-0 text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border",
+                  "shrink-0 text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border",
                   STATUS_STYLES[task.status] ??
                     "bg-slate-100 text-slate-600 border-slate-200",
                 )}
@@ -68,7 +68,7 @@ export function AgentTaskList({ tasks }: { tasks: AgentTask[] }) {
           ))}
         </div>
       ) : (
-        <div className="text-[11px] text-slate-500 italic py-1">
+        <div className="text-xs text-slate-500 italic py-1">
           No builder sub-agents assigned.
         </div>
       )}
@@ -78,16 +78,16 @@ export function AgentTaskList({ tasks }: { tasks: AgentTask[] }) {
         <button
           type="button"
           onClick={() => navigateTo("/audit")}
-          className="mt-2 w-full flex items-center justify-between p-2 rounded-lg bg-[#064C1C]/5 border border-[#064C1C]/20 text-left hover:bg-[#064C1C]/10 transition-colors cursor-pointer group"
+          className="mt-2.5 w-full flex items-center justify-between p-2.5 rounded-lg bg-[#064C1C]/5 border border-[#064C1C]/20 text-left hover:bg-[#064C1C]/10 transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-2">
-            <ShieldCheck size={13} className="text-[#064C1C] shrink-0" />
-            <span className="text-[10.5px] font-medium text-[#1E2D24]">
+            <ShieldCheck size={14} className="text-[#064C1C] shrink-0" />
+            <span className="text-xs font-medium text-[#1E2D24]">
               {auditorTasksCount} Independent Audit Agent task
               {auditorTasksCount > 1 ? "s" : ""} segregated
             </span>
           </div>
-          <span className="text-[10px] font-mono font-bold text-[#064C1C] group-hover:underline">
+          <span className="text-xs font-mono font-bold text-[#064C1C] group-hover:underline">
             View Audit Room →
           </span>
         </button>

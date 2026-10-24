@@ -11,16 +11,16 @@ import { cn } from "../../../utils/cn";
  */
 const components = (inverted: boolean): Components => ({
   h1: ({ children }) => (
-    <h1 className="text-sm font-bold mt-2 mb-1 first:mt-0">{children}</h1>
+    <h1 className="text-lg font-bold mt-2.5 mb-1.5 first:mt-0">{children}</h1>
   ),
   h2: ({ children }) => (
-    <h2 className="text-sm font-bold mt-2 mb-1 first:mt-0">{children}</h2>
+    <h2 className="text-base font-bold mt-2 mb-1 first:mt-0">{children}</h2>
   ),
   h3: ({ children }) => (
-    <h3 className="text-[13px] font-bold mt-2 mb-1 first:mt-0">{children}</h3>
+    <h3 className="text-sm font-bold mt-2 mb-1 first:mt-0">{children}</h3>
   ),
   h4: ({ children }) => (
-    <h4 className="text-xs font-bold mt-2 mb-1 first:mt-0">{children}</h4>
+    <h4 className="text-sm font-semibold mt-1.5 mb-0.5 first:mt-0">{children}</h4>
   ),
   p: ({ children }) => (
     <p className="leading-relaxed my-1.5 first:mt-0 last:mb-0">{children}</p>
@@ -84,8 +84,8 @@ const components = (inverted: boolean): Components => ({
     );
   },
   table: ({ children }) => (
-    <div className="my-2 overflow-x-auto no-scrollbar">
-      <table className="w-full text-[11px] border-collapse">{children}</table>
+    <div className="my-2.5 overflow-x-auto no-scrollbar">
+      <table className="w-full text-xs sm:text-sm border-collapse">{children}</table>
     </div>
   ),
   thead: ({ children }) => (
@@ -94,12 +94,12 @@ const components = (inverted: boolean): Components => ({
     </thead>
   ),
   th: ({ children }) => (
-    <th className="border border-[#334139]/20 px-2 py-1 text-left font-bold">
+    <th className="border border-[#334139]/20 px-3 py-1.5 text-left font-bold">
       {children}
     </th>
   ),
   td: ({ children }) => (
-    <td className="border border-[#334139]/15 px-2 py-1">{children}</td>
+    <td className="border border-[#334139]/15 px-3 py-1.5">{children}</td>
   ),
   hr: () => <hr className="my-2 border-[#334139]/15" />,
 });

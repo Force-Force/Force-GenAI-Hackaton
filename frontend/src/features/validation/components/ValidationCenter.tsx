@@ -18,14 +18,14 @@ export function ValidationCenter() {
   return (
     <div className="w-full max-w-4xl mx-auto space-y-8 pb-10">
       {/* 1. Editorial Lead (Matching PlanProposalPage typography & spacing) */}
-      <section className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <div className="flex items-center gap-1.5 text-[#064C1C] font-medium">
-            <Check size={13} strokeWidth={3} className="shrink-0" />
+      <section className="space-y-2.5">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <div className="flex items-center gap-1.5 text-[#064C1C] font-semibold">
+            <Check size={14} strokeWidth={3} className="shrink-0" />
             <span>Audited by a separate agent</span>
           </div>
           <span className="text-[#334139]/40">·</span>
-          <span className="text-[#334139]/60">
+          <span className="text-[#334139]/70">
             Nothing is graded by its own author
           </span>
         </div>
@@ -35,7 +35,7 @@ export function ValidationCenter() {
           Audit
         </h1>
 
-        <p className="text-xs md:text-sm text-[#334139]/70 leading-relaxed max-w-2xl">
+        <p className="text-sm md:text-base text-[#334139]/75 leading-relaxed max-w-2xl">
           A dedicated audit agent — separate from the builder agents that
           constructed your pipeline — checked the results and organized the
           findings to match your data.
@@ -45,30 +45,30 @@ export function ValidationCenter() {
       {/* 2. Separation of Builder vs. Auditor */}
       <section className="space-y-2.5">
         <div className="flex items-center justify-between pb-1 border-b border-[#334139]/12">
-          <span className="text-xs font-bold text-[#334139]">
+          <span className="text-sm font-bold text-[#334139]">
             Role Separation
           </span>
-          <span className="text-[11px] text-[#334139]/50">
+          <span className="text-xs text-[#334139]/60">
             Independent verification
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           {/* Builder Card */}
-          <div className="p-4 rounded-2xl bg-white border border-[#334139]/15 shadow-2xs flex items-start gap-3">
-            <div className="w-7 h-7 rounded-lg bg-[#334139]/8 text-[#334139] flex items-center justify-center shrink-0 mt-0.5">
-              <Workflow size={14} />
+          <div className="p-5 rounded-2xl bg-white border border-[#334139]/15 shadow-2xs flex items-start gap-3.5">
+            <div className="w-8 h-8 rounded-lg bg-[#334139]/8 text-[#334139] flex items-center justify-center shrink-0 mt-0.5">
+              <Workflow size={16} />
             </div>
-            <div className="space-y-0.5 min-w-0">
+            <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#334139]">
+                <span className="text-sm font-bold text-[#334139]">
                   Builder Agents
                 </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#334139]/[0.06] text-[#334139]/70 font-semibold">
+                <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-[#334139]/[0.06] text-[#334139]/70 font-semibold">
                   Author
                 </span>
               </div>
-              <p className="text-xs text-[#334139]/65 leading-relaxed">
+              <p className="text-sm text-[#334139]/75 leading-relaxed">
                 Designed the schema, wrote the SQL transformations, and
                 assembled the pipeline stages.
               </p>
@@ -76,23 +76,23 @@ export function ValidationCenter() {
           </div>
 
           {/* Auditor Card */}
-          <div className="p-4 rounded-2xl bg-white border border-[#064C1C]/25 shadow-2xs flex items-start gap-3">
+          <div className="p-5 rounded-2xl bg-white border border-[#064C1C]/25 shadow-2xs flex items-start gap-3.5">
             <div
               style={{ backgroundColor: "#064C1C" }}
-              className="w-7 h-7 rounded-lg text-[#FDFFFC] flex items-center justify-center shrink-0 mt-0.5"
+              className="w-8 h-8 rounded-lg text-[#FDFFFC] flex items-center justify-center shrink-0 mt-0.5"
             >
-              <ShieldCheck size={14} />
+              <ShieldCheck size={16} />
             </div>
-            <div className="space-y-0.5 min-w-0">
+            <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#1E2D24]">
+                <span className="text-sm font-bold text-[#1E2D24]">
                   Independent Audit Agent
                 </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-semibold">
+                <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-semibold">
                   Reviewer
                 </span>
               </div>
-              <p className="text-xs text-[#334139]/65 leading-relaxed">
+              <p className="text-sm text-[#334139]/75 leading-relaxed">
                 Separate from the builders. Checks the final numbers against raw
                 source data in read-only mode.
               </p>
@@ -110,22 +110,22 @@ export function ValidationCenter() {
 
       {/* 4. Bottom Summary & Sign-Off Card */}
       <section className="pt-2">
-        <div className="p-5 rounded-2xl md:rounded-3xl bg-white border border-[#334139]/15 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-5 md:p-6 rounded-2xl md:rounded-3xl bg-white border border-[#334139]/15 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               {hasDataVariance ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#D66F14]">
-                  <AlertTriangle size={14} />
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#D66F14]">
+                  <AlertTriangle size={15} />
                   <span>1 discrepancy flagged for review</span>
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#064C1C]">
-                  <Check size={14} strokeWidth={3} />
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#064C1C]">
+                  <Check size={15} strokeWidth={3} />
                   <span>All audited metrics match source data</span>
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#334139]/65 leading-relaxed">
+            <p className="text-sm text-[#334139]/75 leading-relaxed">
               {hasDataVariance
                 ? "Review the highlighted row above or return to the workspace to adjust the pipeline."
                 : "Every tracked metric reconciled with zero variance against raw source ledgers."}
@@ -136,7 +136,7 @@ export function ValidationCenter() {
             type="button"
             onClick={() => navigateTo("/workspace")}
             className={cn(
-              "inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-[#FDFFFC] transition-all cursor-pointer shrink-0 shadow-xs",
+              "inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#FDFFFC] transition-all cursor-pointer shrink-0 shadow-xs",
               "bg-[#064C1C] hover:bg-[#1E2D24]",
             )}
           >

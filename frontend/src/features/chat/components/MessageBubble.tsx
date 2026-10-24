@@ -30,7 +30,7 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
 
       <div
         className={cn(
-          "p-3.5 rounded-xl text-xs leading-relaxed border shadow-sm",
+          "p-4 rounded-xl text-sm leading-relaxed border shadow-sm",
           isAI
             ? "bg-slate-50 border-slate-200 text-slate-700"
             : "bg-indigo-600 border-indigo-700 text-white",
