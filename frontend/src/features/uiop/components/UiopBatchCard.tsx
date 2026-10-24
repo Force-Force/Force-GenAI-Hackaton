@@ -149,7 +149,9 @@ export function UiopBatchCard({ envelope }: { envelope: UiopEnvelope }) {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#D66F14]">
             <Sparkles size={12} />
-            <span>Pipeline Operations ({envelope.operations.length})</span>
+            <span>
+              Pipeline Operations ({envelope.operations.length})
+            </span>
           </div>
           <span className="text-xs text-[#334139]/50 tabular-nums">
             rev #{envelope.baseRevision}
