@@ -11,6 +11,9 @@
     color-scheme: light;
     --app-bg: #f8fafc;
     --app-fg: #0f172a;
+    --scrollbar-thumb: rgba(51, 65, 57, 0.45);
+    --scrollbar-thumb-hover: rgba(51, 65, 57, 0.8);
+    --scrollbar-track: transparent;
   }
 
   body {
@@ -25,6 +28,42 @@
     transition-property: background-color, border-color, color, fill, stroke;
     transition-duration: 200ms;
     transition-timing-function: ease;
+  }
+
+  /* Universal custom charcoal scrollbar across the whole app / process */
+  * {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: thin;
+  }
+}
+
+/* Dedicated charcoal scrollbar utility */
+.custom-scrollbar {
+  --scrollbar-thumb: rgba(51, 65, 57, 0.45);
+  --scrollbar-thumb-hover: rgba(51, 65, 57, 0.8);
+  --scrollbar-track: transparent;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: thin;
+}
+
+/* Fallback for WebKit/Blink browsers without native scrollbar-color support */
+@supports not (scrollbar-color: auto) {
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
   }
 }
 

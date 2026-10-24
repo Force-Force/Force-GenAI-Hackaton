@@ -201,7 +201,7 @@ export function WorkspacePromptBar({ className }: { className?: string } = {}) {
             disabled={isGenerating}
             placeholder="Ask AuraBI to build, transform, or analyze your pipeline... (Shift+Enter for new line)"
             aria-label="Workspace prompt input"
-            className="flex-1 bg-transparent border-none outline-none text-sm text-[#334139] placeholder:text-[#334139]/40 font-sans px-2 py-1.5 min-w-0 resize-none max-h-[200px] overflow-y-auto leading-relaxed whitespace-pre-wrap selection:bg-[#064C1C]/15"
+            className="flex-1 bg-transparent border-none outline-none text-sm text-[#334139] placeholder:text-[#334139]/40 font-sans px-2 py-1.5 min-w-0 resize-none max-h-[200px] overflow-y-auto leading-relaxed whitespace-pre-wrap selection:bg-[#064C1C]/15 custom-scrollbar"
           />
 
           {/* Send Icon on the RIGHT: Slanted Arrow */}

@@ -297,7 +297,7 @@ export function AiThoughtPanel() {
       {/* Bullet Points Stream */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-3.5 py-3 space-y-3 text-xs"
+        className="flex-1 overflow-y-auto px-3.5 py-3 space-y-3 text-xs custom-scrollbar"
       >
         {blocks.map((block) => {
           const isCollapsed = !!collapsedBlocks[block.id];
