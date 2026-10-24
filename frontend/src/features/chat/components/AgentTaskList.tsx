@@ -1,13 +1,13 @@
-import { Workflow, ShieldCheck } from 'lucide-react';
-import { cn } from '../../../utils/cn';
-import type { AgentTask } from '../../../contracts/backend';
-import { navigateTo } from '../../../utils/navigation';
+import { Workflow, ShieldCheck } from "lucide-react";
+import { cn } from "../../../utils/cn";
+import type { AgentTask } from "../types";
+import { navigateTo } from "../../../utils/navigation";
 
 const STATUS_STYLES: Record<string, string> = {
-  PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
-  RUNNING: 'bg-sky-50 text-sky-700 border-sky-200',
-  COMPLETED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  FAILED: 'bg-rose-50 text-rose-700 border-rose-200',
+  PENDING: "bg-amber-50 text-amber-700 border-amber-200",
+  RUNNING: "bg-sky-50 text-sky-700 border-sky-200",
+  COMPLETED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  FAILED: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
 /**
@@ -18,7 +18,7 @@ const STATUS_STYLES: Record<string, string> = {
 export function AgentTaskList({ tasks }: { tasks: AgentTask[] }) {
   // Strictly filter out any AUDITOR role tasks from the builder task list
   const builderTasks = tasks.filter(
-    (t) => !t.agent_role?.toUpperCase().includes('AUDIT'),
+    (t) => !t.agent_role?.toUpperCase().includes("AUDIT"),
   );
   const auditorTasksCount = tasks.length - builderTasks.length;
 
@@ -57,8 +57,9 @@ export function AgentTaskList({ tasks }: { tasks: AgentTask[] }) {
               </div>
               <span
                 className={cn(
-                  'shrink-0 text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border',
-                  STATUS_STYLES[task.status] ?? 'bg-slate-100 text-slate-600 border-slate-200',
+                  "shrink-0 text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border",
+                  STATUS_STYLES[task.status] ??
+                    "bg-slate-100 text-slate-600 border-slate-200",
                 )}
               >
                 {task.status}
@@ -76,13 +77,14 @@ export function AgentTaskList({ tasks }: { tasks: AgentTask[] }) {
       {auditorTasksCount > 0 && (
         <button
           type="button"
-          onClick={() => navigateTo('/audit')}
+          onClick={() => navigateTo("/audit")}
           className="mt-2 w-full flex items-center justify-between p-2 rounded-lg bg-[#064C1C]/5 border border-[#064C1C]/20 text-left hover:bg-[#064C1C]/10 transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-2">
             <ShieldCheck size={13} className="text-[#064C1C] shrink-0" />
             <span className="text-[10.5px] font-medium text-[#1E2D24]">
-              {auditorTasksCount} Independent Audit Agent task{auditorTasksCount > 1 ? 's' : ''} segregated
+              {auditorTasksCount} Independent Audit Agent task
+              {auditorTasksCount > 1 ? "s" : ""} segregated
             </span>
           </div>
           <span className="text-[10px] font-mono font-bold text-[#064C1C] group-hover:underline">

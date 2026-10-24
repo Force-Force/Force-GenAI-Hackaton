@@ -1,21 +1,19 @@
-import { TopNav } from '../layouts/TopNav';
-import { PipelineCanvas } from '../features/workspace/components/PipelineCanvas';
-import { CanvasToolbar } from '../features/workspace/components/CanvasToolbar';
-import { AiThoughtPanel } from '../features/workspace/components/AiThoughtPanel';
-import { NodeDetailsPanel } from '../features/workspace/components/NodeDetailsPanel';
-import { WorkspacePromptBar } from '../features/workspace/components/WorkspacePromptBar';
-import { ExportModal } from '../features/workspace/components/ExportModal';
-import { useBootstrapPipeline } from '../features/workspace/hooks/useBootstrapPipeline';
-import { useFullscreen } from '../features/workspace/hooks/useFullscreen';
+import { TopNav } from "../layouts/TopNav";
+import { PipelineCanvas } from "../features/workspace/components/PipelineCanvas";
+import { CanvasToolbar } from "../features/workspace/components/CanvasToolbar";
+import { AiThoughtPanel } from "../features/workspace/components/AiThoughtPanel";
+import { NodeDetailsPanel } from "../features/workspace/components/NodeDetailsPanel";
+import { WorkspacePromptBar } from "../features/workspace/components/WorkspacePromptBar";
+import { ExportModal } from "../features/workspace/components/ExportModal";
+import { useFullscreen } from "../features/workspace/hooks/useFullscreen";
 
 export function WorkspacePage() {
-  useBootstrapPipeline();
   const { ref, isFullscreen, toggle } = useFullscreen<HTMLDivElement>();
 
   return (
     <div
       ref={ref}
-      style={{ backgroundColor: '#FDFFFC' }}
+      style={{ backgroundColor: "#FDFFFC" }}
       className="h-screen w-screen relative overflow-hidden font-sans text-[#334139] selection:bg-[#064C1C]/15 antialiased"
     >
       {/* 
@@ -50,4 +48,3 @@ export function WorkspacePage() {
     </div>
   );
 }
-
