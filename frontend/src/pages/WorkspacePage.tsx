@@ -1,6 +1,7 @@
 import { TopNav } from '../layouts/TopNav';
 import { PipelineCanvas } from '../features/workspace/components/PipelineCanvas';
 import { CanvasToolbar } from '../features/workspace/components/CanvasToolbar';
+import { AiThoughtPanel } from '../features/workspace/components/AiThoughtPanel';
 import { WorkspacePromptBar } from '../features/workspace/components/WorkspacePromptBar';
 import { ExportModal } from '../features/workspace/components/ExportModal';
 import { useBootstrapPipeline } from '../features/workspace/hooks/useBootstrapPipeline';
@@ -32,7 +33,10 @@ export function WorkspacePage() {
         <TopNav />
       </div>
 
-      {/* Canvas Toolbar positioned neatly below TopNav */}
+      {/* Floating AI Thought Process Panel on the left */}
+      <AiThoughtPanel />
+
+      {/* Canvas Toolbar on the center-right border */}
       <CanvasToolbar isFullscreen={isFullscreen} onToggleFullscreen={toggle} />
 
       {/* Floating Prompt Bar at bottom center */}
