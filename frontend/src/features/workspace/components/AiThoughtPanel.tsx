@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Bot,
+  Check,
   ChevronDown,
   ChevronRight,
   ChevronLeft,
+  ChevronsUpDown,
+  ArrowDown,
   Wand2,
   Loader2,
-  Activity,
-  PlayCircle,
-  Brain,
 } from 'lucide-react';
 import { useChatStore } from '../../chat/store/chatStore';
 import { usePipelineStore } from '../store/pipelineStore';
@@ -39,7 +39,13 @@ function getScriptFileName(node: PipelineNode): string {
 
 export function AiThoughtPanel() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [collapsedBlocks, setCollapsedBlocks] = useState<Record<string, boolean>>({});
+  // Explicit user overrides (true = expanded). Absent => default (latest/running block open).
+  const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>({});
+  const [groupOpen, setGroupOpen] = useState(false);
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+  const [hasNewActivity, setHasNewActivity] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const atBottomRef = useRef(true);
 
   const messages = useChatStore((s) => s.messages);
   const isGenerating = useChatStore((s) => s.isGenerating);
@@ -55,15 +61,41 @@ export function AiThoughtPanel() {
   const conversationTurns = messages.filter((m) => m.id !== 'welcome');
   const lastUserMessage = [...conversationTurns].reverse().find((m) => m.sender === 'user');
 
-  // Auto-scroll when new thought blocks arrive
+  // Smart auto-scroll: only follow new activity when the user is near the bottom
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (!el) return;
+    if (atBottomRef.current) {
+      el.scrollTop = el.scrollHeight;
+    } else {
+      setHasNewActivity(true);
     }
   }, [conversationTurns.length, isGenerating, selectedNodeId]);
 
-  const toggleBlock = (id: string) => {
-    setCollapsedBlocks((prev) => ({ ...prev, [id]: !prev[id] }));
+  // Live elapsed timer while the agent is working
+  useEffect(() => {
+    if (!isGenerating) return;
+    const startedAt = Date.now();
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 1000);
+    return () => {
+      clearInterval(id);
+      setElapsed(0);
+    };
+  }, [isGenerating]);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const near = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+    atBottomRef.current = near;
+    if (near) setHasNewActivity(false);
+  };
+
+  const jumpToLatest = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    setHasNewActivity(false);
   };
 
   const resourceNodes = nodes.filter((n) => n.data.category === 'resource');
@@ -133,7 +165,8 @@ export function AiThoughtPanel() {
   };
 
   // Assemble dynamic blocks
-  const blocks: ThoughtBlock[] = [discoveryBlock, transformationBlock, modelingBlock];
+  const staticBlocks: ThoughtBlock[] = [discoveryBlock, transformationBlock, modelingBlock];
+  const blocks: ThoughtBlock[] = [];
 
   // Selected node focus block if user clicked a node
   if (selectedNode) {
@@ -228,6 +261,150 @@ export function AiThoughtPanel() {
     });
   }
 
+  const lastBlockId = blocks.length > 0 ? blocks[blocks.length - 1].id : null;
+  const isExpanded = (b: ThoughtBlock) =>
+    expandedBlocks[b.id] ?? (b.status === 'running' || b.id === lastBlockId);
+  const toggleBlock = (b: ThoughtBlock) =>
+    setExpandedBlocks((prev) => ({ ...prev, [b.id]: !isExpanded(b) }));
+
+  const allBlocks = [...staticBlocks, ...blocks];
+  const allCollapsed = allBlocks.every((b) => !isExpanded(b)) && !groupOpen;
+  const toggleAll = () => {
+    const next: Record<string, boolean> = {};
+    allBlocks.forEach((b) => {
+      next[b.id] = allCollapsed;
+    });
+    setExpandedBlocks(next);
+    setGroupOpen(allCollapsed);
+  };
+
+  const handleApply = (b: ThoughtBlock) => {
+    if (!b.action) return;
+    applyAction(b.action);
+    setAppliedIds((prev) => new Set(prev).add(b.id));
+  };
+
+  const formatElapsed = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+  const renderNode = (b: ThoughtBlock) => {
+    if (b.status === 'running') {
+      return (
+        <span className="w-[18px] h-[18px] rounded-full bg-[#FDFFFC] flex items-center justify-center">
+          <Loader2 size={14} className="animate-spin text-[#D66F14]" />
+        </span>
+      );
+    }
+    return (
+      <span className="w-[18px] h-[18px] rounded-full bg-[#334139]/10 flex items-center justify-center">
+        <Check size={11} strokeWidth={3} className="text-[#064C1C]" />
+      </span>
+    );
+  };
+
+  const renderBlock = (block: ThoughtBlock) => {
+    const open = isExpanded(block);
+    const running = block.status === 'running';
+    const applied = appliedIds.has(block.id);
+    const lastExecIdx = block.executionSteps.length - 1;
+    return (
+      <div key={block.id} className="relative pl-7">
+        <span className="absolute left-0 top-[7px] z-10">{renderNode(block)}</span>
+
+        <div
+          onClick={() => toggleBlock(block)}
+          className="flex items-start gap-2 py-1.5 pr-1 cursor-pointer select-none rounded-lg hover:bg-[#334139]/[0.04] -ml-1 pl-1"
+        >
+          <div className="flex-1 min-w-0">
+            <h3
+              className={cn(
+                'text-[12px] font-semibold leading-snug text-[#334139]',
+                open ? '' : 'line-clamp-2',
+              )}
+            >
+              {block.title}
+            </h3>
+            {!open && (
+              <p className="text-[10.5px] text-[#334139]/55 mt-0.5">
+                {block.executionSteps.length} scripts · {block.thoughtProcess.length} thoughts
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0 text-[#334139]/45 mt-0.5">
+            {block.timestamp && <span className="text-[9.5px] font-mono">{block.timestamp}</span>}
+            {block.action &&
+              (applied ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#064C1C]/10 text-[#064C1C]">
+                  <Check size={10} strokeWidth={3} /> Applied
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleApply(block);
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-[#D66F14] hover:brightness-110 text-[#FDFFFC] transition cursor-pointer"
+                >
+                  <Wand2 size={10} />
+                  Apply
+                </button>
+              ))}
+            {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+          </div>
+        </div>
+
+        {open && (
+          <div className="pb-2.5 space-y-2.5">
+            <div>
+              <div className="text-[10px] font-medium text-[#334139]/50 mb-1">Scripts</div>
+              <ul className="space-y-1 rounded-lg bg-[#334139]/[0.05] px-2.5 py-2">
+                {block.executionSteps.map((step, idx) => {
+                  const isCode = step.startsWith('executing ');
+                  const stepRunning = running && idx === lastExecIdx;
+                  return (
+                    <li key={idx} className="flex items-start gap-1.5 text-[11px] leading-snug">
+                      <span className="mt-[2px] shrink-0 w-3 flex justify-center">
+                        {stepRunning ? (
+                          <Loader2 size={11} className="animate-spin text-[#D66F14]" />
+                        ) : (
+                          <Check size={11} strokeWidth={3} className="text-[#334139]/40" />
+                        )}
+                      </span>
+                      <span
+                        className={cn(
+                          'min-w-0 break-words',
+                          isCode
+                            ? 'font-mono text-[10.5px] text-[#334139]'
+                            : 'font-sans text-[#334139]/75',
+                        )}
+                      >
+                        {step}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            <div>
+              <div className="text-[10px] font-medium text-[#334139]/50 mb-1">Reasoning</div>
+              <div className="space-y-1.5">
+                {block.thoughtProcess.map((thought, idx) => (
+                  <p
+                    key={idx}
+                    className="text-[11.5px] leading-relaxed text-[#334139]/85 font-sans whitespace-pre-line"
+                  >
+                    {thought}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (isCollapsed) {
     return (
       <div className="absolute left-4 top-20 z-20">
@@ -235,7 +412,7 @@ export function AiThoughtPanel() {
           type="button"
           onClick={() => setIsCollapsed(false)}
           style={{ backgroundColor: '#FDFFFC' }}
-          className="group flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-[#334139]/20 shadow-md hover:border-[#064C1C] transition-all cursor-pointer"
+          className="group flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-[#334139]/20 shadow-md hover:border-[#334139]/50 transition-all cursor-pointer"
           aria-label="Expand AI Thought Process panel"
           title="Expand AI Thought Process"
         >
@@ -246,10 +423,10 @@ export function AiThoughtPanel() {
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D66F14]" />
               </>
             ) : (
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#064C1C]" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#334139]/40" />
             )}
           </span>
-          <Bot size={15} className="text-[#064C1C] group-hover:text-[#D66F14] transition-colors" />
+          <Bot size={15} className="text-[#334139]" />
           <span className="text-xs font-bold text-[#334139]">AI Thoughts</span>
           <ChevronRight size={14} className="text-[#334139]/60 group-hover:translate-x-0.5 transition-transform" />
         </button>
@@ -264,154 +441,103 @@ export function AiThoughtPanel() {
       className="absolute left-4 top-20 z-20 w-80 md:w-[350px] max-h-[calc(100vh-11.5rem)] flex flex-col rounded-2xl border border-[#334139]/20 shadow-lg backdrop-blur-md overflow-hidden transition-all"
     >
       {/* Header */}
-      <div className="px-4 py-3.5 border-b border-[#334139]/12 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2.5">
+      <div className="px-4 py-3 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div
-            style={{ backgroundColor: isGenerating ? '#D66F14' : '#064C1C' }}
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-[#FDFFFC] shadow-2xs transition-colors shrink-0"
-          >
-            {isGenerating ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Bot size={16} />
+            className={cn(
+              'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors',
+              isGenerating ? 'bg-[#D66F14] text-[#FDFFFC]' : 'bg-[#334139] text-[#FDFFFC]',
             )}
+          >
+            {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Bot size={16} />}
           </div>
           <div className="min-w-0">
-            <h2 className="text-sm font-bold tracking-tight text-[#334139] truncate">
+            <h2 className="text-sm font-bold tracking-tight text-[#334139] truncate leading-tight">
               AI Thought Process
             </h2>
+            <p
+              className={cn(
+                'text-[10.5px] leading-tight mt-0.5',
+                isGenerating ? 'text-[#D66F14] font-medium' : 'text-[#334139]/55',
+              )}
+            >
+              {isGenerating ? `Analyzing… ${formatElapsed(elapsed)}` : 'Idle'}
+            </p>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsCollapsed(true)}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-[#334139]/60 hover:text-[#334139] hover:bg-[#334139]/8 transition-colors cursor-pointer shrink-0 ml-1"
-          aria-label="Collapse AI Thought Process panel"
-          title="Minimize panel"
-        >
-          <ChevronLeft size={15} />
-        </button>
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={toggleAll}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#334139]/60 hover:text-[#334139] hover:bg-[#334139]/8 transition-colors cursor-pointer"
+            aria-label={allCollapsed ? 'Expand all' : 'Collapse all'}
+            title={allCollapsed ? 'Expand all' : 'Collapse all'}
+          >
+            <ChevronsUpDown size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(true)}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#334139]/60 hover:text-[#334139] hover:bg-[#334139]/8 transition-colors cursor-pointer"
+            aria-label="Collapse AI Thought Process panel"
+            title="Minimize panel"
+          >
+            <ChevronLeft size={15} />
+          </button>
+        </div>
       </div>
 
-      {/* Bullet Points Stream */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto px-3.5 py-3 space-y-3 text-xs custom-scrollbar"
-      >
-        {blocks.map((block) => {
-          const isCollapsed = !!collapsedBlocks[block.id];
-          return (
-            <div
-              key={block.id}
-              className={cn(
-                'rounded-xl transition-all overflow-hidden',
-                block.status === 'running'
-                  ? 'bg-[#D66F14]/5'
-                  : 'hover:bg-[#334139]/[0.03]',
-              )}
-            >
-              {/* Bullet Point Header */}
+      {/* Timeline */}
+      <div className="relative flex-1 min-h-0 flex flex-col">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto px-4 pb-4 pt-1 text-xs custom-scrollbar"
+        >
+          <div className="relative">
+            {/* Rail */}
+            <span className="absolute left-[8.5px] top-3 bottom-3 w-px bg-[#334139]/15" />
+
+            {/* Grouped static pipeline analysis */}
+            <div className="relative pl-7">
+              <span className="absolute left-0 top-[7px] z-10 w-[18px] h-[18px] rounded-full bg-[#334139]/10 flex items-center justify-center">
+                <Check size={11} strokeWidth={3} className="text-[#064C1C]" />
+              </span>
               <div
-                onClick={() => toggleBlock(block.id)}
-                className="w-full px-2.5 py-1.5 flex items-start gap-2 cursor-pointer select-none"
+                onClick={() => setGroupOpen((v) => !v)}
+                className="flex items-center gap-2 py-1.5 -ml-1 pl-1 pr-1 cursor-pointer select-none rounded-lg hover:bg-[#334139]/[0.04]"
               >
-                {/* Primary Bullet Marker */}
-                <span
-                  className={cn(
-                    'font-bold text-sm leading-none mt-0.5 shrink-0',
-                    block.status === 'running' ? 'text-[#D66F14]' : 'text-[#064C1C]',
-                  )}
-                >
-                  •
-                </span>
-
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1.5">
-                    <h3 className="font-bold text-[#334139] text-[12px] truncate">
-                      {block.title}
-                    </h3>
-                    <div className="flex items-center gap-1 shrink-0 text-[#334139]/45">
-                      {block.timestamp && (
-                        <span className="text-[9px] font-mono">{block.timestamp}</span>
-                      )}
-                      {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
-                    </div>
-                  </div>
+                  <h3 className="text-[12px] font-semibold text-[#334139] leading-snug">
+                    Pipeline analysis
+                  </h3>
+                  <p className="text-[10.5px] text-[#334139]/55 mt-0.5">
+                    {staticBlocks.length} stages · {nodes.length} nodes · {edges.length} links
+                  </p>
                 </div>
+                <span className="text-[#334139]/45">
+                  {groupOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                </span>
               </div>
-
-              {/* Sub-sections: Execution steps & Thought process */}
-              {!isCollapsed && (
-                <div className="px-2.5 pb-2.5 pt-0 space-y-2">
-                  {/* Under which: Execution steps */}
-                  <div className="pt-1">
-                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#334139]/70 flex items-center gap-1.5 mb-1">
-                      <PlayCircle size={11} className="text-[#064C1C]" />
-                      <span>Execution steps:</span>
-                    </div>
-                    <ul className="space-y-1 pl-1">
-                      {block.executionSteps.map((step, idx) => {
-                        const isCodeExecution = step.startsWith('executing ');
-                        return (
-                          <li
-                            key={idx}
-                            className="flex items-start gap-1.5 text-[11px] leading-snug"
-                          >
-                            <span className="text-[#334139]/40 mt-0.5 shrink-0">•</span>
-                            {isCodeExecution ? (
-                              <code className="font-mono text-[10.5px] text-[#064C1C] font-semibold bg-[#064C1C]/8 px-1.5 py-0.5 rounded truncate">
-                                {step}
-                              </code>
-                            ) : (
-                              <span className="text-[#334139]/80 font-sans">{step}</span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-
-                  {/* Under which: Thought process */}
-                  <div className="pt-1">
-                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#D66F14] flex items-center gap-1.5 mb-1">
-                      <Brain size={11} className="text-[#D66F14]" />
-                      <span>Thought process:</span>
-                    </div>
-                    <ul className="space-y-1 pl-1">
-                      {block.thoughtProcess.map((thought, idx) => (
-                        <li
-                          key={idx}
-                          className="flex items-start gap-1.5 text-[11px] leading-snug text-[#334139]/85 font-sans"
-                        >
-                          <span className="text-[#D66F14]/70 mt-0.5 shrink-0">•</span>
-                          <span className="whitespace-pre-line">{thought}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Action Apply Button if available */}
-                  {block.action && (
-                    <div className="pt-1.5 flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-mono text-[#334139]/70 truncate">
-                        Action: <strong className="text-[#334139]">{block.action.type}</strong>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => applyAction(block.action!)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10.5px] font-bold bg-[#064C1C] hover:bg-[#D66F14] text-[#FDFFFC] transition-colors cursor-pointer shadow-2xs shrink-0"
-                      >
-                        <Wand2 size={11} />
-                        <span>Apply</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
-          );
-        })}
+            {groupOpen && <div className="space-y-0.5">{staticBlocks.map(renderBlock)}</div>}
+
+            {/* Focus + conversation */}
+            <div className="space-y-0.5">{blocks.map(renderBlock)}</div>
+          </div>
+        </div>
+
+        {hasNewActivity && (
+          <button
+            type="button"
+            onClick={jumpToLatest}
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10.5px] font-semibold bg-[#334139] text-[#FDFFFC] shadow-md hover:bg-[#1E2D24] transition-colors cursor-pointer"
+          >
+            <ArrowDown size={11} />
+            New activity
+          </button>
+        )}
       </div>
     </aside>
   );
