@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { ArrowLeft, Copy, Check, Palette, Sparkles, Layers, Box } from 'lucide-react';
 import { navigateTo } from '../utils/navigation';
-
+import {
+  ButtonsSection, TypographySection, IconsSection, ColorsSection, SizesSection,
+} from './components/DesignSections';
 interface PaletteColor {
   hex: string;
   name: string;
@@ -14,7 +16,7 @@ interface PaletteColor {
 const PALETTE: PaletteColor[] = [
   {
     hex: '#FDFFFC',
-    name: 'Baby Powder / Pure Light',
+    name: 'Porcelain',
     role: 'Primary Surface / Canvas Background',
     textColor: '#1E2D24',
     borderColor: '#e2e8f0',
@@ -22,31 +24,31 @@ const PALETTE: PaletteColor[] = [
   },
   {
     hex: '#334139',
-    name: 'Slate Forest / Deep Sage',
+    name: 'Charcoal Brown',
     role: 'Secondary Card & Container Surface',
     textColor: '#FDFFFC',
-    description: 'Sophisticated muted dark-green for sidebar elements and secondary surfaces.',
+    description: 'Muted dark earthy tone for sidebar elements and secondary surfaces.',
   },
   {
     hex: '#1E2D24',
-    name: 'Obsidian Evergreen',
+    name: 'Evergreen',
     role: 'Dominant Dark Chrome & Typography',
     textColor: '#FDFFFC',
     description: 'Deep, rich evergreen for high-contrast headers, top bars, and solid text.',
   },
   {
     hex: '#D66F14',
-    name: 'Warm Ochre / Terracotta Amber',
+    name: 'Cinnamon',
     role: 'Primary Accent & Agent Highlights',
     textColor: '#FDFFFC',
-    description: 'Vibrant amber-orange for agent action cards, status badges, and interactive alerts.',
+    description: 'Vibrant warm spice accent for agent action cards, status badges, and interactive alerts.',
   },
   {
     hex: '#064C1C',
-    name: 'Deep Pine / Forest Green',
-    role: 'Brand Signature & Success States',
+    name: 'Black Forest',
+    role: 'Brand Signature & Primary CTA',
     textColor: '#FDFFFC',
-    description: 'Commanding forest green for key CTA buttons, active pipeline states, and headers.',
+    description: 'Commanding dark forest green for key CTA buttons, active pipeline states, and headers.',
   },
 ];
 
@@ -199,7 +201,7 @@ export function ComponentsPage() {
               Agent-First Layout Composition
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Demonstrating how #FDFFFC, #334139, #1E2D24, #D66F14, and #064C1C harmonize in the new interface.
+              Demonstrating how Porcelain (#FDFFFC), Charcoal Brown (#334139), Evergreen (#1E2D24), Cinnamon (#D66F14), and Black Forest (#064C1C) harmonize in the new interface.
             </p>
           </div>
 
@@ -269,13 +271,13 @@ export function ComponentsPage() {
                 <div className="flex items-center gap-3 pt-3 border-t border-slate-200">
                   <button
                     style={{ backgroundColor: '#064C1C', color: '#FDFFFC' }}
-                    className="px-4 py-2 rounded-lg text-xs font-bold transition-opacity hover:opacity-95 cursor-pointer shadow-sm"
+                    className="px-5 py-2 rounded-full text-xs font-bold transition-opacity hover:opacity-95 cursor-pointer"
                   >
                     Approve & Run Execution
                   </button>
                   <button
                     style={{ backgroundColor: '#D66F14', color: '#FDFFFC' }}
-                    className="px-4 py-2 rounded-lg text-xs font-bold transition-opacity hover:opacity-95 cursor-pointer shadow-sm"
+                    className="px-5 py-2 rounded-full text-xs font-bold transition-opacity hover:opacity-95 cursor-pointer"
                   >
                     Modify Agent Strategy
                   </button>
@@ -290,6 +292,12 @@ export function ComponentsPage() {
             </div>
           </div>
         </section>
+
+        <ButtonsSection />
+        <TypographySection />
+        <IconsSection />
+        <ColorsSection />
+        <SizesSection />
       </main>
     </div>
   );
