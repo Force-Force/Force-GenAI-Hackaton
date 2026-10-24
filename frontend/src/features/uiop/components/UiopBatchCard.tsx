@@ -144,18 +144,15 @@ export function UiopBatchCard({ envelope }: { envelope: UiopEnvelope }) {
   };
 
   return (
-    <div className="mt-3 pt-2.5 border-t border-[#334139]/12 space-y-2">
-      <div className="rounded-xl bg-[#334139]/[0.04] border border-[#334139]/12 p-2.5 space-y-2">
+    <div className="mt-2.5 pt-2 border-t border-[#334139]/12 space-y-2.5 font-sans">
+      <div className="rounded-xl bg-[#334139]/[0.03] border border-[#334139]/12 p-3 space-y-2.5">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-[#D66F14]">
-            <Sparkles size={11} />
-            <span>
-              UIOP v{envelope.version} · {envelope.operations.length} Op
-              {envelope.operations.length === 1 ? "" : "s"}
-            </span>
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#D66F14]">
+            <Sparkles size={12} />
+            <span>Pipeline Operations ({envelope.operations.length})</span>
           </div>
-          <span className="text-[9.5px] font-mono text-[#334139]/50">
-            rev #{envelope.baseRevision} · {envelope.source.agentId}
+          <span className="text-xs text-[#334139]/50 tabular-nums">
+            rev #{envelope.baseRevision}
           </span>
         </div>
 
@@ -165,17 +162,17 @@ export function UiopBatchCard({ envelope }: { envelope: UiopEnvelope }) {
             return (
               <div
                 key={idx}
-                className="rounded-lg bg-[#FDFFFC] border border-[#334139]/10 px-2.5 py-1.5 space-y-0.5"
+                className="rounded-lg bg-white border border-[#334139]/10 px-3 py-2 space-y-0.5 shadow-2xs"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold font-mono text-[#1E2D24] truncate">
+                  <span className="text-xs font-bold text-[#1E2D24] truncate">
                     {meta.title}
                   </span>
-                  <span className="px-1.5 py-0.5 rounded bg-[#064C1C]/10 text-[#064C1C] font-mono text-[9.5px] font-bold shrink-0">
+                  <code className="px-1.5 py-0.5 rounded bg-[#064C1C]/10 text-[#064C1C] font-mono text-[11px] font-semibold shrink-0">
                     {meta.badge}
-                  </span>
+                  </code>
                 </div>
-                <div className="text-[10px] text-[#334139]/65 font-mono truncate">
+                <div className="text-xs text-[#334139]/70 truncate font-sans">
                   {meta.detail}
                 </div>
               </div>
@@ -184,8 +181,8 @@ export function UiopBatchCard({ envelope }: { envelope: UiopEnvelope }) {
         </div>
 
         {lastReport && !lastReport.ok && (
-          <div className="flex items-start gap-1.5 rounded-lg bg-rose-50 border border-rose-200 px-2.5 py-1.5 text-[10.5px] text-rose-700">
-            <AlertCircle size={12} className="shrink-0 mt-0.5" />
+          <div className="flex items-start gap-1.5 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-rose-700">
+            <AlertCircle size={13} className="shrink-0 mt-0.5" />
             <span>{lastReport.errors.map((e) => e.message).join("; ")}</span>
           </div>
         )}
@@ -193,18 +190,18 @@ export function UiopBatchCard({ envelope }: { envelope: UiopEnvelope }) {
 
       <div className="flex items-center gap-2">
         {isApplied ? (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-[#064C1C]/10 text-[#064C1C]">
-            <Check size={12} strokeWidth={3} />
-            <span>UIOP Batch Applied</span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[#064C1C]/10 text-[#064C1C]">
+            <Check size={13} strokeWidth={3} />
+            <span>Changes Applied to Pipeline</span>
           </span>
         ) : (
           <button
             type="button"
             onClick={handleApply}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-[#064C1C] hover:bg-[#1E2D24] text-[#FDFFFC] transition-colors cursor-pointer shadow-xs"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-[#064C1C] hover:bg-[#1E2D24] text-[#FDFFFC] transition-colors cursor-pointer shadow-xs"
           >
-            <Wand2 size={12} />
-            <span>Apply UIOP Batch</span>
+            <Wand2 size={13} />
+            <span>Apply Changes to Pipeline</span>
           </button>
         )}
       </div>

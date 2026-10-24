@@ -58,7 +58,6 @@ function parseUserPromptContext(text: string): {
 
 export function AiThoughtPanel() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  // Explicit user overrides for blocks & assistant thought traces
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>(
     {},
   );
@@ -138,63 +137,67 @@ export function AiThoughtPanel() {
   // 1. Source Discovery Thought Block
   const discoveryBlock: ThoughtBlock = {
     id: "block-discovery",
-    title: "Source Ingestion & Virtual Layer Discovery",
+    title: "Source Connection & Field Discovery",
     category: "discovery",
     status: "completed",
     executionSteps: [
-      "executing inspect_zetaris_catalog.py...",
+      resourceNodes.length > 0
+        ? `Auditing ${resourceNodes.length} connected business datasets`
+        : "Connecting external business datasets",
       ...resourceNodes.map(
         (n) =>
-          `connecting ${n.data.label} (${
+          `Connecting ${n.data.label} (${
             n.data.category === "resource"
-              ? (n.data.format ?? n.data.kind)
+              ? (n.data.format ?? n.data.kind ?? "dataset")
               : "source"
-          } • ${n.data.category === "resource" ? n.data.columns.length : 0} columns)`,
+          } · ${n.data.category === "resource" ? n.data.columns.length : 0} fields)`,
       ),
     ],
     thoughtProcess: [
-      "Auditing schema definitions across external databases, CSVs, and REST endpoints.",
-      "Configuring Zetaris virtualization access layer to allow SQL queries without physical replication.",
-      "Checking primary keys and unique identifiers across raw sources for downstream joins.",
+      "Auditing incoming business datasets to verify field consistency and schema structure.",
+      "Ensuring real-time synchronization so insights reflect up-to-date transaction activity.",
+      "Validating primary customer and order keys for reliable metric correlation downstream.",
     ],
   };
 
   // 2. Transformation Pipeline Thought Block
   const transformationBlock: ThoughtBlock = {
     id: "block-transformation",
-    title: "Data Transformation & DAG Lineage",
+    title: "Metric Calculation & Data Preparation",
     category: "transformation",
     status: "completed",
     executionSteps: [
-      ...processingNodes.map((n) => `executing ${getScriptFileName(n)}...`),
-      `verifying ${edges.length} active Cinnamon lineage links across DAG topology`,
+      ...processingNodes.map(
+        (n) => `Applying calculation: ${getScriptFileName(n)}`,
+      ),
+      `Verified ${edges.length} active metric lineage connections across the model`,
     ],
     thoughtProcess: [
-      "Decomposing raw transactional inputs into staged, cleansed, and enriched formats.",
-      "Applying pushdown filters early in the processing DAG to eliminate nulls and reduce compute overhead.",
-      "Ensuring staging models maintain deterministic column names and types for warehouse compatibility.",
+      "Cleansing transaction amounts, standardizing date intervals, and normalizing customer identifiers.",
+      "Eliminating duplicate records early to ensure accurate revenue and volume totals.",
+      "Structuring unified data models ready for executive dashboards and cohort retention tracking.",
     ],
   };
 
   // 3. Dimensional Modeling Thought Block
   const modelingBlock: ThoughtBlock = {
     id: "block-modeling",
-    title: "Dimensional Star-Schema Synthesis",
+    title: "Executive Performance & Cohort Modeling",
     category: "modeling",
     status: "completed",
     executionSteps: [
-      "executing generate_star_schema.sql...",
+      "Compiling executive KPI aggregates and trend lines",
       ...containerNodes.map(
         (c) =>
-          `materializing ${c.data.label} (${
+          `Structuring ${c.data.label} (${
             c.data.category === "datamart" ? c.data.children.nodes.length : 0
-          } nested tables)`,
+          } reporting views)`,
       ),
     ],
     thoughtProcess: [
-      "Synthesizing Kimball-compliant dimensional model with surrogate keys for slow-changing dimensions.",
-      "Enforcing referential integrity constraints between fact measures and dimension tables.",
-      "Structuring aggregated rollup metrics for performant BI dashboards and ad-hoc analytical queries.",
+      "Organizing dimensional tables to power fast executive dashboards and retention analysis.",
+      "Enforcing consistency between net revenue metrics and customer cohort segments.",
+      "Preparing summary rollups for real-time variance detection and trend forecasting.",
     ],
   };
 
@@ -213,18 +216,20 @@ export function AiThoughtPanel() {
 
     focusBlocks.push({
       id: `block-selection-${selectedNode.id}`,
-      title: `Focused Node: ${selectedNode.data.label}`,
+      title: `Selected Focus: ${selectedNode.data.label}`,
       category: "selection",
       status: "completed",
       executionSteps: [
-        ...(isProc ? [`executing ${getScriptFileName(selectedNode)}...`] : []),
-        `inspecting ${selectedNode.data.label} node schema attributes`,
-        `tracing ${upstream} upstream source(s) and ${downstream} downstream consumer(s)`,
+        ...(isProc
+          ? [`Applying calculation: ${getScriptFileName(selectedNode)}`]
+          : []),
+        `Inspecting ${selectedNode.data.label} attributes and field types`,
+        `Connected to ${upstream} upstream source(s) and ${downstream} downstream view(s)`,
       ],
       thoughtProcess: [
         selectedNode.data.description ||
-          "Evaluating entity role within overall data warehouse architecture.",
-        "Verifying that all required input columns are satisfied by parent nodes in the DAG.",
+          "Analyzing role within business performance and metric reporting.",
+        "Verifying that all necessary upstream fields are available for calculations.",
       ],
     });
   }
@@ -264,14 +269,14 @@ export function AiThoughtPanel() {
   const renderNodeBadge = (status: ThoughtBlock["status"]) => {
     if (status === "running") {
       return (
-        <span className="w-[18px] h-[18px] rounded-full bg-[#FDFFFC] flex items-center justify-center">
-          <Loader2 size={14} className="animate-spin text-[#D66F14]" />
+        <span className="w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-2xs">
+          <Loader2 size={13} className="animate-spin text-[#D66F14]" />
         </span>
       );
     }
     return (
-      <span className="w-[18px] h-[18px] rounded-full bg-[#334139]/10 flex items-center justify-center">
-        <Check size={11} strokeWidth={3} className="text-[#064C1C]" />
+      <span className="w-5 h-5 rounded-full bg-[#064C1C]/10 flex items-center justify-center">
+        <Check size={12} strokeWidth={3} className="text-[#064C1C]" />
       </span>
     );
   };
@@ -281,74 +286,77 @@ export function AiThoughtPanel() {
     const running = block.status === "running";
     const lastExecIdx = block.executionSteps.length - 1;
     return (
-      <div key={block.id} className="relative pl-7">
+      <div key={block.id} className="relative pl-7 font-sans">
         <span className="absolute left-0 top-[7px] z-10">
           {renderNodeBadge(block.status)}
         </span>
 
         <div
           onClick={() => toggleBlockById(block.id, defaultOpen)}
-          className="flex items-start gap-2 py-1.5 pr-1 cursor-pointer select-none rounded-lg hover:bg-[#334139]/[0.04] -ml-1 pl-1"
+          className="flex items-start gap-2 py-2 pr-1 cursor-pointer select-none rounded-lg hover:bg-[#334139]/[0.05] -ml-1 pl-1 transition-colors"
         >
           <div className="flex-1 min-w-0">
             <h3
               className={cn(
-                "text-[12px] font-semibold leading-snug text-[#334139]",
+                "text-xs font-semibold leading-snug text-[#1E2D24]",
                 open ? "" : "line-clamp-2",
               )}
             >
               {block.title}
             </h3>
             {!open && (
-              <p className="text-[10.5px] text-[#334139]/55 mt-0.5">
-                {block.executionSteps.length} scripts ·{" "}
-                {block.thoughtProcess.length} thoughts
+              <p className="text-xs text-[#334139]/60 mt-0.5 tabular-nums">
+                {block.executionSteps.length} steps ·{" "}
+                {block.thoughtProcess.length} reasoning points
               </p>
             )}
           </div>
-          <div className="flex items-center gap-1.5 shrink-0 text-[#334139]/45 mt-0.5">
-            {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+          <div className="flex items-center gap-1.5 shrink-0 text-[#334139]/50 mt-0.5">
+            {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </div>
         </div>
 
         {open && (
-          <div className="pb-2.5 space-y-2.5">
+          <div className="pb-3 space-y-3">
             <div>
-              <div className="text-[10px] font-medium text-[#334139]/50 mb-1">
-                Scripts
+              <div className="text-xs font-semibold text-[#334139]/60 uppercase tracking-wider mb-1.5">
+                Activity
               </div>
-              <ul className="space-y-1 rounded-lg bg-[#334139]/[0.05] px-2.5 py-2">
+              <ul className="space-y-1.5 rounded-xl bg-[#334139]/[0.04] px-3 py-2.5">
                 {block.executionSteps.map((step, idx) => {
-                  const isCode = step.startsWith("executing ");
+                  const hasScript =
+                    step.includes(".sql") || step.includes(".py");
                   const stepRunning = running && idx === lastExecIdx;
                   return (
                     <li
                       key={idx}
-                      className="flex items-start gap-1.5 text-[11px] leading-snug"
+                      className="flex items-start gap-2 text-xs leading-relaxed"
                     >
-                      <span className="mt-[2px] shrink-0 w-3 flex justify-center">
+                      <span className="mt-[3px] shrink-0 w-3.5 flex justify-center">
                         {stepRunning ? (
                           <Loader2
-                            size={11}
+                            size={12}
                             className="animate-spin text-[#D66F14]"
                           />
                         ) : (
                           <Check
-                            size={11}
+                            size={12}
                             strokeWidth={3}
-                            className="text-[#334139]/40"
+                            className="text-[#064C1C]"
                           />
                         )}
                       </span>
-                      <span
-                        className={cn(
-                          "min-w-0 break-words",
-                          isCode
-                            ? "font-mono text-[10.5px] text-[#334139]"
-                            : "font-sans text-[#334139]/75",
+                      <span className="min-w-0 break-words font-sans text-[#334139]/85">
+                        {hasScript ? (
+                          <span>
+                            {step.split(/(?=[a-zA-Z0-9_\-]+\.(?:sql|py))/)[0]}
+                            <code className="font-mono text-xs bg-black/5 px-1.5 py-0.5 rounded text-[#064C1C] font-semibold">
+                              {step.match(/[a-zA-Z0-9_\-]+\.(?:sql|py)/)?.[0]}
+                            </code>
+                          </span>
+                        ) : (
+                          step
                         )}
-                      >
-                        {step}
                       </span>
                     </li>
                   );
@@ -357,14 +365,14 @@ export function AiThoughtPanel() {
             </div>
 
             <div>
-              <div className="text-[10px] font-medium text-[#334139]/50 mb-1">
+              <div className="text-xs font-semibold text-[#334139]/60 uppercase tracking-wider mb-1.5">
                 Reasoning
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {block.thoughtProcess.map((thought, idx) => (
                   <p
                     key={idx}
-                    className="text-[11.5px] leading-relaxed text-[#334139]/85 font-sans whitespace-pre-line"
+                    className="text-xs leading-relaxed text-[#334139]/90 font-sans whitespace-pre-line"
                   >
                     {thought}
                   </p>
@@ -379,14 +387,13 @@ export function AiThoughtPanel() {
 
   if (isCollapsed) {
     return (
-      <div className="absolute left-4 top-20 z-20">
+      <div className="absolute left-5 top-20 z-20">
         <button
           type="button"
           onClick={() => setIsCollapsed(false)}
-          style={{ backgroundColor: "#FDFFFC" }}
-          className="group flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-[#334139]/20 shadow-md hover:border-[#064C1C]/60 transition-all cursor-pointer"
-          aria-label="Expand AI Agent & Thought Process panel"
-          title="Expand AI Agent & Thought Process"
+          className="group flex items-center gap-3 px-4 py-2.5 rounded-full border border-[#334139]/15 bg-white shadow-md hover:shadow-lg hover:border-[#064C1C]/40 transition-all cursor-pointer font-sans"
+          aria-label="Expand AI Insights & Reasoning panel"
+          title="Expand AI Insights & Reasoning"
         >
           <span className="relative flex h-2.5 w-2.5">
             {isGenerating ? (
@@ -398,10 +405,12 @@ export function AiThoughtPanel() {
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#064C1C]" />
             )}
           </span>
-          <Bot size={15} className="text-[#064C1C]" />
-          <span className="text-xs font-bold text-[#334139]">AI Architect</span>
+          <Bot size={16} className="text-[#064C1C]" />
+          <span className="text-xs font-bold text-[#1E2D24]">
+            AI Insights & Reasoning
+          </span>
           {conversationTurns.length > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-[#064C1C]/10 text-[#064C1C]">
+            <span className="px-2 py-0.5 rounded-full text-xs font-semibold tabular-nums bg-[#064C1C]/10 text-[#064C1C]">
               {conversationTurns.length}
             </span>
           )}
@@ -416,53 +425,52 @@ export function AiThoughtPanel() {
 
   return (
     <aside
-      aria-label="AI Thought Process Panel"
-      style={{ backgroundColor: "#FDFFFC" }}
-      className="absolute left-4 top-20 z-20 w-80 md:w-[370px] max-h-[calc(100vh-11.5rem)] flex flex-col rounded-2xl border border-[#334139]/20 shadow-lg backdrop-blur-md overflow-hidden transition-all"
+      aria-label="AI Insights & Reasoning Panel"
+      className="absolute left-5 top-20 z-20 w-84 sm:w-96 md:w-[400px] max-h-[calc(100vh-8.5rem)] flex flex-col rounded-2xl border border-[#334139]/15 shadow-xl shadow-[#1E2D24]/10 bg-white/95 backdrop-blur-md overflow-hidden transition-all font-sans"
     >
       {/* Header */}
-      <div className="px-4 py-3 border-b border-[#334139]/10 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2.5 min-w-0">
+      <div className="px-5 py-3.5 border-b border-[#334139]/10 bg-white flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
           <div
             className={cn(
-              "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors",
+              "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors shadow-2xs",
               isGenerating
-                ? "bg-[#D66F14] text-[#FDFFFC]"
-                : "bg-[#064C1C] text-[#FDFFFC]",
+                ? "bg-[#D66F14] text-white"
+                : "bg-[#064C1C] text-white",
             )}
           >
             {isGenerating ? (
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 size={18} className="animate-spin" />
             ) : (
-              <Bot size={16} />
+              <Bot size={18} />
             )}
           </div>
           <div className="min-w-0">
-            <h2 className="text-sm font-bold tracking-tight text-[#334139] truncate leading-tight">
-              AuraBI Architect
+            <h2 className="text-sm font-bold tracking-tight text-[#1E2D24] truncate leading-tight">
+              AuraBI Assistant
             </h2>
             <p
               className={cn(
-                "text-[10.5px] leading-tight mt-0.5 truncate",
+                "text-xs leading-tight mt-0.5 truncate tabular-nums",
                 isGenerating
                   ? "text-[#D66F14] font-medium"
-                  : "text-[#334139]/55",
+                  : "text-[#334139]/70",
               )}
             >
               {isGenerating
-                ? `Synthesizing… ${formatElapsed(elapsed)}`
+                ? `Analyzing insights… ${formatElapsed(elapsed)}`
                 : conversationTurns.length > 0
                   ? `${conversationTurns.length} message${conversationTurns.length === 1 ? "" : "s"} · Ready`
-                  : "Agent & Thought Feed · Ready"}
+                  : "AI Thought Process · Ready"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
             onClick={toggleAll}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#334139]/60 hover:text-[#334139] hover:bg-[#334139]/8 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#334139]/70 hover:text-[#1E2D24] hover:bg-[#334139]/10 transition-colors cursor-pointer"
             aria-label={
               allCollapsed ? "Expand all thoughts" : "Collapse all thoughts"
             }
@@ -470,16 +478,16 @@ export function AiThoughtPanel() {
               allCollapsed ? "Expand all thoughts" : "Collapse all thoughts"
             }
           >
-            <ChevronsUpDown size={14} />
+            <ChevronsUpDown size={15} />
           </button>
           <button
             type="button"
             onClick={() => setIsCollapsed(true)}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#334139]/60 hover:text-[#334139] hover:bg-[#334139]/8 transition-colors cursor-pointer"
-            aria-label="Collapse AI Thought Process panel"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#334139]/70 hover:text-[#1E2D24] hover:bg-[#334139]/10 transition-colors cursor-pointer"
+            aria-label="Minimize AI panel"
             title="Minimize panel"
           >
-            <ChevronLeft size={15} />
+            <ChevronLeft size={16} />
           </button>
         </div>
       </div>
@@ -489,63 +497,63 @@ export function AiThoughtPanel() {
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-4 pb-4 pt-2.5 text-xs custom-scrollbar space-y-4"
+          className="flex-1 overflow-y-auto px-5 pb-5 pt-3.5 text-xs no-scrollbar space-y-4"
         >
           {/* 1. Pipeline Telemetry & Selected Node Context */}
           <div className="relative">
-            {/* Rail */}
-            <span className="absolute left-[8.5px] top-3 bottom-3 w-px bg-[#334139]/15" />
+            {/* Vertical Guide Rail */}
+            <span className="absolute left-[9.5px] top-3 bottom-3 w-px bg-[#334139]/15" />
 
             {/* Grouped static pipeline analysis */}
             <div className="relative pl-7">
-              <span className="absolute left-0 top-[7px] z-10 w-[18px] h-[18px] rounded-full bg-[#334139]/10 flex items-center justify-center">
-                <Check size={11} strokeWidth={3} className="text-[#064C1C]" />
+              <span className="absolute left-0 top-[7px] z-10 w-5 h-5 rounded-full bg-[#064C1C]/10 flex items-center justify-center">
+                <Check size={12} strokeWidth={3} className="text-[#064C1C]" />
               </span>
               <div
                 onClick={() => setGroupOpen((v) => !v)}
-                className="flex items-center gap-2 py-1.5 -ml-1 pl-1 pr-1 cursor-pointer select-none rounded-lg hover:bg-[#334139]/[0.04]"
+                className="flex items-center gap-2 py-2 -ml-1 pl-1 pr-1 cursor-pointer select-none rounded-lg hover:bg-[#334139]/[0.05] transition-colors"
               >
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-[12px] font-semibold text-[#334139] leading-snug">
-                    Pipeline analysis
+                  <h3 className="text-xs font-bold text-[#1E2D24] leading-snug">
+                    Data Pipeline & Metric Status
                   </h3>
-                  <p className="text-[10.5px] text-[#334139]/55 mt-0.5">
-                    {staticBlocks.length} stages · {nodes.length} nodes ·{" "}
-                    {edges.length} links
+                  <p className="text-xs text-[#334139]/65 mt-0.5 tabular-nums">
+                    {staticBlocks.length} stages · {nodes.length} entities ·{" "}
+                    {edges.length} connections
                   </p>
                 </div>
-                <span className="text-[#334139]/45">
+                <span className="text-[#334139]/50">
                   {groupOpen ? (
-                    <ChevronDown size={13} />
+                    <ChevronDown size={14} />
                   ) : (
-                    <ChevronRight size={13} />
+                    <ChevronRight size={14} />
                   )}
                 </span>
               </div>
             </div>
             {groupOpen && (
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {staticBlocks.map((b) => renderTelemetryBlock(b, false))}
               </div>
             )}
 
             {/* Focused node telemetry when a node is selected on the canvas */}
             {focusBlocks.length > 0 && (
-              <div className="space-y-0.5">
+              <div className="space-y-1 mt-1">
                 {focusBlocks.map((b) => renderTelemetryBlock(b, true))}
               </div>
             )}
           </div>
 
           {/* 2. Unified Conversation Feed */}
-          <div className="pt-2 border-t border-[#334139]/10 space-y-3.5">
+          <div className="pt-3 border-t border-[#334139]/10 space-y-3.5">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#334139]/45">
-                Agent Conversation
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#334139]/60 font-sans">
+                AI Conversation
               </span>
               {selectedNode && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-mono text-[10px] font-semibold">
-                  <AtSign size={10} />
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] text-xs font-semibold font-sans">
+                  <AtSign size={11} />
                   {selectedNode.data.label}
                 </span>
               )}
@@ -553,37 +561,37 @@ export function AiThoughtPanel() {
 
             {/* Welcome / Ready Card when no messages sent yet */}
             {conversationTurns.length === 0 && !isGenerating && (
-              <div className="rounded-2xl border border-[#334139]/12 bg-[#334139]/[0.025] p-3.5 space-y-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-md bg-[#064C1C] text-[#FDFFFC] flex items-center justify-center shrink-0">
-                    <Bot size={12} />
+              <div className="rounded-2xl border border-[#334139]/15 bg-[#FDFFFC] p-4 space-y-3 shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-6 h-6 rounded-lg bg-[#064C1C] text-white flex items-center justify-center shrink-0">
+                    <Bot size={14} />
                   </span>
-                  <span className="text-[11.5px] font-bold text-[#1E2D24]">
-                    Ready to co-design your pipeline
+                  <span className="text-sm font-bold text-[#1E2D24]">
+                    Ready to assist with your business metrics
                   </span>
                 </div>
-                <p className="text-[11.5px] leading-relaxed text-[#334139]/80">
-                  Use the prompt bar below or click any node on the canvas to
-                  attach it as context. I will trace my reasoning steps here and
-                  let you apply changes directly to the DAG.
+                <p className="text-xs leading-relaxed text-[#334139]/80 font-sans">
+                  Ask questions about your data, explore revenue trends, or
+                  click any node on the canvas to inspect its role and
+                  dependencies.
                 </p>
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                <div className="flex flex-wrap gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() =>
                       void sendMessage(
                         selectedNode
-                          ? `@${selectedNode.data.label} Explain the schema and lineage of this node`
-                          : "Explain the current pipeline architecture and data lineage",
+                          ? `@${selectedNode.data.label} Explain the schema and metric calculations for this node`
+                          : "Explain the current revenue metrics and data lineage",
                       )
                     }
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-[#FDFFFC] border border-[#334139]/18 text-[#334139] hover:border-[#064C1C] hover:text-[#064C1C] transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-[#334139]/15 text-[#334139] hover:border-[#064C1C] hover:text-[#064C1C] shadow-2xs transition-colors cursor-pointer font-sans"
                   >
-                    <Sparkles size={10} className="text-[#D66F14]" />
+                    <Sparkles size={12} className="text-[#D66F14]" />
                     <span>
                       {selectedNode
                         ? `Explain @${selectedNode.data.label}`
-                        : "Explain pipeline"}
+                        : "Explain revenue metrics"}
                     </span>
                   </button>
                   <button
@@ -593,10 +601,10 @@ export function AiThoughtPanel() {
                         "Create a SQL transformation node to cleanse and join staging data",
                       )
                     }
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-[#FDFFFC] border border-[#334139]/18 text-[#334139] hover:border-[#064C1C] hover:text-[#064C1C] transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-[#334139]/15 text-[#334139] hover:border-[#064C1C] hover:text-[#064C1C] shadow-2xs transition-colors cursor-pointer font-sans"
                   >
-                    <Wand2 size={10} className="text-[#064C1C]" />
-                    <span>Propose SQL transform</span>
+                    <Wand2 size={12} className="text-[#064C1C]" />
+                    <span>Propose revenue transform</span>
                   </button>
                 </div>
               </div>
@@ -609,21 +617,21 @@ export function AiThoughtPanel() {
                 return (
                   <div
                     key={msg.id}
-                    className="flex flex-col items-end animate-fadeIn space-y-1"
+                    className="flex flex-col items-end animate-fadeIn space-y-1.5"
                   >
-                    <div className="flex items-center gap-1.5 text-[9.5px] font-mono text-[#334139]/45 px-1">
-                      <span>You</span>
+                    <div className="flex items-center gap-1.5 text-xs text-[#334139]/55 px-1 tabular-nums font-sans">
+                      <span className="font-medium text-[#334139]">You</span>
                       <span>·</span>
                       <span>{msg.timestamp}</span>
                     </div>
-                    <div className="max-w-[92%] rounded-2xl rounded-tr-xs bg-[#1E2D24] text-[#FDFFFC] px-3.5 py-2.5 shadow-xs space-y-1.5">
+                    <div className="max-w-[92%] rounded-2xl rounded-tr-xs bg-[#1E2D24] text-[#FDFFFC] px-4 py-3 shadow-xs space-y-2">
                       {nodeTag && (
-                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D66F14]/25 border border-[#D66F14]/40 text-[#FDFFFC] font-mono text-[10px] font-semibold">
-                          <AtSign size={9} className="text-[#D66F14]" />
+                        <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D66F14]/25 border border-[#D66F14]/40 text-[#FDFFFC] text-xs font-semibold font-sans">
+                          <AtSign size={10} className="text-[#D66F14]" />
                           <span>{nodeTag}</span>
                         </div>
                       )}
-                      <p className="text-[12px] leading-relaxed whitespace-pre-wrap break-words">
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words font-sans">
                         {body}
                       </p>
                     </div>
@@ -635,74 +643,99 @@ export function AiThoughtPanel() {
               const traceId = `trace-${msg.id}`;
               const traceOpen = isBlockExpanded(traceId, false);
 
+              const uiopSteps =
+                msg.uiop?.operations.map((op) => {
+                  switch (op.op) {
+                    case "node.add":
+                      return `Planned node addition: ${op.params.data.label} (${op.params.type})`;
+                    case "edge.add":
+                      return `Planned lineage link: ${op.params.source} → ${op.params.target}`;
+                    case "node.update":
+                      return `Planned node modification for ${op.params.id}`;
+                    case "layout.update":
+                      return `Arranged pipeline stages in ${op.params.direction} flow`;
+                    default:
+                      return `Prepared pipeline operation: ${op.op}`;
+                  }
+                }) ?? [];
+
               const executionSteps: string[] = [
-                "executing parse_user_intent.py...",
-                "executing evaluate_graph_dependencies.py...",
-                "finalizing response and schema verification",
+                "Evaluating user request and pipeline topology",
+                ...uiopSteps,
+                "Synthesizing recommendations and summary",
               ];
 
               return (
-                <div key={msg.id} className="space-y-2 animate-fadeIn">
+                <div
+                  key={msg.id}
+                  className="space-y-2.5 animate-fadeIn font-sans"
+                >
                   {/* Bot Persona Header */}
                   <div className="flex items-center justify-between px-0.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-4 h-4 rounded-md bg-[#064C1C] text-[#FDFFFC] flex items-center justify-center">
-                        <Bot size={10} />
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-md bg-[#064C1C] text-white flex items-center justify-center">
+                        <Bot size={12} />
                       </span>
-                      <span className="text-[11px] font-bold text-[#1E2D24]">
-                        AuraBI Architect
+                      <span className="text-xs font-bold text-[#1E2D24]">
+                        AuraBI Assistant
                       </span>
                     </div>
-                    <span className="text-[9.5px] font-mono text-[#334139]/45">
+                    <span className="text-xs text-[#334139]/55 tabular-nums">
                       {msg.timestamp}
                     </span>
                   </div>
 
                   {/* Collapsible Thought Process Trace */}
-                  <div className="rounded-xl border border-[#334139]/12 bg-[#334139]/[0.02] px-2.5 py-1.5">
+                  <div className="rounded-xl border border-[#334139]/12 bg-[#FDFFFC] px-3 py-2">
                     <button
                       type="button"
                       onClick={() => toggleBlockById(traceId, false)}
                       className="w-full flex items-center justify-between gap-2 text-left cursor-pointer select-none py-0.5"
                     >
-                      <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         <span className="w-4 h-4 rounded-full bg-[#064C1C]/10 flex items-center justify-center shrink-0">
                           <Check
-                            size={9}
+                            size={10}
                             strokeWidth={3}
                             className="text-[#064C1C]"
                           />
                         </span>
-                        <span className="text-[11px] font-semibold text-[#334139] truncate">
+                        <span className="text-xs font-semibold text-[#1E2D24] truncate">
                           Thought process
                         </span>
-                        <span className="text-[10px] text-[#334139]/50 font-mono shrink-0">
+                        <span className="text-xs text-[#334139]/50 tabular-nums shrink-0">
                           · {executionSteps.length} steps
                         </span>
+                        {msg.uiop && (
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#D66F14]/10 text-[#D66F14] border border-[#D66F14]/20 tabular-nums shrink-0">
+                            {msg.uiop.operations.length} proposed operation
+                            {msg.uiop.operations.length === 1 ? "" : "s"}
+                          </span>
+                        )}
                       </div>
                       <span className="text-[#334139]/45 shrink-0">
                         {traceOpen ? (
-                          <ChevronDown size={12} />
+                          <ChevronDown size={14} />
                         ) : (
-                          <ChevronRight size={12} />
+                          <ChevronRight size={14} />
                         )}
                       </span>
                     </button>
 
                     {traceOpen && (
-                      <div className="mt-2 pt-2 border-t border-[#334139]/10 space-y-2">
-                        <ul className="space-y-1 rounded-lg bg-[#334139]/[0.04] px-2 py-1.5">
+                      <div className="mt-2 pt-2 border-t border-[#334139]/10 space-y-2.5">
+                        <ul className="space-y-1.5 rounded-lg bg-[#334139]/[0.04] px-2.5 py-2">
                           {executionSteps.map((step, i) => (
                             <li
                               key={i}
-                              className="flex items-start gap-1.5 text-[10.5px] font-mono text-[#334139]/80 leading-snug"
+                              className="flex items-start gap-2 text-xs text-[#334139]/80 leading-relaxed font-sans"
                             >
                               <Check
-                                size={10}
+                                size={12}
                                 strokeWidth={3}
                                 className="text-[#064C1C] shrink-0 mt-0.5"
                               />
-                              <span className="break-all">{step}</span>
+                              <span className="break-words">{step}</span>
                             </li>
                           ))}
                         </ul>
@@ -711,21 +744,25 @@ export function AiThoughtPanel() {
                             {msg.tasks.map((t, i) => (
                               <div
                                 key={i}
-                                className="text-[10.5px] text-[#334139]/75 font-mono bg-[#FDFFFC] px-2 py-1 rounded border border-[#334139]/10"
+                                className="text-xs text-[#334139]/80 font-sans bg-white px-2.5 py-1.5 rounded-lg border border-[#334139]/10"
                               >
-                                [{t.agent_role}]: {t.instruction || t.status}
+                                <span className="font-semibold text-[#064C1C]">
+                                  {t.agent_role}:
+                                </span>{" "}
+                                {t.instruction || t.status}
                               </div>
                             ))}
                           </div>
                         )}
+                        {/* UIOP Operations placed inside the thought process so it's transparent to the user unless expanded */}
+                        {msg.uiop && <UiopBatchCard envelope={msg.uiop} />}
                       </div>
                     )}
                   </div>
 
-                  {/* AI Reply Body (Markdown + UIOP Batch Card) */}
-                  <div className="rounded-2xl rounded-tl-xs border border-[#334139]/15 bg-[#FDFFFC] p-3.5 text-[12px] text-[#334139] shadow-2xs space-y-3">
+                  {/* AI Reply Body (Clean human-facing Markdown only) */}
+                  <div className="rounded-2xl rounded-tl-xs border border-[#334139]/15 bg-white p-4 text-sm text-[#334139] shadow-2xs space-y-3 leading-relaxed font-sans">
                     <Markdown>{msg.text}</Markdown>
-                    {msg.uiop && <UiopBatchCard envelope={msg.uiop} />}
                   </div>
                 </div>
               );
@@ -733,42 +770,44 @@ export function AiThoughtPanel() {
 
             {/* Live Generating State */}
             {isGenerating && (
-              <div className="space-y-2 animate-fadeIn">
+              <div className="space-y-2.5 animate-fadeIn font-sans">
                 <div className="flex items-center justify-between px-0.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-4 h-4 rounded-md bg-[#D66F14] text-[#FDFFFC] flex items-center justify-center">
-                      <Loader2 size={10} className="animate-spin" />
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-md bg-[#D66F14] text-white flex items-center justify-center">
+                      <Loader2 size={12} className="animate-spin" />
                     </span>
-                    <span className="text-[11px] font-bold text-[#D66F14]">
-                      AuraBI Architect
+                    <span className="text-xs font-bold text-[#D66F14]">
+                      AuraBI Assistant
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono text-[#D66F14] font-semibold">
+                  <span className="text-xs font-semibold text-[#D66F14] tabular-nums">
                     {formatElapsed(elapsed)}
                   </span>
                 </div>
 
-                <div className="rounded-2xl border border-[#D66F14]/30 bg-[#D66F14]/[0.04] p-3 space-y-2">
-                  <div className="text-[11.5px] font-semibold text-[#334139]">
-                    Synthesizing Architecture Updates...
+                <div className="rounded-2xl border border-[#D66F14]/30 bg-[#D66F14]/[0.04] p-4 space-y-2.5">
+                  <div className="text-sm font-semibold text-[#1E2D24]">
+                    Synthesizing Insights & Recommendations...
                   </div>
-                  <ul className="space-y-1 rounded-lg bg-[#FDFFFC] border border-[#334139]/10 px-2.5 py-2">
-                    <li className="flex items-center gap-1.5 text-[10.5px] font-mono text-[#334139]">
+                  <ul className="space-y-1.5 rounded-xl bg-white border border-[#334139]/10 px-3 py-2.5">
+                    <li className="flex items-center gap-2 text-xs font-sans text-[#334139]">
                       <Check
-                        size={10}
+                        size={12}
                         strokeWidth={3}
                         className="text-[#064C1C] shrink-0"
                       />
-                      <span>executing agent_master_reasoner.py...</span>
+                      <span>Correlating active business metrics...</span>
                     </li>
-                    <li className="flex items-center gap-1.5 text-[10.5px] font-mono text-[#D66F14]">
-                      <Loader2 size={10} className="animate-spin shrink-0" />
-                      <span>executing compute_optimal_join_path.sql...</span>
+                    <li className="flex items-center gap-2 text-xs font-sans text-[#D66F14] font-medium">
+                      <Loader2 size={12} className="animate-spin shrink-0" />
+                      <span>
+                        Evaluating optimal chart formats and variance trends...
+                      </span>
                     </li>
                   </ul>
-                  <p className="text-[11px] text-[#334139]/75 leading-relaxed">
-                    Analyzing column types and evaluating query pushdown
-                    feasibility against Zetaris virtual catalog.
+                  <p className="text-xs text-[#334139]/80 leading-relaxed font-sans">
+                    Analyzing quarterly KPI performance to provide clear
+                    explanations and actionable insights.
                   </p>
                 </div>
               </div>
@@ -780,10 +819,10 @@ export function AiThoughtPanel() {
           <button
             type="button"
             onClick={jumpToLatest}
-            className="absolute bottom-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10.5px] font-semibold bg-[#334139] text-[#FDFFFC] shadow-md hover:bg-[#1E2D24] transition-colors cursor-pointer"
+            className="absolute bottom-3.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#1E2D24] text-[#FDFFFC] shadow-lg hover:bg-[#064C1C] transition-colors cursor-pointer font-sans"
           >
-            <ArrowDown size={11} />
-            New activity
+            <ArrowDown size={12} />
+            <span>New activity</span>
           </button>
         )}
       </div>

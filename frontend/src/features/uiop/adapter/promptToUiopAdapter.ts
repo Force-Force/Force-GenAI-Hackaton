@@ -148,7 +148,7 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
     });
 
     return {
-      replyMarkdown: `### UIOP Plan & Clarifying Question Proposed\n\nI have prepared a **UIOP v1.0** batch containing ${ops.length} operation(s) to update the architectural plan and propose a clarifying decision question.`,
+      replyMarkdown: `### Architecture Plan & Decision Question Proposed\n\nI have prepared recommendations to update the metric plan and suggested a decision question to clarify implementation details. You can review the execution details and apply updates in the thought process above.`,
       envelope: createUiopEnvelope(ops, "plan-architect-agent"),
     };
   }
@@ -189,7 +189,7 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
     ];
 
     return {
-      replyMarkdown: `### UIOP Node Update Ready\n\nPrepared a \`node.update\` operation to add column \`${newColName}\` to **${contextNode.data.label}**.`,
+      replyMarkdown: `### Field Added to ${contextNode.data.label}\n\nI have structured a schema update to add field \`${newColName}\` to **${contextNode.data.label}**. Expand the thought process above to review and apply this update to your canvas.`,
       envelope: createUiopEnvelope(ops, "schema-model-agent"),
     };
   }
@@ -229,7 +229,7 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
     ];
 
     return {
-      replyMarkdown: `### UIOP Processing Update Ready\n\nPrepared a \`node.update\` operation for **${contextNode.data.label}** (${targetLang.toUpperCase()}).`,
+      replyMarkdown: `### Calculation Logic Updated\n\nI have optimized the data processing logic for **${contextNode.data.label}** (${targetLang.toUpperCase()}). Expand the thought process above to review the calculation and apply this update to your canvas.`,
       envelope: createUiopEnvelope(ops, "transform-engineer-agent"),
     };
   }
@@ -248,7 +248,7 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
     ];
     return {
       replyMarkdown:
-        "### UIOP Layout Operation Ready\n\nPrepared a `layout.update` operation to arrange the pipeline DAG from left to right.",
+        "### Canvas Layout Auto-Arranged\n\nI have organized the pipeline stages from left to right for clear visual data lineage. Expand the thought process above to review and apply the layout to your canvas.",
       envelope: createUiopEnvelope(ops, "layout-engine-agent"),
     };
   }
@@ -289,7 +289,7 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
     if (ops.length > 0) {
       return {
         replyMarkdown:
-          "### UIOP Lineage Connection Ready\n\nPrepared an `edge.add` operation to link the pipeline stages.",
+          "### Lineage Connection Proposed\n\nI have identified an unlinked data flow between pipeline stages. Expand the thought process above to review and connect this lineage link on your canvas.",
         envelope: createUiopEnvelope(ops, "lineage-architect-agent"),
       };
     }
@@ -343,7 +343,7 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
     }
 
     return {
-      replyMarkdown: `### UIOP Transformation Batch Ready\n\nPrepared a **UIOP v1.0** batch (\`${ops.map((o) => o.op).join(" → ")}\`) to add transformation node **${label}**${sourceToLink ? ` and connect it from **${sourceToLink.data.label}**` : ""}.`,
+      replyMarkdown: `### Data Transformation Stage Proposed\n\nI have structured a data transformation stage (**${label}**)${sourceToLink ? ` connected from **${sourceToLink.data.label}**` : ""} to cleanse and prepare your transactional records. Expand the thought process above to inspect the technical operations and apply this update to your canvas.`,
       envelope: createUiopEnvelope(ops, "data-engineer-agent"),
     };
   }
@@ -408,7 +408,7 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
   ];
 
   return {
-    replyMarkdown: `### UIOP Schema Operation Ready\n\nI have generated a **UIOP v1.0** envelope (\`node.add\`) for **${label}**. Click **Apply UIOP Batch** below to validate and commit it to the workspace.`,
+    replyMarkdown: `### Entity Definition Proposed\n\nI have generated the data definition for **${label}** with verified primary keys and attributes. Expand the thought process above to inspect the operations and apply it to your workspace.`,
     envelope: createUiopEnvelope(ops, "data-model-agent"),
   };
 }
