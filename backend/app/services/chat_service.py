@@ -12,6 +12,7 @@ from app.analysis.agent import AnalysisAgent
 from app.analysis.config import get_analysis_settings
 from app.analysis.data import ZetarisClient
 from app.analysis.model import NemotronClient
+from app.meterless.memory import HMemMemoryStore
 from app.websocket.events import WsEvent, WsEventType
 from app.websocket.manager import ws_manager
 
@@ -66,6 +67,7 @@ async def handle_chat_message(db: AsyncSession, pipeline_id: UUID, content: str)
                 provider=settings.model_provider,
             ),
             max_iterations=settings.max_agent_iterations,
+            memory_store=HMemMemoryStore(settings.meterless_memory_log),
         )
         result = await asyncio.to_thread(agent.run, content)
         agent_reply_content = result["response"]

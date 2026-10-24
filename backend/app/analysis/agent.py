@@ -1,9 +1,11 @@
 import json
+import uuid
 from typing import Any
 
 from app.analysis.data import ZetarisClient
 from app.analysis.intent import ScoutIntentEngine
 from app.analysis.model import NemotronClient
+from app.meterless.memory import HMemMemoryStore
 
 TOOL_SCHEMA = [
     {
@@ -36,19 +38,36 @@ Règles prioritaires :
 
 
 class AnalysisAgent:
-    def __init__(self, zetaris_client: ZetarisClient, llm_client: NemotronClient, max_iterations: int = 8) -> None:
+    def __init__(
+        self,
+        zetaris_client: ZetarisClient,
+        llm_client: NemotronClient,
+        max_iterations: int = 8,
+        memory_store: HMemMemoryStore | None = None,
+    ) -> None:
         self.zetaris = zetaris_client
         self.llm = llm_client
         self.max_iterations = max_iterations
         self.intent_engine = ScoutIntentEngine()
+        self.memory = memory_store or HMemMemoryStore()
 
     def run(self, question: str, request_id: str | None = None) -> dict[str, Any]:
+        run_id = request_id or str(uuid.uuid4())
         intent = self.intent_engine.classify(question)
+        memories = self.memory.retrieve(question, run_id=run_id)
         if intent.approval_required:
             response = (
                 "Cette demande est orientée action et nécessite une approbation Guardian "
                 "avant toute exécution."
             )
+            memory = self.memory.remember(
+                f"Zetaris returned {len(rows)} rows for SQL: {sql}",
+                source="zetaris.tool_result",
+                agent_id=self.llm.provider,
+                run_id=run_id,
+            )
+            if memory:
+                trace["memory"]["written"].append(memory.as_dict())
             return {
                 "response": response,
                 "trace": {
@@ -58,11 +77,20 @@ class AnalysisAgent:
                     "final_answer": response,
                     "intent": intent.as_dict(),
                     "provider": self.llm.provider,
+                    "memory": {"retrieved": [memory.as_dict() for memory in memories], "written": []},
                 },
             }
+        memory_context = "\n".join(f"- {memory.content}" for memory in memories)
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": question},
+            {
+                "role": "user",
+                "content": (
+                    f"Relevant H-MEM context:\n{memory_context}\n\nQuestion: {question}"
+                    if memory_context
+                    else question
+                ),
+            },
         ]
         trace: dict[str, Any] = {
             "question": question,
@@ -71,6 +99,7 @@ class AnalysisAgent:
             "final_answer": "",
             "intent": intent.as_dict(),
             "provider": self.llm.provider,
+            "memory": {"retrieved": [memory.as_dict() for memory in memories], "written": []},
         }
 
         for iteration in range(1, self.max_iterations + 1):
@@ -85,6 +114,15 @@ class AnalysisAgent:
                 content = message.content or "Aucune donnée exploitable n'a été produite par le modèle."
                 trace["final_answer"] = content
                 trace["steps"].append({"iteration": iteration, "stage": "final_response"})
+                memory = self.memory.remember(
+                    f"Analysis answer: {content}",
+                    source="analysis.final_response",
+                    agent_id=self.llm.provider,
+                    run_id=run_id,
+                    memory_type="procedural",
+                )
+                if memory:
+                    trace["memory"]["written"].append(memory.as_dict())
                 return {
                     "response": content,
                     "trace": trace,

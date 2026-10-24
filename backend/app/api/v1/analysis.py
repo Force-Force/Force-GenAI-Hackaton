@@ -6,6 +6,7 @@ from fastapi import APIRouter, Header, HTTPException, Response
 from app.analysis.agent import AnalysisAgent
 from app.analysis.config import get_analysis_settings
 from app.analysis.data import ZetarisClient
+from app.meterless.memory import HMemMemoryStore
 from app.analysis.model import NemotronClient
 from app.schemas.analysis import AgentQueryRequest, AgentQueryResponse
 
@@ -39,7 +40,12 @@ async def query_agent(
         model=model_name,
         provider=settings.model_provider,
     )
-    agent = AnalysisAgent(zetaris, llm, max_iterations=settings.max_agent_iterations)
+    agent = AnalysisAgent(
+        zetaris,
+        llm,
+        max_iterations=settings.max_agent_iterations,
+        memory_store=HMemMemoryStore(settings.meterless_memory_log),
+    )
     try:
         result = agent.run(payload.question, request_id=request_id)
     except (RuntimeError, ValueError) as exc:

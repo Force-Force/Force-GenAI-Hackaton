@@ -140,6 +140,7 @@ Edit `.env` before starting the stack. At minimum, review:
 | `NVIDIA_BASE_URL` | Direct NVIDIA route | Defaults to `https://integrate.api.nvidia.com/v1` for the OpenAI-compatible NVIDIA API Catalog route. |
 | `NVIDIA_API_KEY` | Direct NVIDIA route | Optional direct-route credential; keep separate from `NIGHTSHIFT_API_KEY`. |
 | `NVIDIA_MODEL` | Direct NVIDIA route | Defaults to `nvidia/nemotron-3.5-lightning-30b-a3b` in `.env.example`; select a model available to your NVIDIA key. |
+| `METERLESS_MEMORY_LOG` | H-MEM audit memory | JSONL path for retrieved/written Meterless memory evidence; default `logs/meterless_memory.jsonl`. |
 | `ZETARIS_API_URL` or `ZETARIS_REST_URL` | Zetaris-backed analysis/ETL | Use a container-reachable hostname, not an inaccessible host-local address. |
 | `ZETARIS_API_KEY` | Zetaris-backed analysis/ETL | Keep secret; never commit `.env`. |
 | `ZETARIS_ORG_ID` | Zetaris-backed analysis/ETL | Use the organization ID supplied by Zetaris. |
@@ -149,6 +150,23 @@ to the API. If the API needs the LLM or Zetaris variables in Docker, pass them t
 the `api` service through a local Compose override or add them to the service's
 `environment`/`env_file`; do not put secret values in the committed
 `docker-compose.yml`.
+
+Meterless H-MEM does not require a separate package or service. It runs inside
+the API process and writes its append-only audit memory to
+`METERLESS_MEMORY_LOG`. For Docker, persist that path if memory must survive
+container replacement. For example, add this to a local, uncommitted Compose
+override:
+
+```yaml
+services:
+  api:
+    volumes:
+      - ./logs:/app/logs
+```
+
+The application creates `/app/logs` when it writes the first memory record.
+Restrict access to this directory because it can contain analysis summaries and
+provider/tool evidence.
 
 Example local override (`docker-compose.override.yml`, not for commit):
 

@@ -154,6 +154,63 @@ high-risk operations remain behind validation and Guardian approval flows.
 Together, NVIDIA provides reasoning, Zetaris provides governed data access, and
 the frontend presents the resulting analysis and controls in a visual workflow.
 
+## Meterless engines mounted in AuraBI
+
+AuraBI mounts **H-MEM Agent Engine** as the first Meterless engine because its
+core problem is repeated analysis across pipeline chats and runs. The
+implementation is in `app/meterless/memory.py`:
+
+- short, normalized memory records are persisted as append-only JSONL;
+- records carry source, confidence, layer, namespace, agent, and run IDs;
+- relevant memories are retrieved before each Nemotron call;
+- Zetaris tool results and final answers are mined back into memory;
+- duplicate facts are content-addressed and written once;
+- retrieval and writes are included in the analysis trace for judge inspection.
+
+This is the headless version described by the Meterless guides: no UI-only
+memory panel, no hidden provider call, and a durable JSONL artifact under
+`logs/`. The `METERLESS_MEMORY_LOG` variable allows Docker or local deployments
+to choose the artifact location.
+
+### Manual setup checklist
+
+There is no Meterless package, server, API key, or external Meterless account to
+install for the mounted H-MEM implementation. The engines in the supplied
+Meterless resources are reference architectures implemented inside the
+application.
+
+Manually do the following:
+
+1. From the repository root, create `.env` from `.env.example` if it does not
+   exist.
+2. Keep this setting in `.env`:
+
+   ```env
+   METERLESS_MEMORY_LOG=logs/meterless_memory.jsonl
+   ```
+
+3. Ensure the process can create the `logs/` directory and write the JSONL
+   file. The application creates the directory automatically on the first
+   memory write.
+4. Activate the project `.venv` and install `requirements.txt`.
+5. Configure the model provider and Zetaris credentials if you want live
+   memories mined from real analysis results. H-MEM itself has no separate
+   credentials.
+6. Run an analysis request twice with related questions. The second request
+   should retrieve relevant memories, and the trace should contain
+   `trace.memory.retrieved` and `trace.memory.written`.
+
+For Docker, mount a persistent volume or host directory for `logs/`; otherwise
+memory survives only for the lifetime of the API container. Do not commit
+`logs/meterless_memory.jsonl` if it contains business data.
+
+Scout Intent remains the request-routing guard in front of H-MEM and the model:
+it classifies informational, predictive, and action-oriented requests before
+the agent runs. We intentionally do not claim Markovian or World Model support
+yet. Those engines require bounded chunk orchestration or a durable entity/
+relationship control plane; adding an unconsumed helper would violate the
+Meterless guide's "stored ≠ loaded" rule.
+
 ## NVIDIA Skills repository
 
 The referenced [NVIDIA Skills repository](https://github.com/NVIDIA/skills) is

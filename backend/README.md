@@ -82,6 +82,13 @@ Explication des technologies sponsors : [docs/SPONSOR_TECHNOLOGY.md](docs/SPONSO
 
 Evaluation reproductible Scout Intent : `python scripts/evaluate_scout_intent.py`
 
+Meterless H-MEM writes auditable memory evidence to
+`logs/meterless_memory.jsonl` and reinjects relevant memories into analysis
+requests. See [docs/SPONSOR_TECHNOLOGY.md](docs/SPONSOR_TECHNOLOGY.md) for the
+mounted engine and its boundaries. No separate Meterless installation or API
+key is required; the manual setup is documented in
+[docs/DEVOPS_DOCKER.md](docs/DEVOPS_DOCKER.md).
+
 ### Docker (API + DB)
 
 Guide détaillé partage réseau : **[docs/EXPOSITION_RESEAU.md](docs/EXPOSITION_RESEAU.md)**

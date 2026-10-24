@@ -24,6 +24,7 @@ class AnalysisSettings(BaseSettings):
     nvidia_model: str = ""
 
     max_agent_iterations: int = 8
+    meterless_memory_log: str = "logs/meterless_memory.jsonl"
 
     @property
     def resolved_zetaris_url(self) -> str:
