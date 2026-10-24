@@ -52,11 +52,17 @@ def check_zetaris_select_one() -> None:
 
 
 def check_nemotron_simple_message() -> None:
-    base_url = os.getenv("MODEL_BASE_URL")
-    api_key = os.getenv("MODEL_API_KEY")
-    model = os.getenv("NEMOTRON_MODEL")
+    provider = os.getenv("MODEL_PROVIDER", "nvidia")
+    if provider == "nvidia":
+        base_url = os.getenv("NVIDIA_BASE_URL") or os.getenv("MODEL_BASE_URL")
+        api_key = os.getenv("NVIDIA_API_KEY") or os.getenv("MODEL_API_KEY")
+        model = os.getenv("NVIDIA_MODEL") or os.getenv("NEMOTRON_MODEL")
+    else:
+        base_url = os.getenv("NIGHTSHIFT_BASE_URL") or os.getenv("MODEL_BASE_URL")
+        api_key = os.getenv("NIGHTSHIFT_API_KEY")
+        model = os.getenv("NIGHTSHIFT_MODEL") or os.getenv("NEMOTRON_MODEL")
     if not base_url or not api_key or not model:
-        raise RuntimeError("MODEL_BASE_URL, MODEL_API_KEY or NEMOTRON_MODEL is not configured in .env")
+        raise RuntimeError(f"{provider} model configuration is incomplete")
 
     client = OpenAI(base_url=base_url, api_key=api_key)
     response = client.chat.completions.create(
@@ -69,8 +75,44 @@ def check_nemotron_simple_message() -> None:
         raise RuntimeError("Nemotron response is empty")
 
 
+def check_nemotron_tool_call() -> None:
+    provider = os.getenv("MODEL_PROVIDER", "nvidia")
+    base_url = os.getenv("NVIDIA_BASE_URL") or os.getenv("MODEL_BASE_URL")
+    api_key = os.getenv("NVIDIA_API_KEY") or os.getenv("MODEL_API_KEY")
+    model = os.getenv("NVIDIA_MODEL") or os.getenv("NEMOTRON_MODEL")
+    if provider != "nvidia" or not base_url or not api_key or not model:
+        raise RuntimeError("NVIDIA provider configuration is incomplete")
+
+    client = OpenAI(base_url=base_url, api_key=api_key)
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": "Call the tool once with the value 2."}],
+        tools=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "echo_number",
+                    "description": "Return a number for a smoke test.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"value": {"type": "integer"}},
+                        "required": ["value"],
+                    },
+                },
+            }
+        ],
+        tool_choice="required",
+        temperature=0,
+        timeout=90,
+    )
+    tool_calls = getattr(response.choices[0].message, "tool_calls", None) or []
+    if not tool_calls or tool_calls[0].function.name != "echo_number":
+        raise RuntimeError("NVIDIA model did not return the expected tool call")
+
+
 if __name__ == "__main__":
     check("Zetaris UI", check_zetaris_frontend)
     check("Zetaris SELECT 1", check_zetaris_select_one)
     check("Nemotron message", check_nemotron_simple_message)
+    check("NVIDIA tool call", check_nemotron_tool_call)
     sys.exit(0)

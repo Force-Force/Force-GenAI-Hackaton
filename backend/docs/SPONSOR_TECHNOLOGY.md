@@ -95,11 +95,14 @@ follow-up questions, while Zetaris remains the data execution layer.
 
 ### How it is integrated
 
-NVIDIA technology contributes through the Nemotron lane served by Nightshift
-and through the compatible model adapter in
-`app/analysis/model.py`. The adapter uses the OpenAI-compatible
-`chat.completions` interface and reads `MODEL_BASE_URL`, `MODEL_API_KEY`, and
-`NEMOTRON_MODEL`.
+NVIDIA technology contributes directly through the NVIDIA API Catalog/NIM
+OpenAI-compatible endpoint and the Nemotron model adapter in
+`app/analysis/model.py`. The direct NVIDIA route reads `NVIDIA_BASE_URL`,
+`NVIDIA_API_KEY`, and `NVIDIA_MODEL`, with the default endpoint
+`https://integrate.api.nvidia.com/v1`. The selected model is currently
+`nvidia/nemotron-3.5-lightning-30b-a3b`, which was confirmed available for the
+configured NVIDIA account during integration testing. It can be changed without
+code changes.
 
 The model is used in the `AnalysisAgent`, called by
 `POST /api/v1/agent/query` and
@@ -109,8 +112,10 @@ reasoning and select the appropriate data-analysis action before Zetaris
 executes the read-only query.
 
 The adapter handles provider rate limits with bounded retries and returns
-explicit errors when the model route is unavailable. `/health` reports the
-configured model name and whether the required LLM settings are present.
+explicit errors when the model route is unavailable. Each model step records
+the provider, model, latency, input/output token counts when supplied by the
+provider, and whether tools were enabled. `/health` reports the configured
+provider/model route and whether the required LLM settings are present.
 
 ### What role it plays
 
@@ -142,9 +147,26 @@ high-risk operations remain behind validation and Guardian approval flows.
    read-oriented statement, while pipeline execution can pause for Guardian
    approvals or user questions.
 5. **The runtime route is explicit.** Scout Intent classifies every request and
-   exposes intent, risk, route, and approval requirement. Nightshift/Nemotron
-   provides the model response only after that decision, and provider identity
-   is visible in health and traces.
+   exposes intent, risk, route, and approval requirement. NVIDIA/Nemotron
+   provides the model response only after that decision, and provider identity,
+   model, latency, and token usage are visible in health and traces.
 
 Together, NVIDIA provides reasoning, Zetaris provides governed data access, and
 the frontend presents the resulting analysis and controls in a visual workflow.
+
+## NVIDIA Skills repository
+
+The referenced [NVIDIA Skills repository](https://github.com/NVIDIA/skills) is
+an official catalog of portable instructions for coding agents such as Claude
+Code and Codex. It is not a model SDK and it does not replace the OpenAI
+compatible runtime client used by AuraBI. We used the relevant NVIDIA guidance
+by keeping the application integration standards-based:
+
+- NVIDIA API Catalog/NIM endpoint configured through environment variables
+- OpenAI-compatible `chat.completions` calls
+- explicit model selection instead of hard-coding provider behavior
+- tool calling tested independently from ordinary chat
+- provider/model/latency/token metadata retained in the trace
+
+The application therefore benefits from NVIDIA's model/runtime ecosystem without
+copying agent-only skill files into production code.

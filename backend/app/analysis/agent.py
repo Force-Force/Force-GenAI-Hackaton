@@ -76,6 +76,8 @@ class AnalysisAgent:
         for iteration in range(1, self.max_iterations + 1):
             trace["steps"].append({"iteration": iteration, "stage": "llm_call"})
             completion = self.llm.chat_with_tools(messages=messages, tools=TOOL_SCHEMA)
+            trace["steps"][-1].update(self.llm.last_call_metadata)
+            trace.setdefault("model_calls", []).append(dict(self.llm.last_call_metadata))
             message = completion.choices[0].message
             tool_calls = getattr(message, "tool_calls", None) or []
 

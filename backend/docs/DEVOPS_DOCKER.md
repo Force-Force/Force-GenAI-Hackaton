@@ -133,13 +133,13 @@ Edit `.env` before starting the stack. At minimum, review:
 | `MODEL_BASE_URL` | Agent analysis and Explain Why | Use an endpoint reachable from the container. |
 | `MODEL_API_KEY` | Agent analysis and Explain Why | Keep secret; never commit `.env`. |
 | `NEMOTRON_MODEL` | Agent analysis and Explain Why | Use the provider's model identifier. |
-| `MODEL_PROVIDER` | Active model route | Set to `nightshift` for the required Nightshift runtime or `nvidia` for the direct NVIDIA-compatible route. |
+| `MODEL_PROVIDER` | Active model route | Set to `nvidia` for the NVIDIA API Catalog/NIM route or `nightshift` for the separate Nightshift runtime. |
 | `NIGHTSHIFT_BASE_URL` | Nightshift runtime | Obtain the endpoint from HackOS/organizers; keep it separate from NVIDIA settings. |
 | `NIGHTSHIFT_API_KEY` | Nightshift runtime | Obtain the runtime token from HackOS/organizers; never reuse a coding-tool token or NVIDIA key. |
 | `NIGHTSHIFT_MODEL` | Nightshift runtime | Use the Nemotron lane/model name supplied by the organizers. |
-| `NVIDIA_BASE_URL` | Direct NVIDIA route | Optional when `MODEL_PROVIDER=nvidia`; use only a verified NVIDIA endpoint. |
+| `NVIDIA_BASE_URL` | Direct NVIDIA route | Defaults to `https://integrate.api.nvidia.com/v1` for the OpenAI-compatible NVIDIA API Catalog route. |
 | `NVIDIA_API_KEY` | Direct NVIDIA route | Optional direct-route credential; keep separate from `NIGHTSHIFT_API_KEY`. |
-| `NVIDIA_MODEL` | Direct NVIDIA route | Optional direct-route model name. |
+| `NVIDIA_MODEL` | Direct NVIDIA route | Defaults to `nvidia/nemotron-3.5-lightning-30b-a3b` in `.env.example`; select a model available to your NVIDIA key. |
 | `ZETARIS_API_URL` or `ZETARIS_REST_URL` | Zetaris-backed analysis/ETL | Use a container-reachable hostname, not an inaccessible host-local address. |
 | `ZETARIS_API_KEY` | Zetaris-backed analysis/ETL | Keep secret; never commit `.env`. |
 | `ZETARIS_ORG_ID` | Zetaris-backed analysis/ETL | Use the organization ID supplied by Zetaris. |
@@ -196,6 +196,17 @@ Expected shape:
 Interactive API documentation is available at
 `http://localhost:8000/docs`; the OpenAPI JSON is at
 `http://localhost:8000/openapi.json`.
+
+For the direct NVIDIA route, run the provider smoke tests from the activated
+venv:
+
+```bash
+python smoke_test.py
+```
+
+This checks a normal Nemotron response and a required tool call without printing
+the API key. Authentication, model availability, tool-calling support, and
+timeout behavior depend on the endpoint and key configured in `.env`.
 
 ## 5. Frontend and LAN access
 

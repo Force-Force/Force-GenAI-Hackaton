@@ -101,13 +101,15 @@ Workflow `curl` : **[docs/WORKFLOW_CURL.md](docs/WORKFLOW_CURL.md)** — démo r
 | `API_PORT` | Port HTTP (défaut `8000`) |
 | `CORS_ORIGINS` | URLs frontend autorisées (virgules) |
 | `CORS_ALLOW_ALL` | `true` = tout autoriser en dev LAN |
-| `MODEL_BASE_URL` | Endpoint OpenAI-compatible du modèle Nemotron |
-| `MODEL_API_KEY` | Clé du fournisseur de modèle |
-| `NEMOTRON_MODEL` | Identifiant du modèle Nemotron |
+| `MODEL_PROVIDER` | Route active (`nvidia` or `nightshift`) |
+| `NVIDIA_BASE_URL` | Endpoint OpenAI-compatible NVIDIA (default `https://integrate.api.nvidia.com/v1`) |
+| `NVIDIA_API_KEY` | Clé NVIDIA API Catalog |
+| `NVIDIA_MODEL` | Identifiant du modèle Nemotron (tested: `nvidia/nemotron-3.5-lightning-30b-a3b`) |
+| `NIGHTSHIFT_BASE_URL` / `NIGHTSHIFT_API_KEY` / `NIGHTSHIFT_MODEL` | Route Nightshift séparée |
 | `ZETARIS_API_URL` / `ZETARIS_REST_URL` | Endpoint analytique Zetaris |
 | `ZETARIS_API_KEY` / `ZETARIS_ORG_ID` | Authentification et organisation Zetaris |
 
-Vérification : `GET /health` → `llm_provider`, `llm_configured`.
+Vérification : `GET /health` → `provider`, `model`, `llm_configured`.
 
 ## REST API (`/api/v1`)
 

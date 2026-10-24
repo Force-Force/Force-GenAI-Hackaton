@@ -49,6 +49,9 @@ async def query_agent(
     trace["model"] = model_name
     trace["model_route"] = "configured"
     trace["latency_ms"] = round((perf_counter() - started) * 1000, 2)
+    model_calls = trace.get("model_calls", [])
+    trace["tokens_in"] = sum(call.get("tokens_in") or 0 for call in model_calls)
+    trace["tokens_out"] = sum(call.get("tokens_out") or 0 for call in model_calls)
     executed = trace.get("sql_executions", [])
     explain = AgentQueryResponse(
         response=result["response"],
@@ -59,6 +62,8 @@ async def query_agent(
         model=model_name,
         model_route="configured",
         latency_ms=trace["latency_ms"],
+        tokens_in=trace["tokens_in"] or None,
+        tokens_out=trace["tokens_out"] or None,
         warnings=[] if executed else ["No Zetaris query was executed; factual claims may be incomplete."],
         provider=settings.model_provider,
         intent=trace.get("intent", {}).get("intent"),
