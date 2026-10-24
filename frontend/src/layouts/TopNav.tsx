@@ -1,7 +1,6 @@
-import { Sparkles, ShieldCheck, FileCode2, RotateCcw, Palette } from 'lucide-react';
+import { Sparkles, ShieldCheck, Palette } from 'lucide-react';
 import { Badge } from '../components/ui';
 import { useWorkspaceStore } from '../features/workspace/store/workspaceStore';
-import { usePipelineStore } from '../features/workspace/store/pipelineStore';
 import { navigateTo } from '../utils/navigation';
 
 export function TopNav() {
@@ -9,10 +8,6 @@ export function TopNav() {
   const setProjectName = useWorkspaceStore((s) => s.setProjectName);
   const isValid = useWorkspaceStore((s) => s.isValid);
   const runValidation = useWorkspaceStore((s) => s.runValidation);
-  const openExport = useWorkspaceStore((s) => s.openExport);
-  const clearValidations = useWorkspaceStore((s) => s.clearValidations);
-
-  const resetWorkspace = usePipelineStore((s) => s.resetWorkspace);
 
   return (
     <header className="w-full flex items-center justify-between px-6 py-4 bg-transparent shrink-0 z-20 pointer-events-auto">
@@ -61,33 +56,12 @@ export function TopNav() {
         </button>
         <button
           type="button"
-          onClick={() => {
-            resetWorkspace();
-            clearValidations();
-          }}
-          aria-label="Reset workspace"
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
-        >
-          <RotateCcw size={13} />
-          <span className="hidden sm:inline">Reset</span>
-        </button>
-        <button
-          type="button"
           onClick={() => void runValidation()}
           aria-label="Validate pipeline graph"
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/20 hover:border-[#064C1C] hover:text-[#064C1C] transition-colors cursor-pointer"
         >
           <ShieldCheck size={13} />
           <span>Validate</span>
-        </button>
-        <button
-          type="button"
-          onClick={openExport}
-          aria-label="Compile and export DDL"
-          className="flex items-center gap-1.5 px-4.5 py-1.5 rounded-full text-xs font-bold bg-[#064C1C] hover:brightness-110 text-[#FDFFFC] transition-all cursor-pointer shadow-xs"
-        >
-          <FileCode2 size={13} />
-          <span>Compile DDL</span>
         </button>
       </div>
     </header>

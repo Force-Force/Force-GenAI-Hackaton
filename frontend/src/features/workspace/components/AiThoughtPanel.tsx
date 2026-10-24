@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  Sparkles,
+  Bot,
   ChevronDown,
   ChevronRight,
   ChevronLeft,
@@ -249,7 +249,7 @@ export function AiThoughtPanel() {
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#064C1C]" />
             )}
           </span>
-          <Sparkles size={15} className="text-[#064C1C] group-hover:text-[#D66F14] transition-colors" />
+          <Bot size={15} className="text-[#064C1C] group-hover:text-[#D66F14] transition-colors" />
           <span className="text-xs font-bold text-[#334139]">AI Thoughts</span>
           <ChevronRight size={14} className="text-[#334139]/60 group-hover:translate-x-0.5 transition-transform" />
         </button>
@@ -264,27 +264,22 @@ export function AiThoughtPanel() {
       className="absolute left-4 top-20 z-20 w-80 md:w-[350px] max-h-[calc(100vh-11.5rem)] flex flex-col rounded-2xl border border-[#334139]/20 shadow-lg backdrop-blur-md overflow-hidden transition-all"
     >
       {/* Header */}
-      <div className="px-4 py-3 border-b border-[#334139]/12 flex items-center justify-between shrink-0">
+      <div className="px-4 py-3.5 border-b border-[#334139]/12 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2.5">
           <div
             style={{ backgroundColor: isGenerating ? '#D66F14' : '#064C1C' }}
-            className="w-7 h-7 rounded-xl flex items-center justify-center text-[#FDFFFC] shadow-2xs transition-colors shrink-0"
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-[#FDFFFC] shadow-2xs transition-colors shrink-0"
           >
             {isGenerating ? (
-              <Loader2 size={14} className="animate-spin" />
+              <Loader2 size={16} className="animate-spin" />
             ) : (
-              <Sparkles size={14} />
+              <Bot size={16} />
             )}
           </div>
           <div className="min-w-0">
-            <h2 className="text-xs font-bold tracking-tight text-[#334139] truncate">
+            <h2 className="text-sm font-bold tracking-tight text-[#334139] truncate">
               AI Thought Process
             </h2>
-            <p className="text-[10px] text-[#334139]/60 font-mono truncate">
-              {isGenerating
-                ? 'Synthesizing pipeline graph...'
-                : `${blocks.length} structured reasoning stages`}
-            </p>
           </div>
         </div>
 
@@ -417,15 +412,6 @@ export function AiThoughtPanel() {
             </div>
           );
         })}
-      </div>
-
-      {/* Footer Summary */}
-      <div className="px-4 py-2 border-t border-[#334139]/12 bg-[#334139]/4 flex items-center justify-between text-[10px] font-mono text-[#334139]/70 shrink-0">
-        <span>Nodes: {nodes.length}</span>
-        <span>•</span>
-        <span>Links: {edges.length}</span>
-        <span>•</span>
-        <span className="text-[#064C1C] font-semibold">Zetaris SQL Ready</span>
       </div>
     </aside>
   );
