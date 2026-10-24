@@ -85,6 +85,7 @@ installation with:
 
 ```bash
 python -m pytest
+python -m pytest -q tests/test_generic_data_flow.py
 python scripts/evaluate_scout_intent.py
 ```
 

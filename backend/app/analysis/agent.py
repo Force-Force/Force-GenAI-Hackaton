@@ -60,14 +60,6 @@ class AnalysisAgent:
                 "Cette demande est orientée action et nécessite une approbation Guardian "
                 "avant toute exécution."
             )
-            memory = self.memory.remember(
-                f"Zetaris returned {len(rows)} rows for SQL: {sql}",
-                source="zetaris.tool_result",
-                agent_id=self.llm.provider,
-                run_id=run_id,
-            )
-            if memory:
-                trace["memory"]["written"].append(memory.as_dict())
             return {
                 "response": response,
                 "trace": {
@@ -156,6 +148,14 @@ class AnalysisAgent:
                     "preview": rows[:10],
                 }
             )
+            memory = self.memory.remember(
+                f"Zetaris returned {len(rows)} rows for SQL: {sql}",
+                source="zetaris.tool_result",
+                agent_id=self.llm.provider,
+                run_id=run_id,
+            )
+            if memory:
+                trace["memory"]["written"].append(memory.as_dict())
 
             messages.append({
                 "role": "assistant",

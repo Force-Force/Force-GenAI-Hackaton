@@ -200,6 +200,16 @@ Manually do the following:
    should retrieve relevant memories, and the trace should contain
    `trace.memory.retrieved` and `trace.memory.written`.
 
+For a credential-free generic-data verification of the complete flow, run:
+
+```bash
+python -m pytest -q tests/test_generic_data_flow.py
+```
+
+This uses a fake Zetaris-shaped read result and a fake model tool call. It
+verifies that rows flow through the agent, become auditable H-MEM records, are
+retrieved on a later run, and that an unsafe action is stopped before Zetaris.
+
 For Docker, mount a persistent volume or host directory for `logs/`; otherwise
 memory survives only for the lifetime of the API container. Do not commit
 `logs/meterless_memory.jsonl` if it contains business data.

@@ -42,6 +42,12 @@ set. Use `python -m pytest` to run tests and
 `python scripts/evaluate_scout_intent.py` for the reproducible Scout Intent
 evaluation.
 
+Generic Zetaris-shaped offline flow test:
+
+```bash
+python -m pytest -q tests/test_generic_data_flow.py
+```
+
 **Windows PowerShell**
 
 ```powershell
