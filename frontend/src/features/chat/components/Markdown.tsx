@@ -25,7 +25,7 @@ const components = (inverted: boolean): Components => ({
       rel="noreferrer noopener"
       className={cn(
         'underline underline-offset-2 font-medium',
-        inverted ? 'text-indigo-100' : 'text-indigo-600',
+        inverted ? 'text-[#FDFFFC]/90' : 'text-[#064C1C]',
       )}
     >
       {children}
@@ -37,7 +37,7 @@ const components = (inverted: boolean): Components => ({
     <blockquote
       className={cn(
         'border-l-2 pl-3 my-2 italic',
-        inverted ? 'border-indigo-300/60 text-indigo-100' : 'border-slate-300 text-slate-500',
+        inverted ? 'border-[#FDFFFC]/40 text-[#FDFFFC]/85' : 'border-[#D66F14]/50 text-[#334139]/75',
       )}
     >
       {children}
@@ -47,8 +47,8 @@ const components = (inverted: boolean): Components => ({
     const isBlock = (className ?? '').includes('language-');
     if (isBlock) {
       return (
-        <pre className="bg-slate-900 border border-slate-800 rounded-lg p-2.5 my-2 overflow-auto custom-scrollbar">
-          <code className="font-mono text-[10.5px] text-cyan-300 leading-snug whitespace-pre">
+        <pre className="bg-[#1E2D24] border border-[#334139]/30 rounded-lg p-2.5 my-2 overflow-auto custom-scrollbar">
+          <code className="font-mono text-[10.5px] text-[#FDFFFC] leading-snug whitespace-pre">
             {children}
           </code>
         </pre>
@@ -58,7 +58,7 @@ const components = (inverted: boolean): Components => ({
       <code
         className={cn(
           'font-mono text-[11px] px-1 py-0.5 rounded',
-          inverted ? 'bg-indigo-500/40 text-white' : 'bg-slate-200/70 text-slate-800',
+          inverted ? 'bg-white/15 text-[#FDFFFC]' : 'bg-[#334139]/[0.08] text-[#1E2D24]',
         )}
       >
         {children}
@@ -71,15 +71,15 @@ const components = (inverted: boolean): Components => ({
     </div>
   ),
   thead: ({ children }) => (
-    <thead className={inverted ? 'bg-indigo-500/30' : 'bg-slate-100'}>{children}</thead>
+    <thead className={inverted ? 'bg-white/10' : 'bg-[#334139]/[0.06]'}>{children}</thead>
   ),
   th: ({ children }) => (
-    <th className="border border-slate-300/50 px-2 py-1 text-left font-bold">{children}</th>
+    <th className="border border-[#334139]/20 px-2 py-1 text-left font-bold">{children}</th>
   ),
   td: ({ children }) => (
-    <td className="border border-slate-200/60 px-2 py-1">{children}</td>
+    <td className="border border-[#334139]/15 px-2 py-1">{children}</td>
   ),
-  hr: () => <hr className="my-2 border-slate-200" />,
+  hr: () => <hr className="my-2 border-[#334139]/15" />,
 });
 
 export function Markdown({ children, inverted = false }: { children: string; inverted?: boolean }) {

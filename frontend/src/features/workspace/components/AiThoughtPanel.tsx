@@ -9,9 +9,12 @@ import {
   ArrowDown,
   Wand2,
   Loader2,
+  Sparkles,
+  AtSign,
 } from 'lucide-react';
 import { useChatStore } from '../../chat/store/chatStore';
 import { usePipelineStore } from '../store/pipelineStore';
+import { Markdown } from '../../chat/components/Markdown';
 import { cn } from '../../../utils/cn';
 import type { PipelineNode } from '../../../types/pipeline';
 import type { AiAction } from '../../../contracts/aiActions';
@@ -37,9 +40,48 @@ function getScriptFileName(node: PipelineNode): string {
   return `${node.data.label}.sql`;
 }
 
+/** Extracts a leading `@node_label` context tag from a user prompt if present. */
+function parseUserPromptContext(text: string): { nodeTag: string | null; body: string } {
+  const match = text.match(/^@([^\s]+)\s+([\s\S]*)$/);
+  if (match) {
+    return { nodeTag: match[1], body: match[2] };
+  }
+  return { nodeTag: null, body: text };
+}
+
+/** Summarizes an AI action for the inline Action Card. */
+function describeAction(action: AiAction): { title: string; detail: string; explainTarget: string } {
+  switch (action.type) {
+    case 'create_resource':
+      return {
+        title: `Add Resource: ${action.payload.label} (${action.payload.kind})`,
+        detail: `Columns: ${action.payload.columns.map((c) => c.name).join(', ') || 'default schema'}`,
+        explainTarget: action.payload.label,
+      };
+    case 'create_processing':
+      return {
+        title: `Add ${action.payload.language.toUpperCase()} Node: ${action.payload.label}`,
+        detail: action.payload.code.slice(0, 100),
+        explainTarget: action.payload.label,
+      };
+    case 'connect_nodes':
+      return {
+        title: `Connect ${action.payload.fromNode} → ${action.payload.toNode}`,
+        detail: 'Lineage edge in pipeline DAG',
+        explainTarget: `${action.payload.fromNode} → ${action.payload.toNode}`,
+      };
+    case 'explain':
+      return {
+        title: `Deep-Dive: ${action.payload.target ?? 'Pipeline Architecture'}`,
+        detail: 'Request architectural rationale from Master Agent',
+        explainTarget: action.payload.target ?? 'this structure',
+      };
+  }
+}
+
 export function AiThoughtPanel() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  // Explicit user overrides (true = expanded). Absent => default (latest/running block open).
+  // Explicit user overrides for blocks & assistant thought traces
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>({});
   const [groupOpen, setGroupOpen] = useState(false);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
@@ -50,18 +92,28 @@ export function AiThoughtPanel() {
   const messages = useChatStore((s) => s.messages);
   const isGenerating = useChatStore((s) => s.isGenerating);
   const applyAction = useChatStore((s) => s.applyAction);
+  const sendMessage = useChatStore((s) => s.sendMessage);
 
   const nodes = usePipelineStore((s) => s.nodes);
   const edges = usePipelineStore((s) => s.edges);
   const selectedNodeId = usePipelineStore((s) => s.selectedNodeId);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevTurnCountRef = useRef<number>(0);
 
   // User prompts & AI replies excluding the initial static welcome banner
   const conversationTurns = messages.filter((m) => m.id !== 'welcome');
-  const lastUserMessage = [...conversationTurns].reverse().find((m) => m.sender === 'user');
 
-  // Smart auto-scroll: only follow new activity when the user is near the bottom
+  // Automatically expand the panel when the user sends a prompt or the AI starts responding
+  useEffect(() => {
+    if (conversationTurns.length > prevTurnCountRef.current || isGenerating) {
+      setIsCollapsed(false);
+      atBottomRef.current = true;
+    }
+    prevTurnCountRef.current = conversationTurns.length;
+  }, [conversationTurns.length, isGenerating]);
+
+  // Smart auto-scroll: follow new activity when near bottom or when a new message arrives
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -70,7 +122,7 @@ export function AiThoughtPanel() {
     } else {
       setHasNewActivity(true);
     }
-  }, [conversationTurns.length, isGenerating, selectedNodeId]);
+  }, [conversationTurns.length, isGenerating, selectedNodeId, isCollapsed]);
 
   // Live elapsed timer while the agent is working
   useEffect(() => {
@@ -164,9 +216,8 @@ export function AiThoughtPanel() {
     ],
   };
 
-  // Assemble dynamic blocks
   const staticBlocks: ThoughtBlock[] = [discoveryBlock, transformationBlock, modelingBlock];
-  const blocks: ThoughtBlock[] = [];
+  const focusBlocks: ThoughtBlock[] = [];
 
   // Selected node focus block if user clicked a node
   if (selectedNode) {
@@ -174,7 +225,7 @@ export function AiThoughtPanel() {
     const downstream = edges.filter((e) => e.source === selectedNode.id).length;
     const isProc = selectedNode.data.category === 'processing';
 
-    blocks.push({
+    focusBlocks.push({
       id: `block-selection-${selectedNode.id}`,
       title: `Focused Node: ${selectedNode.data.label}`,
       category: 'selection',
@@ -192,102 +243,41 @@ export function AiThoughtPanel() {
     });
   }
 
-  // Conversation turns (user prompts & AI actions)
-  conversationTurns.forEach((msg, idx) => {
-    if (msg.sender === 'user') {
-      blocks.push({
-        id: `block-user-${msg.id}`,
-        title: `Prompt: "${msg.text}"`,
-        category: 'prompt',
-        status: 'completed',
-        timestamp: msg.timestamp,
-        executionSteps: [
-          'executing parse_user_intent.py...',
-          'executing schema_entity_lookup.sql...',
-          'executing evaluate_graph_dependencies.py...',
-        ],
-        thoughtProcess: [
-          `Interpreted user directive: "${msg.text}".`,
-          'Identified required schema alterations and checked for circular references in DAG.',
-          'Synthesizing minimal impact action plan to fulfill user request.',
-        ],
-      });
-    } else {
-      // Assistant response block
-      const executionSteps: string[] = [];
-      if (msg.action) {
-        if (msg.action.type === 'create_processing') {
-          const ext = msg.action.payload.language === 'python' ? 'py' : 'sql';
-          executionSteps.push(`executing ${msg.action.payload.label}.${ext}...`);
-        } else {
-          executionSteps.push(`executing apply_${msg.action.type}.sql...`);
-        }
-      }
-      executionSteps.push('finalizing graph state and validation checks');
+  const isBlockExpanded = (id: string, defaultOpen = false) =>
+    expandedBlocks[id] ?? defaultOpen;
 
-      blocks.push({
-        id: `block-ai-${msg.id}`,
-        title: `Agent Response #${idx + 1}`,
-        category: 'prompt',
-        status: 'completed',
-        timestamp: msg.timestamp,
-        executionSteps,
-        thoughtProcess: [
-          msg.text.replace(/^###\s+/gm, '').trim(),
-          ...(msg.tasks && msg.tasks.length > 0
-            ? msg.tasks.map((t) => `Delegated sub-agent [${t.agent_role}]: ${t.instruction || t.status}`)
-            : []),
-        ],
-        action: msg.action,
-      });
-    }
-  });
+  const toggleBlockById = (id: string, defaultOpen = false) =>
+    setExpandedBlocks((prev) => ({ ...prev, [id]: !isBlockExpanded(id, defaultOpen) }));
 
-  // If AI is currently generating in real time
-  if (isGenerating) {
-    blocks.push({
-      id: 'block-generating',
-      title: 'Synthesizing Architecture Updates...',
-      category: 'prompt',
-      status: 'running',
-      executionSteps: [
-        'executing agent_master_reasoner.py...',
-        'executing compute_optimal_join_path.sql...',
-      ],
-      thoughtProcess: [
-        'Analyzing column types across connected sources to generate transformation code.',
-        'Evaluating query pushdown feasibility against Zetaris virtual catalog.',
-      ],
-    });
-  }
+  const aiTurnIds = conversationTurns
+    .filter((m) => m.sender === 'assistant')
+    .map((m) => `trace-${m.id}`);
+  const allCollapsibleIds = [
+    ...staticBlocks.map((b) => b.id),
+    ...focusBlocks.map((b) => b.id),
+    ...aiTurnIds,
+  ];
+  const allCollapsed =
+    allCollapsibleIds.every((id) => !isBlockExpanded(id, false)) && !groupOpen;
 
-  const lastBlockId = blocks.length > 0 ? blocks[blocks.length - 1].id : null;
-  const isExpanded = (b: ThoughtBlock) =>
-    expandedBlocks[b.id] ?? (b.status === 'running' || b.id === lastBlockId);
-  const toggleBlock = (b: ThoughtBlock) =>
-    setExpandedBlocks((prev) => ({ ...prev, [b.id]: !isExpanded(b) }));
-
-  const allBlocks = [...staticBlocks, ...blocks];
-  const allCollapsed = allBlocks.every((b) => !isExpanded(b)) && !groupOpen;
   const toggleAll = () => {
     const next: Record<string, boolean> = {};
-    allBlocks.forEach((b) => {
-      next[b.id] = allCollapsed;
+    allCollapsibleIds.forEach((id) => {
+      next[id] = allCollapsed;
     });
     setExpandedBlocks(next);
     setGroupOpen(allCollapsed);
   };
 
-  const handleApply = (b: ThoughtBlock) => {
-    if (!b.action) return;
-    applyAction(b.action);
-    setAppliedIds((prev) => new Set(prev).add(b.id));
+  const handleApplyAction = (msgId: string, action: AiAction) => {
+    applyAction(action);
+    setAppliedIds((prev) => new Set(prev).add(msgId));
   };
 
   const formatElapsed = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
-  const renderNode = (b: ThoughtBlock) => {
-    if (b.status === 'running') {
+  const renderNodeBadge = (status: ThoughtBlock['status']) => {
+    if (status === 'running') {
       return (
         <span className="w-[18px] h-[18px] rounded-full bg-[#FDFFFC] flex items-center justify-center">
           <Loader2 size={14} className="animate-spin text-[#D66F14]" />
@@ -301,17 +291,16 @@ export function AiThoughtPanel() {
     );
   };
 
-  const renderBlock = (block: ThoughtBlock) => {
-    const open = isExpanded(block);
+  const renderTelemetryBlock = (block: ThoughtBlock, defaultOpen = false) => {
+    const open = isBlockExpanded(block.id, defaultOpen);
     const running = block.status === 'running';
-    const applied = appliedIds.has(block.id);
     const lastExecIdx = block.executionSteps.length - 1;
     return (
       <div key={block.id} className="relative pl-7">
-        <span className="absolute left-0 top-[7px] z-10">{renderNode(block)}</span>
+        <span className="absolute left-0 top-[7px] z-10">{renderNodeBadge(block.status)}</span>
 
         <div
-          onClick={() => toggleBlock(block)}
+          onClick={() => toggleBlockById(block.id, defaultOpen)}
           className="flex items-start gap-2 py-1.5 pr-1 cursor-pointer select-none rounded-lg hover:bg-[#334139]/[0.04] -ml-1 pl-1"
         >
           <div className="flex-1 min-w-0">
@@ -330,25 +319,6 @@ export function AiThoughtPanel() {
             )}
           </div>
           <div className="flex items-center gap-1.5 shrink-0 text-[#334139]/45 mt-0.5">
-            {block.timestamp && <span className="text-[9.5px] font-mono">{block.timestamp}</span>}
-            {block.action &&
-              (applied ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#064C1C]/10 text-[#064C1C]">
-                  <Check size={10} strokeWidth={3} /> Applied
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleApply(block);
-                  }}
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-[#D66F14] hover:brightness-110 text-[#FDFFFC] transition cursor-pointer"
-                >
-                  <Wand2 size={10} />
-                  Apply
-                </button>
-              ))}
             {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
           </div>
         </div>
@@ -412,9 +382,9 @@ export function AiThoughtPanel() {
           type="button"
           onClick={() => setIsCollapsed(false)}
           style={{ backgroundColor: '#FDFFFC' }}
-          className="group flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-[#334139]/20 shadow-md hover:border-[#334139]/50 transition-all cursor-pointer"
-          aria-label="Expand AI Thought Process panel"
-          title="Expand AI Thought Process"
+          className="group flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-[#334139]/20 shadow-md hover:border-[#064C1C]/60 transition-all cursor-pointer"
+          aria-label="Expand AI Agent & Thought Process panel"
+          title="Expand AI Agent & Thought Process"
         >
           <span className="relative flex h-2.5 w-2.5">
             {isGenerating ? (
@@ -423,11 +393,16 @@ export function AiThoughtPanel() {
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D66F14]" />
               </>
             ) : (
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#334139]/40" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#064C1C]" />
             )}
           </span>
-          <Bot size={15} className="text-[#334139]" />
-          <span className="text-xs font-bold text-[#334139]">AI Thoughts</span>
+          <Bot size={15} className="text-[#064C1C]" />
+          <span className="text-xs font-bold text-[#334139]">AI Architect</span>
+          {conversationTurns.length > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-[#064C1C]/10 text-[#064C1C]">
+              {conversationTurns.length}
+            </span>
+          )}
           <ChevronRight size={14} className="text-[#334139]/60 group-hover:translate-x-0.5 transition-transform" />
         </button>
       </div>
@@ -438,30 +413,34 @@ export function AiThoughtPanel() {
     <aside
       aria-label="AI Thought Process Panel"
       style={{ backgroundColor: '#FDFFFC' }}
-      className="absolute left-4 top-20 z-20 w-80 md:w-[350px] max-h-[calc(100vh-11.5rem)] flex flex-col rounded-2xl border border-[#334139]/20 shadow-lg backdrop-blur-md overflow-hidden transition-all"
+      className="absolute left-4 top-20 z-20 w-80 md:w-[370px] max-h-[calc(100vh-11.5rem)] flex flex-col rounded-2xl border border-[#334139]/20 shadow-lg backdrop-blur-md overflow-hidden transition-all"
     >
       {/* Header */}
-      <div className="px-4 py-3 flex items-center justify-between shrink-0">
+      <div className="px-4 py-3 border-b border-[#334139]/10 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <div
             className={cn(
               'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors',
-              isGenerating ? 'bg-[#D66F14] text-[#FDFFFC]' : 'bg-[#334139] text-[#FDFFFC]',
+              isGenerating ? 'bg-[#D66F14] text-[#FDFFFC]' : 'bg-[#064C1C] text-[#FDFFFC]',
             )}
           >
             {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Bot size={16} />}
           </div>
           <div className="min-w-0">
             <h2 className="text-sm font-bold tracking-tight text-[#334139] truncate leading-tight">
-              AI Thought Process
+              AuraBI Architect
             </h2>
             <p
               className={cn(
-                'text-[10.5px] leading-tight mt-0.5',
+                'text-[10.5px] leading-tight mt-0.5 truncate',
                 isGenerating ? 'text-[#D66F14] font-medium' : 'text-[#334139]/55',
               )}
             >
-              {isGenerating ? `Analyzing… ${formatElapsed(elapsed)}` : 'Idle'}
+              {isGenerating
+                ? `Synthesizing… ${formatElapsed(elapsed)}`
+                : conversationTurns.length > 0
+                ? `${conversationTurns.length} message${conversationTurns.length === 1 ? '' : 's'} · Ready`
+                : 'Agent & Thought Feed · Ready'}
             </p>
           </div>
         </div>
@@ -471,8 +450,8 @@ export function AiThoughtPanel() {
             type="button"
             onClick={toggleAll}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-[#334139]/60 hover:text-[#334139] hover:bg-[#334139]/8 transition-colors cursor-pointer"
-            aria-label={allCollapsed ? 'Expand all' : 'Collapse all'}
-            title={allCollapsed ? 'Expand all' : 'Collapse all'}
+            aria-label={allCollapsed ? 'Expand all thoughts' : 'Collapse all thoughts'}
+            title={allCollapsed ? 'Expand all thoughts' : 'Collapse all thoughts'}
           >
             <ChevronsUpDown size={14} />
           </button>
@@ -488,13 +467,14 @@ export function AiThoughtPanel() {
         </div>
       </div>
 
-      {/* Timeline */}
+      {/* Unified Feed: Telemetry + Conversation Stream */}
       <div className="relative flex-1 min-h-0 flex flex-col">
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-4 pb-4 pt-1 text-xs custom-scrollbar"
+          className="flex-1 overflow-y-auto px-4 pb-4 pt-2.5 text-xs custom-scrollbar space-y-4"
         >
+          {/* 1. Pipeline Telemetry & Selected Node Context */}
           <div className="relative">
             {/* Rail */}
             <span className="absolute left-[8.5px] top-3 bottom-3 w-px bg-[#334139]/15" />
@@ -521,10 +501,302 @@ export function AiThoughtPanel() {
                 </span>
               </div>
             </div>
-            {groupOpen && <div className="space-y-0.5">{staticBlocks.map(renderBlock)}</div>}
+            {groupOpen && (
+              <div className="space-y-0.5">
+                {staticBlocks.map((b) => renderTelemetryBlock(b, false))}
+              </div>
+            )}
 
-            {/* Focus + conversation */}
-            <div className="space-y-0.5">{blocks.map(renderBlock)}</div>
+            {/* Focused node telemetry when a node is selected on the canvas */}
+            {focusBlocks.length > 0 && (
+              <div className="space-y-0.5">
+                {focusBlocks.map((b) => renderTelemetryBlock(b, true))}
+              </div>
+            )}
+          </div>
+
+          {/* 2. Unified Conversation Feed */}
+          <div className="pt-2 border-t border-[#334139]/10 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#334139]/45">
+                Agent Conversation
+              </span>
+              {selectedNode && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-mono text-[10px] font-semibold">
+                  <AtSign size={10} />
+                  {selectedNode.data.label}
+                </span>
+              )}
+            </div>
+
+            {/* Welcome / Ready Card when no messages sent yet */}
+            {conversationTurns.length === 0 && !isGenerating && (
+              <div className="rounded-2xl border border-[#334139]/12 bg-[#334139]/[0.025] p-3.5 space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-md bg-[#064C1C] text-[#FDFFFC] flex items-center justify-center shrink-0">
+                    <Bot size={12} />
+                  </span>
+                  <span className="text-[11.5px] font-bold text-[#1E2D24]">
+                    Ready to co-design your pipeline
+                  </span>
+                </div>
+                <p className="text-[11.5px] leading-relaxed text-[#334139]/80">
+                  Use the prompt bar below or click any node on the canvas to attach it as context. I will trace my reasoning steps here and let you apply changes directly to the DAG.
+                </p>
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void sendMessage(
+                        selectedNode
+                          ? `@${selectedNode.data.label} Explain the schema and lineage of this node`
+                          : 'Explain the current pipeline architecture and data lineage',
+                      )
+                    }
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-[#FDFFFC] border border-[#334139]/18 text-[#334139] hover:border-[#064C1C] hover:text-[#064C1C] transition-colors cursor-pointer"
+                  >
+                    <Sparkles size={10} className="text-[#D66F14]" />
+                    <span>
+                      {selectedNode ? `Explain @${selectedNode.data.label}` : 'Explain pipeline'}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void sendMessage(
+                        'Create a SQL transformation node to cleanse and join staging data',
+                      )
+                    }
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-[#FDFFFC] border border-[#334139]/18 text-[#334139] hover:border-[#064C1C] hover:text-[#064C1C] transition-colors cursor-pointer"
+                  >
+                    <Wand2 size={10} className="text-[#064C1C]" />
+                    <span>Propose SQL transform</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Conversation Turns */}
+            {conversationTurns.map((msg) => {
+              if (msg.sender === 'user') {
+                const { nodeTag, body } = parseUserPromptContext(msg.text);
+                return (
+                  <div
+                    key={msg.id}
+                    className="flex flex-col items-end animate-fadeIn space-y-1"
+                  >
+                    <div className="flex items-center gap-1.5 text-[9.5px] font-mono text-[#334139]/45 px-1">
+                      <span>You</span>
+                      <span>·</span>
+                      <span>{msg.timestamp}</span>
+                    </div>
+                    <div className="max-w-[92%] rounded-2xl rounded-tr-xs bg-[#1E2D24] text-[#FDFFFC] px-3.5 py-2.5 shadow-xs space-y-1.5">
+                      {nodeTag && (
+                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D66F14]/25 border border-[#D66F14]/40 text-[#FDFFFC] font-mono text-[10px] font-semibold">
+                          <AtSign size={9} className="text-[#D66F14]" />
+                          <span>{nodeTag}</span>
+                        </div>
+                      )}
+                      <p className="text-[12px] leading-relaxed whitespace-pre-wrap break-words">
+                        {body}
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+
+              // Assistant Turn: Persona Header + Collapsible Thought Trace + Markdown Reply + Action Card
+              const traceId = `trace-${msg.id}`;
+              const traceOpen = isBlockExpanded(traceId, false);
+              const applied = appliedIds.has(msg.id);
+
+              const executionSteps: string[] = [
+                'executing parse_user_intent.py...',
+                'executing evaluate_graph_dependencies.py...',
+              ];
+              if (msg.action) {
+                if (msg.action.type === 'create_processing') {
+                  const ext = msg.action.payload.language === 'python' ? 'py' : 'sql';
+                  executionSteps.push(`executing ${msg.action.payload.label}.${ext}...`);
+                } else {
+                  executionSteps.push(`executing apply_${msg.action.type}.sql...`);
+                }
+              }
+              executionSteps.push('finalizing response and schema verification');
+
+              const actionMeta = msg.action ? describeAction(msg.action) : null;
+
+              return (
+                <div key={msg.id} className="space-y-2 animate-fadeIn">
+                  {/* Bot Persona Header */}
+                  <div className="flex items-center justify-between px-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-md bg-[#064C1C] text-[#FDFFFC] flex items-center justify-center">
+                        <Bot size={10} />
+                      </span>
+                      <span className="text-[11px] font-bold text-[#1E2D24]">
+                        AuraBI Architect
+                      </span>
+                    </div>
+                    <span className="text-[9.5px] font-mono text-[#334139]/45">
+                      {msg.timestamp}
+                    </span>
+                  </div>
+
+                  {/* Collapsible Thought Process Trace */}
+                  <div className="rounded-xl border border-[#334139]/12 bg-[#334139]/[0.02] px-2.5 py-1.5">
+                    <button
+                      type="button"
+                      onClick={() => toggleBlockById(traceId, false)}
+                      className="w-full flex items-center justify-between gap-2 text-left cursor-pointer select-none py-0.5"
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-4 h-4 rounded-full bg-[#064C1C]/10 flex items-center justify-center shrink-0">
+                          <Check size={9} strokeWidth={3} className="text-[#064C1C]" />
+                        </span>
+                        <span className="text-[11px] font-semibold text-[#334139] truncate">
+                          Thought process
+                        </span>
+                        <span className="text-[10px] text-[#334139]/50 font-mono shrink-0">
+                          · {executionSteps.length} steps
+                        </span>
+                      </div>
+                      <span className="text-[#334139]/45 shrink-0">
+                        {traceOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                      </span>
+                    </button>
+
+                    {traceOpen && (
+                      <div className="mt-2 pt-2 border-t border-[#334139]/10 space-y-2">
+                        <ul className="space-y-1 rounded-lg bg-[#334139]/[0.04] px-2 py-1.5">
+                          {executionSteps.map((step, i) => (
+                            <li
+                              key={i}
+                              className="flex items-start gap-1.5 text-[10.5px] font-mono text-[#334139]/80 leading-snug"
+                            >
+                              <Check
+                                size={10}
+                                strokeWidth={3}
+                                className="text-[#064C1C] shrink-0 mt-0.5"
+                              />
+                              <span className="break-all">{step}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        {msg.tasks && msg.tasks.length > 0 && (
+                          <div className="space-y-1">
+                            {msg.tasks.map((t, i) => (
+                              <div
+                                key={i}
+                                className="text-[10.5px] text-[#334139]/75 font-mono bg-[#FDFFFC] px-2 py-1 rounded border border-[#334139]/10"
+                              >
+                                [{t.agent_role}]: {t.instruction || t.status}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* AI Reply Body (Markdown) */}
+                  <div className="rounded-2xl rounded-tl-xs border border-[#334139]/15 bg-[#FDFFFC] p-3.5 text-[12px] text-[#334139] shadow-2xs space-y-3">
+                    <Markdown>{msg.text}</Markdown>
+
+                    {/* Action Card when an AiAction is attached */}
+                    {msg.action && actionMeta && (
+                      <div className="pt-2.5 border-t border-[#334139]/12 space-y-2">
+                        <div className="rounded-xl bg-[#334139]/[0.04] border border-[#334139]/10 p-2.5 space-y-1">
+                          <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-[#D66F14]">
+                            <Sparkles size={11} />
+                            <span>Proposed Graph Action</span>
+                          </div>
+                          <div className="text-[11.5px] font-bold font-mono text-[#1E2D24]">
+                            {actionMeta.title}
+                          </div>
+                          <div className="text-[10.5px] text-[#334139]/65 font-mono truncate">
+                            {actionMeta.detail}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {applied ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-[#064C1C]/10 text-[#064C1C]">
+                              <Check size={12} strokeWidth={3} />
+                              <span>Applied to Canvas</span>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleApplyAction(msg.id, msg.action!)}
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-[#064C1C] hover:bg-[#1E2D24] text-[#FDFFFC] transition-colors cursor-pointer shadow-xs"
+                            >
+                              <Wand2 size={12} />
+                              <span>
+                                {msg.action.type === 'explain' ? 'Ask Agent' : 'Apply to Canvas'}
+                              </span>
+                            </button>
+                          )}
+
+                          {msg.action.type !== 'explain' && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                applyAction({
+                                  type: 'explain',
+                                  payload: { target: actionMeta.explainTarget },
+                                })
+                              }
+                              className="px-3 py-1.5 rounded-full text-[11px] font-semibold border border-[#334139]/20 text-[#334139] hover:border-[#064C1C] hover:text-[#064C1C] transition-colors cursor-pointer"
+                            >
+                              Explain
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Live Generating State */}
+            {isGenerating && (
+              <div className="space-y-2 animate-fadeIn">
+                <div className="flex items-center justify-between px-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-4 h-4 rounded-md bg-[#D66F14] text-[#FDFFFC] flex items-center justify-center">
+                      <Loader2 size={10} className="animate-spin" />
+                    </span>
+                    <span className="text-[11px] font-bold text-[#D66F14]">
+                      AuraBI Architect
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono text-[#D66F14] font-semibold">
+                    {formatElapsed(elapsed)}
+                  </span>
+                </div>
+
+                <div className="rounded-2xl border border-[#D66F14]/30 bg-[#D66F14]/[0.04] p-3 space-y-2">
+                  <div className="text-[11.5px] font-semibold text-[#334139]">
+                    Synthesizing Architecture Updates...
+                  </div>
+                  <ul className="space-y-1 rounded-lg bg-[#FDFFFC] border border-[#334139]/10 px-2.5 py-2">
+                    <li className="flex items-center gap-1.5 text-[10.5px] font-mono text-[#334139]">
+                      <Check size={10} strokeWidth={3} className="text-[#064C1C] shrink-0" />
+                      <span>executing agent_master_reasoner.py...</span>
+                    </li>
+                    <li className="flex items-center gap-1.5 text-[10.5px] font-mono text-[#D66F14]">
+                      <Loader2 size={10} className="animate-spin shrink-0" />
+                      <span>executing compute_optimal_join_path.sql...</span>
+                    </li>
+                  </ul>
+                  <p className="text-[11px] text-[#334139]/75 leading-relaxed">
+                    Analyzing column types and evaluating query pushdown feasibility against Zetaris virtual catalog.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
