@@ -129,6 +129,33 @@ function getQuickChips(contextNode: PipelineNode | null): QuickChip[] {
   ];
 }
 
+const PROPOSAL_QUICK_CHIPS: QuickChip[] = [
+  {
+    id: 'prop-kpi',
+    label: 'Add Customer LTV KPI',
+    promptText: 'Add an automated verification check for Customer Lifetime Value (LTV)',
+    icon: Plus,
+  },
+  {
+    id: 'prop-tol',
+    label: 'Enforce strict 0 tolerance',
+    promptText: 'Enforce strict zero tolerance (±0.00%) across all financial mart measures',
+    icon: Sparkles,
+  },
+  {
+    id: 'prop-scd2',
+    label: 'Add SCD-2 customer addresses',
+    promptText: 'Include customer address and territory mutations in the SCD Type-2 timeline',
+    icon: Plus,
+  },
+  {
+    id: 'prop-part',
+    label: 'Partition by region & date',
+    promptText: 'Partition the fact_daily_revenue mart table by both date_key and region_code',
+    icon: Link2,
+  },
+];
+
 export function WorkspacePromptBar({
   className,
   disabled = false,
@@ -153,7 +180,7 @@ export function WorkspacePromptBar({
   const nodes = usePipelineStore((s) => s.nodes);
   const selectedNodeId = usePipelineStore((s) => s.selectedNodeId);
 
-  // Only show workspace node context & quick chips when mounted on the Workspace (no custom onSend override)
+  // Only show workspace node context when mounted on the Workspace (no custom onSend override)
   const isWorkspaceMode = !onSend;
 
   // Reset detached state whenever the user selects a different node on the canvas
@@ -167,6 +194,7 @@ export function WorkspacePromptBar({
       : null;
 
   const quickChips = getQuickChips(activeContextNode);
+  const chipsToDisplay = isWorkspaceMode ? quickChips : PROPOSAL_QUICK_CHIPS;
 
   // Auto-grow textarea with content and preserve formatting
   useEffect(() => {
@@ -352,21 +380,20 @@ export function WorkspacePromptBar({
           </div>
         )}
 
-        {/* Quick Prompt Suggestion Chips (Workspace Mode) */}
-        {isWorkspaceMode && !isListening && !isDeactivated && (
+        {/* Quick Prompt Suggestion Chips (with md size bullets) */}
+        {!isListening && !isDeactivated && chipsToDisplay.length > 0 && (
           <div className="flex flex-wrap items-center justify-center gap-1.5 px-2">
-            {quickChips.map((chip) => {
-              const Icon = chip.icon;
+            {chipsToDisplay.map((chip) => {
               return (
                 <button
                   key={chip.id}
                   type="button"
                   onClick={() => handleChipClick(chip.promptText)}
                   style={{ backgroundColor: '#FDFFFC' }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold text-[#334139] border border-[#334139]/18 hover:border-[#064C1C] hover:text-[#064C1C] shadow-xs transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold text-[#334139] border border-[#334139]/18 hover:border-[#064C1C] hover:text-[#064C1C] shadow-2xs transition-all cursor-pointer"
                 >
-                  <Icon size={11} className="text-[#D66F14] shrink-0" />
-                  <span className="truncate max-w-[200px]">{chip.label}</span>
+                  <span className="w-2 h-2 rounded-full bg-[#064C1C] shrink-0" />
+                  <span className="truncate max-w-[220px]">{chip.label}</span>
                 </button>
               );
             })}

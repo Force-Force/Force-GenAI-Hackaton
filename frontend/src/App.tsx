@@ -4,6 +4,7 @@ import { AgentEntryPage } from './pages/AgentEntryPage';
 import { WorkspacePage } from './pages/WorkspacePage';
 import { ComponentsPage } from './pages/ComponentsPage';
 import { PlanProposalPage } from './pages/PlanProposalPage';
+import { AuditCenterPage } from './pages/AuditCenterPage';
 
 function resolveRoute() {
   const path = window.location.pathname;
@@ -16,6 +17,16 @@ function resolveRoute() {
   }
   if (path === '/plan' || hash === '#/plan' || hash === '#plan') {
     return 'plan';
+  }
+  if (
+    path === '/audit' ||
+    hash === '#/audit' ||
+    hash === '#audit' ||
+    path === '/validate' ||
+    hash === '#/validate' ||
+    hash === '#validate'
+  ) {
+    return 'audit';
   }
   return 'entry';
 }
@@ -38,6 +49,7 @@ export default function App() {
       {route === 'components' && <ComponentsPage />}
       {route === 'workspace' && <WorkspacePage />}
       {route === 'plan' && <PlanProposalPage />}
+      {route === 'audit' && <AuditCenterPage />}
       {route === 'entry' && <AgentEntryPage />}
     </AppProviders>
   );

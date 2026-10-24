@@ -71,12 +71,15 @@ export function TopNav() {
         </button>
         <button
           type="button"
-          onClick={() => void runValidation()}
-          aria-label="Validate pipeline graph"
+          onClick={() => {
+            void runValidation();
+            navigateTo('/audit');
+          }}
+          aria-label="Independent Audit Center"
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/20 hover:border-[#064C1C] hover:text-[#064C1C] transition-colors cursor-pointer"
         >
           <ShieldCheck size={13} />
-          <span>Validate</span>
+          <span>Audit Center</span>
         </button>
       </div>
     </header>

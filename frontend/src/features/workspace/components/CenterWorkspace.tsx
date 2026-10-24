@@ -11,7 +11,7 @@ import { ValidationCenter } from '../../validation/components/ValidationCenter';
 const TABS: { id: WorkspaceTab; label: string; icon: typeof Workflow }[] = [
   { id: 'canvas', label: 'Pipeline Canvas', icon: Workflow },
   { id: 'sources', label: 'Data Sources', icon: Database },
-  { id: 'validation', label: 'Validation', icon: ShieldCheck },
+  { id: 'validation', label: 'Independent Audit Center', icon: ShieldCheck },
 ];
 
 export function CenterWorkspace() {
@@ -20,8 +20,8 @@ export function CenterWorkspace() {
   const { ref, isFullscreen, toggle } = useFullscreen<HTMLDivElement>();
 
   return (
-    <div ref={ref} className="h-full flex flex-col bg-slate-50 min-w-0">
-      <div className="flex items-center gap-1 px-3 pt-2 bg-white border-b border-slate-200" role="tablist">
+    <div ref={ref} style={{ backgroundColor: '#FDFFFC' }} className="h-full flex flex-col min-w-0">
+      <div className="flex items-center gap-1 px-4 pt-2 bg-[#FDFFFC] border-b border-[#334139]/12" role="tablist">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -29,13 +29,13 @@ export function CenterWorkspace() {
             aria-selected={activeTab === id}
             onClick={() => setActiveTab(id)}
             className={cn(
-              'flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-colors cursor-pointer',
+              'flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 transition-colors cursor-pointer',
               activeTab === id
-                ? 'text-[#4F46E5] border-[#4F46E5] bg-indigo-50/50'
-                : 'text-slate-500 border-transparent hover:text-slate-700',
+                ? 'text-[#064C1C] border-[#064C1C] bg-[#064C1C]/5'
+                : 'text-[#334139]/60 border-transparent hover:text-[#334139] hover:bg-[#334139]/[0.02]',
             )}
           >
-            <Icon size={14} />
+            <Icon size={14} className={activeTab === id ? 'text-[#064C1C]' : ''} />
             {label}
           </button>
         ))}
@@ -43,7 +43,7 @@ export function CenterWorkspace() {
 
       <Breadcrumb />
 
-      <div className="flex-1 relative min-h-0">
+      <div className="flex-1 relative min-h-0 bg-[#FDFFFC]">
         {activeTab === 'canvas' && (
           <>
             <CanvasToolbar isFullscreen={isFullscreen} onToggleFullscreen={toggle} />

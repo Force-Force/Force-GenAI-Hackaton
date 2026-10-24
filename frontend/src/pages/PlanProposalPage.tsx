@@ -956,7 +956,7 @@ export function PlanProposalPage() {
                       </p>
                     </div>
 
-                    {/* Options Pills */}
+                    {/* Options Pills with md size bullets */}
                     <div className="pl-5 flex flex-wrap items-center gap-2 pt-1">
                       {currentQuestion.options.map((opt) => {
                         const isSelected = selectedAnswers[currentQuestion.id] === opt.id;
@@ -966,20 +966,23 @@ export function PlanProposalPage() {
                             type="button"
                             onClick={() => handleSelectOption(currentQuestion.id, opt.id)}
                             className={cn(
-                              'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer select-none',
+                              'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer select-none',
                               isSelected
                                 ? 'bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]'
                                 : 'bg-transparent text-[#334139] border-[#334139]/25 hover:border-[#334139]/60',
                             )}
                           >
-                            {isSelected && <Check size={12} strokeWidth={3} />}
+                            <span
+                              className={cn(
+                                'w-2 h-2 rounded-full shrink-0 transition-all',
+                                isSelected
+                                  ? 'bg-[#FDFFFC]'
+                                  : opt.isRecommended
+                                  ? 'bg-[#D66F14]'
+                                  : 'bg-[#334139]/35',
+                              )}
+                            />
                             <span>{opt.label}</span>
-                            {opt.isRecommended && !isSelected && (
-                              <span
-                                className="w-1.5 h-1.5 rounded-full bg-[#D66F14]"
-                                title="Recommended"
-                              />
-                            )}
                           </button>
                         );
                       })}
