@@ -1,12 +1,29 @@
-import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, type ChangeEvent } from 'react';
-import { ArrowUp, Sparkles, Workflow, Palette, Plus, X, FileText, Mic, Square } from 'lucide-react';
-import { useChatStore } from '../features/chat/store/chatStore';
-import { usePipelineStore } from '../features/workspace/store/pipelineStore';
-import { parseCsv } from '../utils/parsers/csvParser';
-import { parseSqlDdl } from '../utils/parsers/sqlDdlParser';
-import type { Column, PipelineNode, SourceFormat } from '../types/pipeline';
-import { navigateTo } from '../utils/navigation';
-import { cn } from '../utils/cn';
+import {
+  useState,
+  useRef,
+  useEffect,
+  type FormEvent,
+  type KeyboardEvent,
+  type ChangeEvent,
+} from "react";
+import {
+  ArrowUp,
+  Sparkles,
+  Workflow,
+  Palette,
+  Plus,
+  X,
+  FileText,
+  Mic,
+  Square,
+} from "lucide-react";
+import { useChatStore } from "../features/chat/store/chatStore";
+import { usePipelineStore } from "../features/workspace/store/pipelineStore";
+import { parseCsv } from "../utils/parsers/csvParser";
+import { parseSqlDdl } from "../utils/parsers/sqlDdlParser";
+import type { Column, PipelineNode, SourceFormat } from "../types/pipeline";
+import { navigateTo } from "../utils/navigation";
+import { cn } from "../utils/cn";
 
 interface AttachedResource {
   id: string;
@@ -16,10 +33,58 @@ interface AttachedResource {
   fileName: string;
 }
 
+const TYPICAL_PROMPTS = [
+  "Build an ETL pipeline for daily web sales...",
+  "Connect PostgreSQL source and Snowflake mart...",
+  "Add a customer loyalty dimension table with SCD type 2...",
+  "Audit warehouse schema constraints and primary keys...",
+  "Transform raw clickstream events into a star schema...",
+  "Suggest an aggregation pipeline for monthly active users...",
+];
+
 export function AgentEntryPage() {
-  const [prompt, setPrompt] = useState('');
-  const [attachedResources, setAttachedResources] = useState<AttachedResource[]>([]);
+  const [prompt, setPrompt] = useState("");
+  const [attachedResources, setAttachedResources] = useState<
+    AttachedResource[]
+  >([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [isFocused, setIsFocused] = useState(false);
+  const [promptIndex, setPromptIndex] = useState(0);
+  const [animatedPrompt, setAnimatedPrompt] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Animated typewriter cycling through typical prompts directly in the prompt text zone
+  useEffect(() => {
+    if (prompt) return;
+
+    const fullPrompt = TYPICAL_PROMPTS[promptIndex];
+    let timer: ReturnType<typeof setTimeout>;
+
+    if (!isDeleting) {
+      if (animatedPrompt.length < fullPrompt.length) {
+        timer = setTimeout(() => {
+          setAnimatedPrompt(fullPrompt.slice(0, animatedPrompt.length + 1));
+        }, 36);
+      } else {
+        timer = setTimeout(() => {
+          setIsDeleting(true);
+        }, 2200);
+      }
+    } else {
+      if (animatedPrompt.length > 0) {
+        timer = setTimeout(() => {
+          setAnimatedPrompt(fullPrompt.slice(0, animatedPrompt.length - 1));
+        }, 18);
+      } else {
+        setIsDeleting(false);
+        setPromptIndex((prev) => (prev + 1) % TYPICAL_PROMPTS.length);
+      }
+    }
+
+    return () => clearTimeout(timer);
+  }, [animatedPrompt, isDeleting, promptIndex, prompt]);
 
   const sendMessage = useChatStore((s) => s.sendMessage);
   const isGenerating = useChatStore((s) => s.isGenerating);
@@ -27,7 +92,7 @@ export function AgentEntryPage() {
 
   const [isListening, setIsListening] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
-  const [interimTranscript, setInterimTranscript] = useState('');
+  const [interimTranscript, setInterimTranscript] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -47,14 +112,16 @@ export function AgentEntryPage() {
 
   const startVoiceInput = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRecognition = typeof window !== 'undefined'
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-      : null;
+    const SpeechRecognition =
+      typeof window !== "undefined"
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any).SpeechRecognition ||
+          (window as any).webkitSpeechRecognition
+        : null;
 
     setIsListening(true);
     setVoiceDuration(0);
-    setInterimTranscript('');
+    setInterimTranscript("");
 
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
@@ -66,12 +133,12 @@ export function AgentEntryPage() {
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
-        recognition.lang = 'en-US';
+        recognition.lang = "en-US";
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         recognition.onresult = (event: any) => {
-          let finalTranscript = '';
-          let currentInterim = '';
+          let finalTranscript = "";
+          let currentInterim = "";
           for (let i = event.resultIndex; i < event.results.length; i++) {
             const transcript = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
@@ -81,7 +148,11 @@ export function AgentEntryPage() {
             }
           }
           if (finalTranscript) {
-            setPrompt((prev) => (prev ? `${prev.trim()} ${finalTranscript.trim()}` : finalTranscript.trim()));
+            setPrompt((prev) =>
+              prev
+                ? `${prev.trim()} ${finalTranscript.trim()}`
+                : finalTranscript.trim(),
+            );
           }
           setInterimTranscript(currentInterim);
         };
@@ -105,7 +176,7 @@ export function AgentEntryPage() {
 
   const stopVoiceInput = () => {
     setIsListening(false);
-    setInterimTranscript('');
+    setInterimTranscript("");
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -134,31 +205,51 @@ export function AgentEntryPage() {
 
     try {
       const text = await file.text();
-      const baseName = file.name.replace(/\.[^/.]+$/, '').toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      const baseName = file.name
+        .replace(/\.[^/.]+$/, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, "_");
 
-      if (file.name.endsWith('.sql')) {
+      if (file.name.endsWith(".sql")) {
         const result = parseSqlDdl(text);
         if (result.tables.length > 0) {
-          const newResources: AttachedResource[] = result.tables.map((table) => ({
-            id: `res_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-            name: table.name,
-            columns: table.columns,
-            format: 'postgresql',
-            fileName: file.name,
-          }));
+          const newResources: AttachedResource[] = result.tables.map(
+            (table) => ({
+              id: `res_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+              name: table.name,
+              columns: table.columns,
+              format: "postgresql",
+              fileName: file.name,
+            }),
+          );
           setAttachedResources((prev) => [...prev, ...newResources]);
         }
       } else {
         // Default to CSV parser
-        const result = parseCsv(text, { tableName: baseName || 'uploaded_resource' });
+        const result = parseCsv(text, {
+          tableName: baseName || "uploaded_resource",
+        });
         const newResource: AttachedResource = {
           id: `res_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
           name: result.tableName,
-          columns: result.columns.length > 0 ? result.columns : [
-            { name: 'id', type: 'INT', isPrimaryKey: true, isForeignKey: false },
-            { name: 'data', type: 'VARCHAR(255)', isPrimaryKey: false, isForeignKey: false },
-          ],
-          format: 'csv',
+          columns:
+            result.columns.length > 0
+              ? result.columns
+              : [
+                  {
+                    name: "id",
+                    type: "INT",
+                    isPrimaryKey: true,
+                    isForeignKey: false,
+                  },
+                  {
+                    name: "data",
+                    type: "VARCHAR(255)",
+                    isPrimaryKey: false,
+                    isForeignKey: false,
+                  },
+                ],
+          format: "csv",
           fileName: file.name,
         };
         setAttachedResources((prev) => [...prev, newResource]);
@@ -167,19 +258,24 @@ export function AgentEntryPage() {
       // Fallback simple resource if parse fails
       const fallback: AttachedResource = {
         id: `res_${Date.now()}`,
-        name: file.name.replace(/\.[^/.]+$/, '') || 'uploaded_data',
+        name: file.name.replace(/\.[^/.]+$/, "") || "uploaded_data",
         columns: [
-          { name: 'id', type: 'INT', isPrimaryKey: true, isForeignKey: false },
-          { name: 'payload', type: 'VARCHAR(255)', isPrimaryKey: false, isForeignKey: false },
+          { name: "id", type: "INT", isPrimaryKey: true, isForeignKey: false },
+          {
+            name: "payload",
+            type: "VARCHAR(255)",
+            isPrimaryKey: false,
+            isForeignKey: false,
+          },
         ],
-        format: 'generic',
+        format: "generic",
         fileName: file.name,
       };
       setAttachedResources((prev) => [...prev, fallback]);
     } finally {
       // Clear input so same file can be re-uploaded if desired
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
   };
@@ -197,14 +293,14 @@ export function AgentEntryPage() {
     attachedResources.forEach((res, index) => {
       const node: PipelineNode = {
         id: `node_${Date.now()}_${index}`,
-        type: 'resource',
+        type: "resource",
         position: { x: 80 + index * 260, y: 100 + (index % 2) * 80 },
         data: {
-          category: 'resource',
-          kind: res.format === 'csv' ? 'external' : 'source',
+          category: "resource",
+          kind: res.format === "csv" ? "external" : "source",
           label: res.name,
           description: `Uploaded resource from ${res.fileName} (${res.columns.length} columns).`,
-          warehouseRole: 'source',
+          warehouseRole: "source",
           format: res.format,
           columns: res.columns,
         },
@@ -216,8 +312,14 @@ export function AgentEntryPage() {
     let messageContent = trimmed;
     if (attachedResources.length > 0) {
       const resourceSummary = attachedResources
-        .map((r) => `${r.name} (${r.columns.length} columns: ${r.columns.map((c) => c.name).slice(0, 4).join(', ')}${r.columns.length > 4 ? '...' : ''})`)
-        .join(', ');
+        .map(
+          (r) =>
+            `${r.name} (${r.columns.length} columns: ${r.columns
+              .map((c) => c.name)
+              .slice(0, 4)
+              .join(", ")}${r.columns.length > 4 ? "..." : ""})`,
+        )
+        .join(", ");
 
       messageContent = trimmed
         ? `[Attached Resource(s): ${resourceSummary}]\n\n${trimmed}`
@@ -226,13 +328,23 @@ export function AgentEntryPage() {
 
     // 3. Send message to AI architect and transition to workspace
     void sendMessage(messageContent);
-    setPrompt('');
+    setPrompt("");
     setAttachedResources([]);
-    navigateTo('/workspace');
+    navigateTo("/workspace");
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (
+      e.key === "Tab" &&
+      !prompt &&
+      attachedResources.length === 0 &&
+      animatedPrompt
+    ) {
+      e.preventDefault();
+      setPrompt(animatedPrompt.replace(/\.\.\.$/, ""));
+      return;
+    }
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       void handleSubmit();
     }
@@ -240,7 +352,7 @@ export function AgentEntryPage() {
 
   return (
     <div
-      style={{ backgroundColor: '#FDFFFC' }}
+      style={{ backgroundColor: "#FDFFFC" }}
       className="min-h-screen flex flex-col font-sans text-[#1E2D24] selection:bg-[#064C1C]/15 antialiased"
     >
       {/* 
@@ -252,7 +364,7 @@ export function AgentEntryPage() {
         {/* Brand */}
         <div className="flex items-center gap-2.5">
           <div
-            style={{ backgroundColor: '#064C1C' }}
+            style={{ backgroundColor: "#064C1C" }}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-[#FDFFFC] shadow-xs"
           >
             <Sparkles size={15} />
@@ -261,7 +373,7 @@ export function AgentEntryPage() {
             AuraBI
           </span>
           <span
-            style={{ backgroundColor: '#D66F14' }}
+            style={{ backgroundColor: "#D66F14" }}
             className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full text-white uppercase tracking-wider ml-1"
           >
             Agent First
@@ -271,7 +383,7 @@ export function AgentEntryPage() {
         {/* Minimal Actions blended into background */}
         <nav className="flex items-center gap-2">
           <button
-            onClick={() => navigateTo('/workspace')}
+            onClick={() => navigateTo("/workspace")}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#1E2D24] hover:bg-[#334139]/5 transition-colors cursor-pointer"
             aria-label="Open Workspace Canvas"
           >
@@ -279,7 +391,7 @@ export function AgentEntryPage() {
             <span>Workspace</span>
           </button>
           <button
-            onClick={() => navigateTo('/components')}
+            onClick={() => navigateTo("/components")}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#1E2D24] hover:bg-[#334139]/5 transition-colors cursor-pointer"
             aria-label="View Design System Components"
           >
@@ -297,7 +409,8 @@ export function AgentEntryPage() {
             Welcome to AuraBI
           </h1>
           <p className="text-sm md:text-base text-[#334139]/80 max-w-md mx-auto leading-relaxed">
-            Your autonomous AI agent for end-to-end data pipelines and warehouse architecture.
+            Your autonomous AI agent for end-to-end data pipelines and warehouse
+            architecture.
           </p>
         </div>
 
@@ -325,8 +438,12 @@ export function AgentEntryPage() {
                   className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#064C1C]/10 text-[#064C1C] border border-[#064C1C]/20 text-xs font-mono"
                 >
                   <FileText size={12} />
-                  <span className="font-semibold max-w-[170px] truncate">{res.name}</span>
-                  <span className="text-[10px] opacity-75 font-sans">({res.columns.length} cols)</span>
+                  <span className="font-semibold max-w-[170px] truncate">
+                    {res.name}
+                  </span>
+                  <span className="text-[10px] opacity-75 font-sans">
+                    ({res.columns.length} cols)
+                  </span>
                   <button
                     type="button"
                     onClick={() => removeAttachment(res.id)}
@@ -340,21 +457,43 @@ export function AgentEntryPage() {
             </div>
           )}
 
-          {/* Text input area */}
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={handleKeyDown}
-            rows={3}
-            disabled={isGenerating}
-            placeholder={
-              attachedResources.length > 0
-                ? "Describe what to do with the attached resource(s)... or click Send to analyze automatically."
-                : "Ask the AI agent anything... e.g. Design a Snowflake data mart for sales analytics"
-            }
-            aria-label="Agent prompt input"
-            className="w-full bg-transparent resize-none outline-none text-[#1E2D24] placeholder:text-[#334139]/40 text-sm md:text-base leading-relaxed font-sans"
-          />
+          {/* Text input area with dynamic animated prompt typewriter */}
+          <div className="relative w-full min-h-[72px]">
+            <textarea
+              ref={textareaRef}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              rows={3}
+              disabled={isGenerating}
+              aria-label="Agent prompt input"
+              className="w-full bg-transparent resize-none outline-none text-[#1E2D24] text-sm md:text-base leading-relaxed font-sans relative z-10"
+            />
+
+            {/* Dynamic animated prompt directly in the prompt text zone */}
+            {!prompt && (
+              <div
+                onClick={() => textareaRef.current?.focus()}
+                className="absolute top-0 left-0 right-0 pointer-events-none text-[#334139]/40 text-sm md:text-base leading-relaxed font-sans select-none flex items-start"
+              >
+                <span>
+                  {attachedResources.length > 0
+                    ? "Describe what to do with the attached resource(s)... or click Send to analyze automatically."
+                    : animatedPrompt}
+                </span>
+                {attachedResources.length === 0 && (
+                  <span className="inline-block w-[2px] h-4 ml-0.5 mt-1 bg-[#D66F14] animate-pulse" />
+                )}
+                {attachedResources.length === 0 && isFocused && (
+                  <span className="hidden sm:inline-block ml-2 text-[10px] font-mono uppercase tracking-wider text-[#334139]/40 px-1.5 py-0.5 rounded bg-slate-100">
+                    Tab ⇥ to fill
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Live Voice Equalizer / Listening Banner */}
           {isListening && (
@@ -381,7 +520,7 @@ export function AgentEntryPage() {
                   <span className="text-[11px] text-[#334139]/80 font-mono">
                     {interimTranscript
                       ? `"${interimTranscript}"`
-                      : `0:${voiceDuration.toString().padStart(2, '0')} • Speak clearly into your microphone`}
+                      : `0:${voiceDuration.toString().padStart(2, "0")} • Speak clearly into your microphone`}
                   </span>
                 </div>
               </div>
@@ -407,12 +546,15 @@ export function AgentEntryPage() {
                 title="Upload resource schema or data file (.csv, .sql, .json)"
                 aria-label="Upload resource"
               >
-                <Plus size={16} className="transition-transform group-hover:rotate-90 duration-200" />
+                <Plus
+                  size={16}
+                  className="transition-transform group-hover:rotate-90 duration-200"
+                />
               </button>
               <span className="text-[11px] text-[#334139]/60 font-medium hidden sm:inline">
                 {attachedResources.length > 0
-                  ? `${attachedResources.length} resource${attachedResources.length > 1 ? 's' : ''} attached`
-                  : 'Add resource'}
+                  ? `${attachedResources.length} resource${attachedResources.length > 1 ? "s" : ""} attached`
+                  : "Add resource"}
               </span>
             </div>
 
@@ -423,23 +565,39 @@ export function AgentEntryPage() {
                 type="button"
                 onClick={toggleListening}
                 className={cn(
-                  'w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-2xs',
+                  "w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-2xs",
                   isListening
-                    ? 'bg-[#D66F14] text-[#FDFFFC] ring-4 ring-[#D66F14]/25 animate-pulse'
-                    : 'bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#1E2D24] border border-[#334139]/15'
+                    ? "bg-[#D66F14] text-[#FDFFFC] ring-4 ring-[#D66F14]/25 animate-pulse"
+                    : "bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#1E2D24] border border-[#334139]/15",
                 )}
-                title={isListening ? 'Stop recording voice' : 'Start voice prompt (dictate)'}
-                aria-label={isListening ? 'Stop recording voice' : 'Start voice recording'}
+                title={
+                  isListening
+                    ? "Stop recording voice"
+                    : "Start voice prompt (dictate)"
+                }
+                aria-label={
+                  isListening ? "Stop recording voice" : "Start voice recording"
+                }
               >
-                {isListening ? <Square size={12} className="fill-current" /> : <Mic size={15} />}
+                {isListening ? (
+                  <Square size={12} className="fill-current" />
+                ) : (
+                  <Mic size={15} />
+                )}
               </button>
 
               {/* Send CTA Button */}
               <button
                 type="submit"
-                disabled={(!prompt.trim() && attachedResources.length === 0) || isGenerating}
+                disabled={
+                  (!prompt.trim() && attachedResources.length === 0) ||
+                  isGenerating
+                }
                 style={{
-                  backgroundColor: prompt.trim() || attachedResources.length > 0 ? '#064C1C' : '#334139',
+                  backgroundColor:
+                    prompt.trim() || attachedResources.length > 0
+                      ? "#064C1C"
+                      : "#334139",
                 }}
                 className="flex items-center gap-1.5 px-4.5 py-2 rounded-full text-xs font-bold text-[#FDFFFC] transition-all hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-xs"
                 aria-label="Submit prompt to agent"
@@ -459,4 +617,3 @@ export function AgentEntryPage() {
     </div>
   );
 }
-
