@@ -14,7 +14,7 @@ export function CodeBlock({ code, className }: CodeBlockProps) {
         className,
       )}
     >
-      <pre className="font-mono text-[10px] text-cyan-300 leading-snug overflow-auto whitespace-pre">
+      <pre className="font-mono text-[10px] text-cyan-300 leading-snug overflow-auto whitespace-pre custom-scrollbar">
         <code>{code}</code>
       </pre>
     </div>

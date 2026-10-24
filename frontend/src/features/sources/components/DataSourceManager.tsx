@@ -182,7 +182,7 @@ export function DataSourceManager() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 space-y-6">
+    <div className="h-full overflow-y-auto p-6 space-y-6 custom-scrollbar">
       {/* Top Banner: Zetaris Unified Lakehouse Virtualization Access Point */}
       <div className="p-5 rounded-2xl bg-[#1E2D24] text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
         <div className="space-y-1">

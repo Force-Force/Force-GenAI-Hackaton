@@ -47,7 +47,7 @@ const components = (inverted: boolean): Components => ({
     const isBlock = (className ?? '').includes('language-');
     if (isBlock) {
       return (
-        <pre className="bg-slate-900 border border-slate-800 rounded-lg p-2.5 my-2 overflow-auto">
+        <pre className="bg-slate-900 border border-slate-800 rounded-lg p-2.5 my-2 overflow-auto custom-scrollbar">
           <code className="font-mono text-[10.5px] text-cyan-300 leading-snug whitespace-pre">
             {children}
           </code>
@@ -66,7 +66,7 @@ const components = (inverted: boolean): Components => ({
     );
   },
   table: ({ children }) => (
-    <div className="my-2 overflow-x-auto">
+    <div className="my-2 overflow-x-auto custom-scrollbar">
       <table className="w-full text-[11px] border-collapse">{children}</table>
     </div>
   ),

@@ -16,7 +16,7 @@ export function ResourceInfoWidget({ data }: { data: ResourceNodeData }) {
       </div>
       <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{data.description}</p>
 
-      <div className="mt-2 border-t border-slate-100 pt-2 space-y-1 max-h-40 overflow-y-auto font-mono text-[10.5px]">
+      <div className="mt-2 border-t border-slate-100 pt-2 space-y-1 max-h-40 overflow-y-auto font-mono text-[10.5px] custom-scrollbar">
         {data.columns.map((col) => (
           <div key={col.name} className="flex items-center justify-between">
             <span className="flex items-center gap-1 truncate text-slate-700">

@@ -26,7 +26,7 @@ export function InspectorPanel() {
   const collapse = useWorkspaceStore((s) => s.setRightCollapsed);
 
   return (
-    <div className="h-full bg-white flex flex-col overflow-y-auto p-4 animate-fadeIn">
+    <div className="h-full bg-white flex flex-col overflow-y-auto p-4 animate-fadeIn custom-scrollbar">
       <div className="flex items-center justify-between mb-3">
         <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
           Inspector

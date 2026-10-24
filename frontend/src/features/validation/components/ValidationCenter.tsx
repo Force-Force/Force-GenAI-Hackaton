@@ -33,7 +33,7 @@ export function ValidationCenter() {
   const source = useWorkspaceStore((s) => s.validationSource);
 
   return (
-    <div className="h-full overflow-y-auto p-6 max-w-3xl mx-auto w-full">
+    <div className="h-full overflow-y-auto p-6 max-w-3xl mx-auto w-full custom-scrollbar">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <ShieldCheck size={18} className="text-[#4F46E5]" />

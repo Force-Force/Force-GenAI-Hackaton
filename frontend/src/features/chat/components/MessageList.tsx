@@ -13,7 +13,7 @@ export function MessageList() {
   }, [messages, isGenerating]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-4" role="log" aria-live="polite">
+    <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-4 custom-scrollbar" role="log" aria-live="polite">
       {messages.map((m) => (
         <MessageBubble key={m.id} message={m} />
       ))}

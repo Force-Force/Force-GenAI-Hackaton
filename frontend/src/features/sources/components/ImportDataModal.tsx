@@ -249,7 +249,7 @@ export function ImportDataModal({ isOpen, onClose, initialTab = 'files', onImpor
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-7 py-6 space-y-5">
+        <div className="flex-1 overflow-y-auto px-7 py-6 space-y-5 custom-scrollbar">
           {tab === 'files' && (
             <>
               <input
@@ -380,7 +380,7 @@ export function ImportDataModal({ isOpen, onClose, initialTab = 'files', onImpor
               <Field label="Sample response (optional, JSON)">
                 <textarea
                   rows={5}
-                  className={cn(input, 'font-mono text-xs resize-none')}
+                  className={cn(input, 'font-mono text-xs resize-none custom-scrollbar')}
                   value={api.sample}
                   onChange={(e) => setApi({ ...api, sample: e.target.value })}
                   placeholder='Paste a response to infer the SQL columns'

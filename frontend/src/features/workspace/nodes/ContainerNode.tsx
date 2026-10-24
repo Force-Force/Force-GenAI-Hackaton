@@ -124,7 +124,7 @@ export function ContainerNode({ id, data, selected }: NodeProps<DatamartNodeType
             transition={{ duration: 0.28, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div className="nowheel px-3 pb-3 pt-1 space-y-2.5 max-h-[420px] overflow-y-auto">
+            <div className="nowheel px-3 pb-3 pt-1 space-y-2.5 max-h-[420px] overflow-y-auto custom-scrollbar">
               {tables.map((table) => (
                 <WarehouseTable key={table.id} data={table.data as ResourceNodeData} />
               ))}

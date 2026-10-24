@@ -46,7 +46,7 @@ export function ExportModal() {
             <X size={18} />
           </button>
         </div>
-        <div className="p-5 overflow-auto">
+        <div className="p-5 overflow-auto custom-scrollbar">
           <CodeBlock code={sql} className="max-h-[50vh]" />
         </div>
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-200 bg-slate-50">

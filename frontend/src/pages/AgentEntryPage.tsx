@@ -430,7 +430,7 @@ export function AgentEntryPage() {
               rows={3}
               disabled={isGenerating}
               aria-label="Agent prompt input"
-              className="w-full bg-transparent resize-none outline-none text-[#334139] text-sm md:text-base leading-relaxed font-sans relative z-10"
+              className="w-full bg-transparent resize-none outline-none text-[#334139] text-sm md:text-base leading-relaxed font-sans relative z-10 custom-scrollbar"
             />
 
             {/* Dynamic animated prompt directly in the prompt text zone */}
