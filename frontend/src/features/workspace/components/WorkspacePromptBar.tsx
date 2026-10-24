@@ -9,13 +9,22 @@ export function WorkspacePromptBar({ className }: { className?: string } = {}) {
   const [voiceDuration, setVoiceDuration] = useState(0);
   const [interimTranscript, setInterimTranscript] = useState('');
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const sendMessage = useChatStore((s) => s.sendMessage);
   const isGenerating = useChatStore((s) => s.isGenerating);
+
+  // Auto-grow textarea with content and preserve formatting
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    const scrollHeight = textarea.scrollHeight;
+    textarea.style.height = `${Math.min(Math.max(scrollHeight, 24), 200)}px`;
+  }, [prompt]);
 
   useEffect(() => {
     return () => {
@@ -117,10 +126,13 @@ export function WorkspacePromptBar({ className }: { className?: string } = {}) {
     if (isListening) stopVoiceInput();
     void sendMessage(trimmed);
     setPrompt('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
@@ -157,18 +169,18 @@ export function WorkspacePromptBar({ className }: { className?: string } = {}) {
           </div>
         )}
 
-        {/* Prompt Input Bar: Voice on LEFT, Text in CENTER, Slanted Arrow on RIGHT */}
+        {/* Prompt Input Bar: Voice on LEFT, Multiline Text in CENTER, Slanted Arrow on RIGHT */}
         <form
           onSubmit={handleSubmit}
           style={{ backgroundColor: '#FDFFFC' }}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-full border border-[#334139]/20 shadow-lg focus-within:border-[#064C1C] focus-within:ring-2 focus-within:ring-[#064C1C]/15 transition-all"
+          className="w-full flex items-end gap-2 px-3 py-2.5 rounded-2xl md:rounded-3xl border border-[#334139]/20 shadow-lg focus-within:border-[#064C1C] focus-within:ring-2 focus-within:ring-[#064C1C]/15 transition-all"
         >
           {/* Voice Icon on the LEFT */}
           <button
             type="button"
             onClick={toggleListening}
             className={cn(
-              'w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0',
+              'w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0 mb-0.5',
               isListening
                 ? 'bg-[#D66F14] text-[#FDFFFC] ring-4 ring-[#D66F14]/25 animate-pulse'
                 : 'bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#064C1C] border border-[#334139]/15'
@@ -179,17 +191,17 @@ export function WorkspacePromptBar({ className }: { className?: string } = {}) {
             {isListening ? <Square size={12} className="fill-current" /> : <Mic size={16} />}
           </button>
 
-          {/* Central Input Field */}
-          <input
-            ref={inputRef}
-            type="text"
+          {/* Central Multiline Auto-Growing Textarea */}
+          <textarea
+            ref={textareaRef}
+            rows={1}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isGenerating}
-            placeholder="Ask AuraBI to build, transform, or analyze your pipeline..."
+            placeholder="Ask AuraBI to build, transform, or analyze your pipeline... (Shift+Enter for new line)"
             aria-label="Workspace prompt input"
-            className="flex-1 bg-transparent border-none outline-none text-sm text-[#334139] placeholder:text-[#334139]/40 font-sans px-2 min-w-0"
+            className="flex-1 bg-transparent border-none outline-none text-sm text-[#334139] placeholder:text-[#334139]/40 font-sans px-2 py-1.5 min-w-0 resize-none max-h-[200px] overflow-y-auto leading-relaxed whitespace-pre-wrap selection:bg-[#064C1C]/15"
           />
 
           {/* Send Icon on the RIGHT: Slanted Arrow */}
@@ -199,7 +211,7 @@ export function WorkspacePromptBar({ className }: { className?: string } = {}) {
             style={{
               backgroundColor: prompt.trim() ? '#064C1C' : '#334139',
             }}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-[#FDFFFC] transition-all hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0 shadow-xs"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-[#FDFFFC] transition-all hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0 shadow-xs mb-0.5"
             title="Send prompt to agent"
             aria-label="Send prompt"
           >

@@ -10,7 +10,13 @@ export function TopNav() {
   const runValidation = useWorkspaceStore((s) => s.runValidation);
 
   return (
-    <header className="w-full flex items-center justify-between px-6 py-4 bg-transparent shrink-0 z-20 pointer-events-auto">
+    <header
+      style={{
+        background:
+          'linear-gradient(to bottom, rgba(253, 255, 252, 0.8) 0%, rgba(253, 255, 252, 0) 100%)',
+      }}
+      className="w-full flex items-center justify-between px-6 pt-4 pb-5 shrink-0 z-20 pointer-events-auto"
+    >
       <div className="flex items-center gap-3 min-w-0">
         <div
           onClick={() => navigateTo('/')}
