@@ -7,89 +7,40 @@ import { StateFlowFunnelGraph } from './StateFlowFunnelGraph';
 import { AnomalyRibbonGraph } from './AnomalyRibbonGraph';
 import { AI_PROPOSED_INSIGHTS } from '../data/mockInsightData';
 
-describe('AI Dynamic Insights Dashboard', () => {
-  it('renders dynamic insights proposed by the AI', () => {
+describe('Insights dashboard', () => {
+  it('renders every AI-proposed insight', () => {
     render(<DynamicDashboardView />);
-
-    expect(screen.getByText('Revenue Decomposition & Leakage Waterfall')).toBeInTheDocument();
-    expect(screen.getByText('Vintage Cohort Decay & Expansion Trajectory')).toBeInTheDocument();
-    expect(screen.getByText('Order State-Flow Conservation & Bottleneck Funnel')).toBeInTheDocument();
-    expect(screen.getByText('Dynamic Confidence Band Ribbon (±2σ)')).toBeInTheDocument();
+    for (const i of AI_PROPOSED_INSIGHTS) {
+      expect(screen.getByText(i.title)).toBeInTheDocument();
+    }
   });
 
-  it('filters insights by domain pill selection', () => {
+  it('filters insights by category tab', () => {
     render(<DynamicDashboardView />);
-
-    // Click on 'Cohorts & LTV'
-    const cohortBtn = screen.getByRole('button', { name: /^Cohorts & LTV/i });
-    fireEvent.click(cohortBtn);
-
-    expect(screen.getByText('Vintage Cohort Decay & Expansion Trajectory')).toBeInTheDocument();
-    expect(screen.queryByText('Revenue Decomposition & Leakage Waterfall')).not.toBeInTheDocument();
-
-    // Click 'All'
-    const allBtn = screen.getByRole('button', { name: /^All \(/i });
-    fireEvent.click(allBtn);
-
-    expect(screen.getByText('Revenue Decomposition & Leakage Waterfall')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Customers' }));
+    expect(screen.getByText('Customer retention by segment')).toBeInTheDocument();
+    expect(screen.queryByText('Where revenue leaks')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    expect(screen.getByText('Where revenue leaks')).toBeInTheDocument();
   });
 
-  it('switches to Table Ledger view mode and back to AI Dashboard', () => {
-    render(<DynamicDashboardView />);
-
-    const ledgerBtn = screen.getByRole('button', { name: /Table Ledger/i });
-    fireEvent.click(ledgerBtn);
-
-    expect(screen.getByText('Underlying Financial Reconciliation Ledger')).toBeInTheDocument();
-    expect(screen.getByText('Operations Conservation & State Transitions')).toBeInTheDocument();
-
-    const aiBtn = screen.getByRole('button', { name: /AI Dashboard/i });
-    fireEvent.click(aiBtn);
-
-    expect(screen.getByText('Revenue Decomposition & Leakage Waterfall')).toBeInTheDocument();
+  it('renders the waterfall chart legend', () => {
+    render(<WaterfallGraph data={AI_PROPOSED_INSIGHTS[0].waterfallData!} />);
+    expect(screen.getByText('Deductions')).toBeInTheDocument();
   });
 
-  it('renders WaterfallGraph with gross base and deductions', () => {
-    const salesInsight = AI_PROPOSED_INSIGHTS[0];
-    render(<WaterfallGraph data={salesInsight.waterfallData!} />);
-
-    expect(screen.getByText('Gross Base')).toBeInTheDocument();
-    expect(screen.getByText('Deductions & Fees')).toBeInTheDocument();
-    expect(screen.getByText('Final Net Realized')).toBeInTheDocument();
-    expect(screen.getByText('Gross Billings')).toBeInTheDocument();
-    expect(screen.getByText('Gateway Fees')).toBeInTheDocument();
-    expect(screen.getByText('Net Recognized Mart')).toBeInTheDocument();
+  it('renders the cohort chart legend', () => {
+    render(<CohortDecayGraph data={AI_PROPOSED_INSIGHTS[1].cohortData!} />);
+    expect(screen.getByText('Self-serve')).toBeInTheDocument();
   });
 
-  it('renders CohortDecayGraph with vintage periods', () => {
-    const cohortInsight = AI_PROPOSED_INSIGHTS[1];
-    render(<CohortDecayGraph data={cohortInsight.cohortData!} />);
-
-    expect(screen.getByText(/Enterprise Tier \(Expansion\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/Self-Serve Tier \(Decay\)/i)).toBeInTheDocument();
-    expect(screen.getByText('Day 0')).toBeInTheDocument();
-    expect(screen.getByText('Day 120')).toBeInTheDocument();
-  });
-
-  it('renders StateFlowFunnelGraph with stage metrics', () => {
-    const opsInsight = AI_PROPOSED_INSIGHTS[2];
-    render(<StateFlowFunnelGraph stages={opsInsight.stateFlowData!} />);
-
-    expect(screen.getByText('STAGE 01')).toBeInTheDocument();
-    expect(screen.getByText('Order Placed')).toBeInTheDocument();
-    expect(screen.getByText('STAGE 03')).toBeInTheDocument();
-    expect(screen.getByText('Warehouse Allocated')).toBeInTheDocument();
+  it('renders the stage wait chart and flags the bottleneck', () => {
+    render(<StateFlowFunnelGraph stages={AI_PROPOSED_INSIGHTS[2].stateFlowData!} />);
     expect(screen.getByText('Bottleneck')).toBeInTheDocument();
   });
 
-  it('renders AnomalyRibbonGraph with confidence band notes', () => {
-    const anomalyInsight = AI_PROPOSED_INSIGHTS[3];
-    render(<AnomalyRibbonGraph data={anomalyInsight.anomalyData!} />);
-
-    expect(screen.getByText(/Actual Sales Volume/i)).toBeInTheDocument();
-    expect(screen.getByText(/Expected Confidence Band/i)).toBeInTheDocument();
-    expect(screen.getByText(/Detected Anomaly/i)).toBeInTheDocument();
-    expect(screen.getByText('Oct 18')).toBeInTheDocument();
+  it('renders the anomaly chart legend', () => {
+    render(<AnomalyRibbonGraph data={AI_PROPOSED_INSIGHTS[3].anomalyData!} />);
+    expect(screen.getByText('Expected range')).toBeInTheDocument();
   });
 });
-

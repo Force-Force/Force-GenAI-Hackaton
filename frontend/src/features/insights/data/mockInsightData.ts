@@ -7,9 +7,9 @@ export const AI_PROPOSED_INSIGHTS: AiInsightModel[] = [
     kpiName: 'Net Revenue',
     domain: 'sales',
     categoryLabel: 'Sales & Revenue',
-    title: 'Revenue Decomposition & Leakage Waterfall',
+    title: 'Where revenue leaks',
     summary:
-      '$91.7K leakage (7.4%) across gateway fees ($42.1K), promos ($31.2K), and returns ($18.4K). Net realized: $1.15M.',
+      '7.4% of gross revenue ($91.7K) is lost to fees, promos and returns.',
     aiReasoning: 'Waterfall isolates exact margin leakage points.',
     aiConfidenceScore: 99.2,
     selectedGraphType: 'waterfall-decomposition',
@@ -41,8 +41,8 @@ export const AI_PROPOSED_INSIGHTS: AiInsightModel[] = [
       { id: 'wf-5', label: 'Net Recognized Mart', amount: 1153300, formatted: '$1.15M', type: 'total', note: 'Recognized mart total' },
     ],
     actionableInsights: [
-      'EU interchange ran 45 bps above average on non-SEPA transactions.',
-      'Holiday promo codes showed 14% cannibalization on repeat purchases.',
+      'EU card fees ran above average on non-SEPA cards.',
+      'Holiday promos cannibalized 14% of repeat purchases.',
     ],
   },
   {
@@ -51,9 +51,9 @@ export const AI_PROPOSED_INSIGHTS: AiInsightModel[] = [
     kpiName: 'Customer LTV',
     domain: 'customers',
     categoryLabel: 'Retention & LTV',
-    title: 'Vintage Cohort Decay & Expansion Trajectory',
+    title: 'Customer retention by segment',
     summary:
-      'Enterprise accounts expand to 118% Net Retention at Day 90. Self-serve stabilizes at 54% after a Day 45 cliff.',
+      'Enterprise grows to 118% of its starting revenue; self-serve falls to 54%.',
     aiReasoning: 'Cohort decay highlights vintage expansion vs churn half-life.',
     aiConfidenceScore: 97.8,
     selectedGraphType: 'cohort-decay-curve',
@@ -87,8 +87,8 @@ export const AI_PROPOSED_INSIGHTS: AiInsightModel[] = [
       { period: 'Day 120', cohortA: 118, cohortB: 54, cohortC: 46 },
     ],
     actionableInsights: [
-      'Enterprise expansion accelerates after Day 45 onboarding integrations.',
-      'Targeted onboarding prompts at Day 20 could protect ~$34K MRR.',
+      'Enterprise expands after completing onboarding integrations.',
+      'Nudging self-serve users at Day 20 could protect ~$34K MRR.',
     ],
   },
   {
@@ -97,9 +97,9 @@ export const AI_PROPOSED_INSIGHTS: AiInsightModel[] = [
     kpiName: 'Fulfillment Flow',
     domain: 'operations',
     categoryLabel: 'Operations Velocity',
-    title: 'Order State-Flow Conservation & Bottleneck Funnel',
+    title: 'Where orders wait',
     summary:
-      '420,000 orders processed with 100% row conservation. Allocation dwell peaks at 18.4 min during 14:00–16:00 syncs.',
+      'Orders wait longest at warehouse allocation: 18 minutes on average.',
     aiReasoning: 'Funnel maps stage conversion and dwell bottlenecks.',
     aiConfidenceScore: 98.6,
     selectedGraphType: 'state-flow-funnel',
@@ -127,12 +127,12 @@ export const AI_PROPOSED_INSIGHTS: AiInsightModel[] = [
       { id: 'sf-1', name: 'Order Placed', count: 420000, ratePct: 100, avgDwellMinutes: 0.8, anomalyCount: 0, status: 'optimal', notes: 'Raw checkouts received' },
       { id: 'sf-2', name: 'Payment Verified', count: 419958, ratePct: 99.99, avgDwellMinutes: 1.4, anomalyCount: 42, status: 'normal', notes: '42 delayed webhooks recovered' },
       { id: 'sf-3', name: 'Warehouse Allocated', count: 419820, ratePct: 99.96, avgDwellMinutes: 18.4, anomalyCount: 138, status: 'bottleneck', notes: 'Lock contention during 14:00 batch sync' },
-      { id: 'sf-4', name: 'Shipped', count: 419400, ratePct: 99.86, avgDwellMinutes: 42.0, anomalyCount: 0, status: 'normal', notes: 'Dock hand-off verified' },
+      { id: 'sf-4', name: 'Shipped', count: 419400, ratePct: 99.86, avgDwellMinutes: 6.2, anomalyCount: 0, status: 'normal', notes: 'Dock hand-off verified' },
       { id: 'sf-5', name: 'Delivered', count: 419380, ratePct: 99.85, avgDwellMinutes: 1840.0, anomalyCount: 20, status: 'optimal', notes: 'Recipient signed' },
     ],
     actionableInsights: [
-      'Switching to delta syncs will eliminate the 18-minute allocation bottleneck.',
-      'Zero illegal state transitions detected across the entire pipeline.',
+      'Delta syncs would remove the allocation wait.',
+      '99.85% of orders are delivered with no skipped steps.',
     ],
   },
   {
@@ -141,9 +141,9 @@ export const AI_PROPOSED_INSIGHTS: AiInsightModel[] = [
     kpiName: 'Sales Velocity',
     domain: 'anomalies',
     categoryLabel: 'Outlier Detection',
-    title: 'Dynamic Confidence Band Ribbon (±2σ)',
+    title: 'Unusual sales spike',
     summary:
-      '+$27.7K unexpected surge on Oct 18 (+142% above forecast band), driven by viral social referral.',
+      'Oct 18 sales hit $84K, $28K above the expected range.',
     aiReasoning: 'Confidence ribbon shows deviations past ±2σ bounds.',
     aiConfidenceScore: 96.9,
     selectedGraphType: 'anomaly-ribbon',
@@ -164,9 +164,8 @@ export const AI_PROPOSED_INSIGHTS: AiInsightModel[] = [
     headlineMetrics: [
       { label: 'Outlier Peak', value: '$84,200', delta: '+142%', trend: 'up' },
       { label: 'Upper Band', value: '$56,500', delta: '+2.0σ', trend: 'neutral' },
-      { label: 'Model Fit', value: '95.4%', delta: 'Prophet', trend: 'up' },
-      { label: 'Driver', value: 'Viral Post', delta: 'Social', trend: 'up' },
-    ],
+      { label: 'Driver', value: 'Creator post', delta: 'Social', trend: 'up' },
+          ],
     anomalyData: [
       { date: 'Oct 12', actual: 42000, expectedLower: 34000, expectedUpper: 50000, isAnomaly: false },
       { date: 'Oct 13', actual: 44500, expectedLower: 35000, expectedUpper: 51000, isAnomaly: false },
@@ -181,8 +180,8 @@ export const AI_PROPOSED_INSIGHTS: AiInsightModel[] = [
       { date: 'Oct 22', actual: 47200, expectedLower: 37000, expectedUpper: 54000, isAnomaly: false },
     ],
     actionableInsights: [
-      'Traffic surged 3.4K visitors in 4 hours from an unscheduled creator feature.',
-      '2 high-margin SKUs stocked out, leaving ~$12K in unfilled demand.',
+      'A creator feature drove 3.4K extra visitors in 4 hours.',
+      'Two high-margin SKUs sold out, leaving ~$12K of demand unmet.',
     ],
   },
 ];

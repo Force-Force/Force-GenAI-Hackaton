@@ -311,3 +311,11 @@ progress.aura-progress-ring[value="100"] {
   }
 }
 
+
+/* Insight charts: use the app font, not the SVG default */
+.recharts-wrapper, .recharts-wrapper text, .recharts-tooltip-wrapper {
+  font-family: var(--font-sans);
+}
+.recharts-wrapper text {
+  font-variant-numeric: tabular-nums;
+}
