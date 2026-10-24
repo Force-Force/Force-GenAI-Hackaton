@@ -64,8 +64,8 @@ function Pills<T extends string>({
           className={cn(
             'px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors cursor-pointer',
             value === o.id
-              ? 'bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]'
-              : 'bg-transparent text-[#334139] border-[#334139]/25 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C]',
+              ? 'bg-[#064C1C] text-[#FDFFFC] border-[#064C1C] hover:bg-[#D66F14] hover:border-[#D66F14]'
+              : 'bg-transparent text-[#334139] border-[#334139]/25 hover:bg-[#D66F14] hover:text-[#FDFFFC] hover:border-[#D66F14]',
           )}
         >
           {o.label}
@@ -220,7 +220,7 @@ export function ImportDataModal({ isOpen, onClose, initialTab = 'files', onImpor
           <button
             onClick={onClose}
             aria-label="Close"
-            className="w-8 h-8 -mr-2 rounded-full flex items-center justify-center text-[#334139]/60 hover:text-[#064C1C] hover:bg-[#334139]/5 cursor-pointer"
+            className="w-8 h-8 -mr-2 rounded-full flex items-center justify-center text-[#334139]/60 hover:text-[#D66F14] hover:bg-[#D66F14]/10 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -239,7 +239,7 @@ export function ImportDataModal({ isOpen, onClose, initialTab = 'files', onImpor
                 'flex items-center gap-1.5 px-3 py-2.5 text-sm font-semibold border-b-2 -mb-px cursor-pointer transition-colors',
                 tab === id
                   ? 'border-[#064C1C] text-[#064C1C]'
-                  : 'border-transparent text-[#334139]/60 hover:text-[#064C1C]',
+                  : 'border-transparent text-[#334139]/60 hover:text-[#D66F14]',
               )}
             >
               <Icon size={15} />
@@ -272,7 +272,7 @@ export function ImportDataModal({ isOpen, onClose, initialTab = 'files', onImpor
                 onDrop={onDrop}
                 className={cn(
                   'flex flex-col items-center justify-center gap-2 py-10 rounded-2xl border-2 border-dashed cursor-pointer transition-colors text-center',
-                  dragging ? 'border-[#064C1C] bg-[#064C1C]/5' : 'border-[#334139]/25 hover:border-[#064C1C]',
+                  dragging ? 'border-[#D66F14] bg-[#D66F14]/5' : 'border-[#334139]/25 hover:border-[#D66F14] hover:bg-[#D66F14]/5',
                 )}
               >
                 <UploadCloud size={26} className="text-[#334139]/70" />
@@ -421,7 +421,7 @@ export function ImportDataModal({ isOpen, onClose, initialTab = 'files', onImpor
         <div className="flex items-center justify-end gap-2 px-7 py-4 border-t border-[#334139]/10">
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-full text-sm font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 cursor-pointer"
+            className="px-5 py-2 rounded-full text-sm font-semibold text-[#334139] hover:text-[#D66F14] hover:bg-[#D66F14]/10 transition-colors cursor-pointer"
           >
             {tab === 'zetaris' ? 'Close' : 'Cancel'}
           </button>
@@ -429,7 +429,7 @@ export function ImportDataModal({ isOpen, onClose, initialTab = 'files', onImpor
             <button
               onClick={submit}
               disabled={!canSubmit}
-              className="px-5 py-2 rounded-full text-sm font-semibold bg-[#064C1C] text-[#FDFFFC] hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              className="px-5 py-2 rounded-full text-sm font-semibold bg-[#064C1C] text-[#FDFFFC] hover:bg-[#D66F14] transition-colors disabled:opacity-30 disabled:hover:bg-[#064C1C] disabled:cursor-not-allowed cursor-pointer"
             >
               {submitLabel}
             </button>

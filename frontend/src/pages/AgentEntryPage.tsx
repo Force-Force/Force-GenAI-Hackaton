@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, type ChangeEvent } from 'react';
-import { ArrowUp, Sparkles, Workflow, Palette, Plus, X, FileText, Mic, Square, Database, Globe, Boxes, Layers } from 'lucide-react';
+import { ArrowUp, Sparkles, Workflow, Palette, X, FileText, Mic, Square, Database, Globe, Boxes, Layers } from 'lucide-react';
 import { useChatStore } from '../features/chat/store/chatStore';
 import { usePipelineStore } from '../features/workspace/store/pipelineStore';
 import { parseCsv } from '../utils/parsers/csvParser';
@@ -498,22 +498,13 @@ export function AgentEntryPage() {
 
           {/* Action Row inside the rectangle */}
           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-            {/* "+" Button to allow for resource upload */}
+            {/* Left side: Attached resources counter if any */}
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#064C1C] border border-[#334139]/15 transition-all cursor-pointer shadow-2xs group"
-                title="Upload resource schema or data file (.csv, .sql, .json)"
-                aria-label="Upload resource"
-              >
-                <Plus size={16} className="transition-transform group-hover:rotate-90 duration-200" />
-              </button>
-              <span className="text-[11px] text-[#334139]/60 font-medium hidden sm:inline">
-                {attachedResources.length > 0
-                  ? `${attachedResources.length} resource${attachedResources.length > 1 ? 's' : ''} attached`
-                  : 'Add resource'}
-              </span>
+              {attachedResources.length > 0 && (
+                <span className="text-[11px] text-[#334139]/60 font-medium">
+                  {attachedResources.length} resource{attachedResources.length > 1 ? 's' : ''} attached
+                </span>
+              )}
             </div>
 
             {/* Right side: Mic voice support & Send button */}
