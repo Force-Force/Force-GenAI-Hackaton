@@ -22,8 +22,12 @@ export function TopNav() {
   return (
     <header className="flex items-center justify-between px-4 h-14 bg-white border-b border-slate-200 shrink-0">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="bg-[#4F46E5] p-1.5 rounded-lg text-white">
+        <div
+          onClick={() => navigateTo('/')}
+          className="flex items-center gap-2 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+          aria-label="Return to Agent Home"
+        >
+          <div className="bg-[#064C1C] p-1.5 rounded-lg text-white">
             <Boxes size={18} />
           </div>
           <span className="font-sans font-black text-slate-900 tracking-tight">AuraBI</span>

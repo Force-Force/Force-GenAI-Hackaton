@@ -38,6 +38,17 @@
   animation: fadeIn 0.2s ease-out forwards;
 }
 
+/* Sound wave animation for voice support */
+@keyframes soundWave {
+  0%, 100% { height: 4px; }
+  50% { height: 18px; }
+}
+.animate-soundwave-1 { animation: soundWave 0.8s ease-in-out infinite; }
+.animate-soundwave-2 { animation: soundWave 0.65s ease-in-out infinite 0.15s; }
+.animate-soundwave-3 { animation: soundWave 1.05s ease-in-out infinite 0.3s; }
+.animate-soundwave-4 { animation: soundWave 0.75s ease-in-out infinite 0.1s; }
+.animate-soundwave-5 { animation: soundWave 0.95s ease-in-out infinite 0.25s; }
+
 /* ---------------------------------------------------------------------------
  * Pipeline data-flow edge animations (Section 2).
  * `.aura-edge-flow` draws a dashed overlay that streams from source -> target;

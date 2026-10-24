@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AppProviders } from './app/providers/AppProviders';
+import { AgentEntryPage } from './pages/AgentEntryPage';
 import { WorkspacePage } from './pages/WorkspacePage';
 import { ComponentsPage } from './pages/ComponentsPage';
 
@@ -9,7 +10,10 @@ function resolveRoute() {
   if (path === '/components' || hash === '#/components' || hash === '#components') {
     return 'components';
   }
-  return 'workspace';
+  if (path === '/workspace' || hash === '#/workspace' || hash === '#workspace') {
+    return 'workspace';
+  }
+  return 'entry';
 }
 
 export default function App() {
@@ -27,7 +31,9 @@ export default function App() {
 
   return (
     <AppProviders>
-      {route === 'components' ? <ComponentsPage /> : <WorkspacePage />}
+      {route === 'components' && <ComponentsPage />}
+      {route === 'workspace' && <WorkspacePage />}
+      {route === 'entry' && <AgentEntryPage />}
     </AppProviders>
   );
 }
