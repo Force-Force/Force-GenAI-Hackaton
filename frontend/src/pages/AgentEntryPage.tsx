@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, type ChangeEvent } from 'react';
-import { ArrowUp, Sparkles, Workflow, Palette, X, FileText, Mic, Square, Database, Globe, Boxes, Layers } from 'lucide-react';
+import { ArrowUp, Bot, Workflow, Palette, X, FileText, Mic, Square, Database, Globe, Boxes, Layers } from 'lucide-react';
 import { useChatStore } from '../features/chat/store/chatStore';
 import { usePipelineStore } from '../features/workspace/store/pipelineStore';
 import { parseCsv } from '../utils/parsers/csvParser';
@@ -333,7 +333,7 @@ export function AgentEntryPage() {
             style={{ backgroundColor: '#064C1C' }}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-[#FDFFFC] shadow-xs"
           >
-            <Sparkles size={15} />
+            <Bot size={15} />
           </div>
           <span className="font-bold text-base tracking-tight text-[#334139]">
             AuraBI
@@ -430,7 +430,11 @@ export function AgentEntryPage() {
               rows={3}
               disabled={isGenerating}
               aria-label="Agent prompt input"
-              className="w-full bg-transparent resize-none outline-none text-[#334139] text-sm md:text-base leading-relaxed font-sans relative z-10 custom-scrollbar"
+              style={{
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+              }}
+              className="w-full bg-transparent resize-none outline-none text-[#334139] text-sm md:text-base leading-relaxed font-sans relative z-10 no-scrollbar"
             />
 
             {/* Dynamic animated prompt directly in the prompt text zone */}

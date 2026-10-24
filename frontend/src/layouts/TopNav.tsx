@@ -1,4 +1,4 @@
-import { Sparkles, ShieldCheck, Palette, FileText } from 'lucide-react';
+import { Bot, ShieldCheck, Palette, FileText } from 'lucide-react';
 import { Badge } from '../components/ui';
 import { useWorkspaceStore } from '../features/workspace/store/workspaceStore';
 import { navigateTo } from '../utils/navigation';
@@ -27,7 +27,7 @@ export function TopNav() {
             style={{ backgroundColor: '#064C1C' }}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-[#FDFFFC] shadow-xs"
           >
-            <Sparkles size={15} />
+            <Bot size={15} />
           </div>
           <span className="font-bold text-base tracking-tight text-[#334139]">
             AuraBI

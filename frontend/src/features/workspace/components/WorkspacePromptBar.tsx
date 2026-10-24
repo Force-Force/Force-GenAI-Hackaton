@@ -3,7 +3,19 @@ import { Mic, ArrowUpRight, Square } from 'lucide-react';
 import { useChatStore } from '../../chat/store/chatStore';
 import { cn } from '../../../utils/cn';
 
-export function WorkspacePromptBar({ className }: { className?: string } = {}) {
+export interface WorkspacePromptBarProps {
+  className?: string;
+  disabled?: boolean;
+  placeholder?: string;
+  onSend?: (text: string) => void;
+}
+
+export function WorkspacePromptBar({
+  className,
+  disabled = false,
+  placeholder,
+  onSend,
+}: WorkspacePromptBarProps = {}) {
   const [prompt, setPrompt] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
@@ -16,6 +28,7 @@ export function WorkspacePromptBar({ className }: { className?: string } = {}) {
 
   const sendMessage = useChatStore((s) => s.sendMessage);
   const isGenerating = useChatStore((s) => s.isGenerating);
+  const isDeactivated = Boolean(disabled || isGenerating);
 
   // Auto-grow textarea with content and preserve formatting
   useEffect(() => {
@@ -121,10 +134,14 @@ export function WorkspacePromptBar({ className }: { className?: string } = {}) {
   const handleSubmit = (e?: FormEvent) => {
     if (e) e.preventDefault();
     const trimmed = prompt.trim();
-    if (!trimmed || isGenerating) return;
+    if (!trimmed || isDeactivated) return;
 
     if (isListening) stopVoiceInput();
-    void sendMessage(trimmed);
+    if (onSend) {
+      onSend(trimmed);
+    } else {
+      void sendMessage(trimmed);
+    }
     setPrompt('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -138,9 +155,18 @@ export function WorkspacePromptBar({ className }: { className?: string } = {}) {
     }
   };
 
+  const isPositionedExternally = className?.includes('relative') || className?.includes('static');
+
   return (
-    <div className={cn("absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-40 pointer-events-none", className)}>
-      <div className="flex flex-col items-center gap-2 pointer-events-auto">
+    <div
+      className={cn(
+        isPositionedExternally
+          ? 'w-full pointer-events-auto'
+          : 'fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-40 pointer-events-none',
+        className,
+      )}
+    >
+      <div className="flex flex-col items-center gap-2 pointer-events-auto w-full max-w-2xl mx-auto">
         {/* Voice Equalizer Banner while recording */}
         {isListening && (
           <div className="flex items-center justify-between gap-3 px-4 py-2 rounded-full bg-[#FDFFFC] border border-[#D66F14]/40 shadow-md animate-fadeIn text-xs text-[#334139]">
@@ -173,46 +199,67 @@ export function WorkspacePromptBar({ className }: { className?: string } = {}) {
         <form
           onSubmit={handleSubmit}
           style={{ backgroundColor: '#FDFFFC' }}
-          className="w-full flex items-end gap-2 px-3 py-2.5 rounded-2xl md:rounded-3xl border border-[#334139]/20 shadow-lg focus-within:border-[#064C1C] focus-within:ring-2 focus-within:ring-[#064C1C]/15 transition-all"
+          className={cn(
+            'w-full flex items-end gap-2 px-3 py-2.5 rounded-2xl md:rounded-3xl border border-[#334139]/20 shadow-lg transition-all',
+            isDeactivated
+              ? 'opacity-70 bg-[#FDFFFC]/80 cursor-not-allowed border-[#334139]/15'
+              : 'focus-within:border-[#064C1C] focus-within:ring-2 focus-within:ring-[#064C1C]/15',
+          )}
         >
           {/* Voice Icon on the LEFT */}
           <button
             type="button"
             onClick={toggleListening}
+            disabled={isDeactivated}
             className={cn(
-              'w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0 mb-0.5',
-              isListening
-                ? 'bg-[#D66F14] text-[#FDFFFC] ring-4 ring-[#D66F14]/25 animate-pulse'
-                : 'bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#064C1C] border border-[#334139]/15'
+              'w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0 mb-0.5',
+              isDeactivated
+                ? 'opacity-40 cursor-not-allowed bg-slate-100 text-[#334139]/40 border border-[#334139]/10'
+                : isListening
+                ? 'bg-[#D66F14] text-[#FDFFFC] ring-4 ring-[#D66F14]/25 animate-pulse cursor-pointer'
+                : 'bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#064C1C] border border-[#334139]/15 cursor-pointer',
             )}
-            title={isListening ? 'Stop recording voice' : 'Start voice prompt'}
+            title={isDeactivated ? 'Voice input paused while agent responds' : isListening ? 'Stop recording voice' : 'Start voice prompt'}
             aria-label={isListening ? 'Stop recording voice' : 'Start voice input'}
           >
             {isListening ? <Square size={12} className="fill-current" /> : <Mic size={16} />}
           </button>
 
-          {/* Central Multiline Auto-Growing Textarea */}
+          {/* Central Multiline Auto-Growing Textarea (No Scrollbar) */}
           <textarea
             ref={textareaRef}
             rows={1}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={isGenerating}
-            placeholder="Ask AuraBI to build, transform, or analyze your pipeline... (Shift+Enter for new line)"
+            disabled={isDeactivated}
+            placeholder={
+              isDeactivated
+                ? (placeholder || 'AI is responding... Please wait')
+                : (placeholder || 'Ask AuraBI to build, transform, or analyze your pipeline... (Shift+Enter for new line)')
+            }
             aria-label="Workspace prompt input"
-            className="flex-1 bg-transparent border-none outline-none text-sm text-[#334139] placeholder:text-[#334139]/40 font-sans px-2 py-1.5 min-w-0 resize-none max-h-[200px] overflow-y-auto leading-relaxed whitespace-pre-wrap selection:bg-[#064C1C]/15 custom-scrollbar"
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}
+            className={cn(
+              'flex-1 bg-transparent border-none outline-none text-sm text-[#334139] font-sans px-2 py-1.5 min-w-0 resize-none max-h-[200px] overflow-y-auto leading-relaxed whitespace-pre-wrap selection:bg-[#064C1C]/15 no-scrollbar',
+              isDeactivated
+                ? 'placeholder:text-[#334139]/30 cursor-not-allowed'
+                : 'placeholder:text-[#334139]/40',
+            )}
           />
 
           {/* Send Icon on the RIGHT: Slanted Arrow */}
           <button
             type="submit"
-            disabled={!prompt.trim() || isGenerating}
+            disabled={!prompt.trim() || isDeactivated}
             style={{
-              backgroundColor: prompt.trim() ? '#064C1C' : '#334139',
+              backgroundColor: prompt.trim() && !isDeactivated ? '#064C1C' : '#334139',
             }}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-[#FDFFFC] transition-all hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0 shadow-xs mb-0.5"
-            title="Send prompt to agent"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-[#FDFFFC] transition-all hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 shadow-xs mb-0.5 cursor-pointer"
+            title={isDeactivated ? 'Send deactivated while agent responds' : 'Send prompt to agent'}
             aria-label="Send prompt"
           >
             <ArrowUpRight size={18} />
