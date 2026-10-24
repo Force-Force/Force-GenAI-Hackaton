@@ -3,6 +3,7 @@ import { AppProviders } from './app/providers/AppProviders';
 import { AgentEntryPage } from './pages/AgentEntryPage';
 import { WorkspacePage } from './pages/WorkspacePage';
 import { ComponentsPage } from './pages/ComponentsPage';
+import { PlanProposalPage } from './pages/PlanProposalPage';
 
 function resolveRoute() {
   const path = window.location.pathname;
@@ -12,6 +13,9 @@ function resolveRoute() {
   }
   if (path === '/workspace' || hash === '#/workspace' || hash === '#workspace') {
     return 'workspace';
+  }
+  if (path === '/plan' || hash === '#/plan' || hash === '#plan') {
+    return 'plan';
   }
   return 'entry';
 }
@@ -33,6 +37,7 @@ export default function App() {
     <AppProviders>
       {route === 'components' && <ComponentsPage />}
       {route === 'workspace' && <WorkspacePage />}
+      {route === 'plan' && <PlanProposalPage />}
       {route === 'entry' && <AgentEntryPage />}
     </AppProviders>
   );

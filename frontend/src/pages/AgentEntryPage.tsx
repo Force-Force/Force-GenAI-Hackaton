@@ -297,11 +297,11 @@ export function AgentEntryPage() {
         : `I have uploaded the following resource(s): ${resourceSummary}. Please analyze and propose a pipeline integration.`;
     }
 
-    // 3. Send message to AI architect and transition to workspace
+    // 3. Send message to AI architect and transition to the AI Planning & Proposal stage
     void sendMessage(messageContent);
     setPrompt('');
     setAttachedResources([]);
-    navigateTo('/workspace');
+    navigateTo('/plan');
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
