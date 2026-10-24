@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -113,7 +114,7 @@ async def _get_node_in_pipeline(db: AsyncSession, pipeline_id: UUID, node_id: UU
 
 
 async def create_node(db: AsyncSession, pipeline_id: UUID, data: NodeCreate) -> NodeRead:
-    await get_pipeline_or_404(db, pipeline_id)
+    pipeline = await get_pipeline_or_404(db, pipeline_id)
     node = Node(
         pipeline_id=pipeline_id,
         type=data.type,
@@ -125,6 +126,7 @@ async def create_node(db: AsyncSession, pipeline_id: UUID, data: NodeCreate) -> 
         status=data.status,
     )
     db.add(node)
+    pipeline.updated_at = datetime.now(timezone.utc)
     await db.flush()
     read = node_to_read(node)
     await ws_manager.broadcast(
@@ -166,6 +168,8 @@ async def update_node(db: AsyncSession, pipeline_id: UUID, node_id: UUID, data: 
         node.internal_data = data.data
     if data.status is not None:
         node.status = data.status
+    pipeline = await get_pipeline_or_404(db, pipeline_id)
+    pipeline.updated_at = datetime.now(timezone.utc)
     await db.flush()
     read = node_to_read(node)
     await ws_manager.broadcast(
@@ -178,6 +182,8 @@ async def update_node(db: AsyncSession, pipeline_id: UUID, node_id: UUID, data: 
 async def delete_node(db: AsyncSession, pipeline_id: UUID, node_id: UUID) -> None:
     node = await _get_node_in_pipeline(db, pipeline_id, node_id)
     await db.delete(node)
+    pipeline = await get_pipeline_or_404(db, pipeline_id)
+    pipeline.updated_at = datetime.now(timezone.utc)
     await ws_manager.broadcast(
         pipeline_id,
         WsEvent(type=WsEventType.NODE_DELETED, pipeline_id=str(pipeline_id), payload={"id": str(node_id)}),
@@ -185,7 +191,7 @@ async def delete_node(db: AsyncSession, pipeline_id: UUID, node_id: UUID) -> Non
 
 
 async def create_edge(db: AsyncSession, pipeline_id: UUID, data: EdgeCreate) -> EdgeRead:
-    await get_pipeline_or_404(db, pipeline_id)
+    pipeline = await get_pipeline_or_404(db, pipeline_id)
     if data.source_node_id == data.target_node_id:
         raise HTTPException(status_code=400, detail="Source and target must differ")
     source = await _get_node_in_pipeline(db, pipeline_id, data.source_node_id)
@@ -196,6 +202,7 @@ async def create_edge(db: AsyncSession, pipeline_id: UUID, data: EdgeCreate) -> 
         target_node_id=target.id,
     )
     db.add(edge)
+    pipeline.updated_at = datetime.now(timezone.utc)
     await db.flush()
     read = edge_to_read(edge)
     await ws_manager.broadcast(
@@ -212,6 +219,8 @@ async def delete_edge(db: AsyncSession, pipeline_id: UUID, edge_id: UUID) -> Non
         raise HTTPException(status_code=404, detail="Edge not found")
     edge_id_str = str(edge.id)
     await db.delete(edge)
+    pipeline = await get_pipeline_or_404(db, pipeline_id)
+    pipeline.updated_at = datetime.now(timezone.utc)
     await ws_manager.broadcast(
         pipeline_id,
         WsEvent(type=WsEventType.EDGE_DELETED, pipeline_id=str(pipeline_id), payload={"id": edge_id_str}),

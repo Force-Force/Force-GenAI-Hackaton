@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class EtlIntrospectResponse(BaseModel):
@@ -10,6 +10,13 @@ class EtlIntrospectResponse(BaseModel):
 
 class EtlExecuteRequest(BaseModel):
     instruction: str = Field(min_length=3, description="Demande ETL en langage naturel")
+
+    @field_validator("instruction")
+    @classmethod
+    def instruction_must_not_be_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("instruction must not be blank")
+        return value
 
 
 class EtlExecuteResponse(BaseModel):
