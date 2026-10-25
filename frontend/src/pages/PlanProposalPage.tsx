@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Scale,
   Plus,
+  FileCode,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { navigateTo } from "../utils/navigation";
@@ -574,13 +575,13 @@ export function PlanProposalPage() {
 
               {/* 2. Clarifying Questions: Stepped Flow (Must be answered or skipped BEFORE the blueprint appears) */}
               {liveStep >= 5 && !questionsFinished && currentQuestion && (
-                <section className="space-y-3 pt-1 animate-fadeIn">
-                  <div className="flex items-center justify-between pb-1 border-b border-[#334139]/12">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-[#334139]">
+                <section className="space-y-3 pt-1 animate-fadeIn font-sans">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#334139]/12">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-sm font-bold text-[#1E2D24]">
                         Architectural Decisions Required
                       </span>
-                      <span className="text-xs text-[#334139]/60 font-mono">
+                      <span className="text-xs text-[#334139]/65 font-sans tabular-nums px-2.5 py-0.5 rounded-full bg-[#334139]/[0.06] font-medium">
                         Question {activeQuestionIndex + 1} of {questions.length}
                       </span>
                     </div>
@@ -597,7 +598,9 @@ export function PlanProposalPage() {
                               "w-2.5 h-2.5 rounded-full transition-all cursor-pointer",
                               activeQuestionIndex === idx
                                 ? "bg-[#064C1C] scale-125"
-                                : "bg-[#334139]/20 hover:bg-[#334139]/40",
+                                : selectedAnswers[q.id]
+                                  ? "bg-[#064C1C]/40"
+                                  : "bg-[#334139]/20 hover:bg-[#334139]/40",
                             )}
                             aria-label={`Go to question ${idx + 1}`}
                           />
@@ -615,23 +618,27 @@ export function PlanProposalPage() {
                   </div>
 
                   {/* Active Question Box */}
-                  <div className="p-5 md:p-6 rounded-2xl bg-white border border-[#334139]/15 shadow-2xs space-y-3.5">
+                  <div className="p-5 md:p-6 rounded-2xl bg-white border border-[#334139]/15 shadow-sm space-y-4 font-sans">
                     <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm font-bold text-[#D66F14]">
+                      <div className="flex items-start gap-3">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-[#D66F14]/10 text-[#D66F14] border border-[#D66F14]/25 tabular-nums mt-0.5 shrink-0">
                           0{activeQuestionIndex + 1}
                         </span>
-                        <h3 className="text-base md:text-lg font-bold text-[#334139]">
-                          {currentQuestion.question}
-                        </h3>
+                        <div className="space-y-1 min-w-0">
+                          <h3 className="text-base md:text-lg font-bold text-[#1E2D24] leading-snug">
+                            {currentQuestion.question}
+                          </h3>
+                          {currentQuestion.context && (
+                            <p className="text-xs md:text-sm text-[#334139]/70 leading-relaxed">
+                              {currentQuestion.context}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm md:text-[15px] text-[#334139]/70 leading-relaxed pl-6">
-                        {currentQuestion.context}
-                      </p>
                     </div>
 
-                    {/* Options Pills */}
-                    <div className="pl-6 flex flex-wrap items-center gap-2.5 pt-1">
+                    {/* Answer Proposals: One line standalone in a list-like fashion */}
+                    <div className="space-y-2 pt-1">
                       {currentQuestion.options.map((opt) => {
                         const isSelected =
                           selectedAnswers[currentQuestion.id] === opt.id;
@@ -643,45 +650,58 @@ export function PlanProposalPage() {
                               handleSelectOption(currentQuestion.id, opt.id)
                             }
                             className={cn(
-                              "inline-flex items-center gap-2 px-4.5 py-2 rounded-full text-xs sm:text-sm font-medium border transition-all cursor-pointer select-none",
+                              "w-full group text-left px-4 py-3 rounded-xl border transition-all cursor-pointer select-none flex items-start sm:items-center justify-between gap-3 font-sans",
                               isSelected
-                                ? "bg-[#064C1C] text-[#FDFFFC] border-[#064C1C] shadow-2xs"
-                                : "bg-white text-[#334139] border-[#334139]/25 hover:border-[#334139]/60 hover:bg-[#334139]/[0.02]",
+                                ? "bg-[#064C1C]/[0.03] border-[#064C1C] ring-1 ring-[#064C1C] shadow-2xs"
+                                : "bg-white border-[#334139]/15 hover:border-[#334139]/40 hover:bg-[#FDFFFC]",
                             )}
                           >
-                            {isSelected && (
-                              <Check
-                                size={14}
-                                strokeWidth={2.5}
-                                className="shrink-0"
-                              />
+                            <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                              <span
+                                className={cn(
+                                  "w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 sm:mt-0 transition-colors",
+                                  isSelected
+                                    ? "bg-[#064C1C] text-white shadow-2xs"
+                                    : "border-2 border-[#334139]/25 bg-white group-hover:border-[#334139]/50",
+                                )}
+                              >
+                                {isSelected && (
+                                  <Check size={11} strokeWidth={3} />
+                                )}
+                              </span>
+
+                              <div className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-2.5">
+                                <span
+                                  className={cn(
+                                    "text-sm font-semibold block sm:inline truncate",
+                                    isSelected
+                                      ? "text-[#064C1C]"
+                                      : "text-[#1E2D24]",
+                                  )}
+                                >
+                                  {opt.label}
+                                </span>
+
+                                {opt.description && (
+                                  <span className="text-xs sm:text-sm text-[#334139]/70 block sm:inline truncate sm:before:content-['·'] sm:before:mr-2 sm:before:text-[#334139]/40">
+                                    {opt.description}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {opt.isRecommended && (
+                              <span className="shrink-0 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#D66F14]/10 text-[#D66F14] border border-[#D66F14]/25">
+                                Recommended
+                              </span>
                             )}
-                            <span>{opt.label}</span>
                           </button>
                         );
                       })}
                     </div>
 
-                    {/* Selected Option Description */}
-                    {(() => {
-                      const activeOption =
-                        currentQuestion.options.find(
-                          (o) => o.id === selectedAnswers[currentQuestion.id],
-                        ) || currentQuestion.options[0];
-                      return (
-                        <p className="pl-6 text-sm text-[#334139]/75 leading-relaxed">
-                          {activeOption.description}
-                          {activeOption.isRecommended && (
-                            <span className="ml-1.5 text-xs font-semibold text-[#D66F14]">
-                              · Recommended
-                            </span>
-                          )}
-                        </p>
-                      );
-                    })()}
-
                     {/* Stepper Navigation: Previous, Skip, Next */}
-                    <div className="flex items-center justify-between pt-2.5 border-t border-[#334139]/10 text-xs sm:text-sm">
+                    <div className="flex items-center justify-between pt-3 border-t border-[#334139]/10 text-xs sm:text-sm">
                       <div>
                         {!isFirstQuestion && (
                           <button
@@ -691,7 +711,7 @@ export function PlanProposalPage() {
                                 Math.max(prev - 1, 0),
                               )
                             }
-                            className="inline-flex items-center gap-1 font-semibold text-[#334139]/70 hover:text-[#334139] transition-colors cursor-pointer px-2.5 py-1.5 rounded"
+                            className="inline-flex items-center gap-1 font-semibold text-[#334139]/70 hover:text-[#1E2D24] transition-colors cursor-pointer px-3 py-1.5 rounded-lg hover:bg-slate-100"
                           >
                             <ChevronLeft size={14} />
                             <span>Previous</span>
@@ -703,7 +723,7 @@ export function PlanProposalPage() {
                         <button
                           type="button"
                           onClick={handleSkipQuestion}
-                          className="inline-flex items-center gap-1 font-semibold text-[#334139]/60 hover:text-[#334139] transition-colors cursor-pointer px-3 py-1.5 rounded"
+                          className="inline-flex items-center gap-1 font-semibold text-[#334139]/60 hover:text-[#1E2D24] transition-colors cursor-pointer px-3.5 py-1.5 rounded-lg hover:bg-slate-100"
                         >
                           <SkipForward size={13} />
                           <span>
@@ -714,7 +734,7 @@ export function PlanProposalPage() {
                         <button
                           type="button"
                           onClick={handleNextQuestion}
-                          className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-full font-bold bg-[#064C1C] hover:bg-[#1E2D24] text-[#FDFFFC] transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full font-bold bg-[#064C1C] hover:bg-[#1E2D24] text-[#FDFFFC] transition-colors cursor-pointer shadow-xs"
                         >
                           <span>
                             {isLastQuestion
@@ -731,9 +751,9 @@ export function PlanProposalPage() {
 
               {/* 3. Architectural Blueprint Card: ONLY APPEARS ONCE ALL QUESTIONS ARE ANSWERED OR SKIPPED */}
               {questionsFinished && (
-                <section className="space-y-3 animate-fadeIn">
+                <section className="space-y-3 animate-fadeIn font-sans">
                   {/* Status header indicating decisions were resolved */}
-                  <div className="flex items-center justify-between text-sm px-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm px-1">
                     <span className="flex items-center gap-1.5 text-[#064C1C] font-semibold">
                       <Check size={15} strokeWidth={3} />
                       Decisions & {selectedKpis.length} KPI audit contracts
@@ -749,39 +769,36 @@ export function PlanProposalPage() {
                   </div>
 
                   {/* Blueprint Card */}
-                  <div className="p-6 rounded-2xl md:rounded-3xl bg-white border border-[#334139]/15 shadow-sm hover:border-[#064C1C]/40 transition-all space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="space-y-2 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-[#064C1C]/10 text-[#064C1C] uppercase tracking-wider">
-                            Architectural Blueprint
-                          </span>
-                          <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-[#064C1C]/10 text-[#064C1C] uppercase tracking-wider inline-flex items-center gap-1">
-                            <ShieldCheck size={13} />
-                            {selectedKpis.length} Verified KPIs
-                          </span>
-                        </div>
+                  <div
+                    className={cn(
+                      "p-6 md:p-7 rounded-2xl md:rounded-3xl bg-white border border-[#334139]/15 shadow-sm transition-all space-y-4 font-sans",
+                      isPanelOpen
+                        ? "border-[#064C1C]/40 ring-1 ring-[#064C1C]/20"
+                        : "hover:border-[#064C1C]/35",
+                    )}
+                  >
+                    {/* Content Section: Full width, clean, uncluttered */}
+                    <div className="space-y-1.5">
+                      <h3 className="text-lg md:text-xl font-bold text-[#1E2D24] leading-snug">
+                        Retail Lakehouse Master Pipeline
+                      </h3>
+                      <p className="text-sm md:text-[15px] text-[#334139]/75 leading-relaxed">
+                        Kimball star schema architecture connecting raw
+                        PostgreSQL & Stripe streams into curated analytics marts
+                        with automated KPI reconciliation.
+                      </p>
+                    </div>
 
-                        <h3 className="text-lg md:text-xl font-bold text-[#334139] leading-snug">
-                          Retail Lakehouse Master Pipeline
-                        </h3>
-
-                        <p className="text-sm md:text-[15px] text-[#334139]/75 leading-relaxed max-w-xl">
-                          Kimball star schema architecture connecting raw
-                          PostgreSQL & Stripe streams into curated analytics
-                          marts with automated KPI reconciliation.
-                        </p>
-                      </div>
-
-                      {/* View Plan & Audit Buttons: Toggles the 48% - 50% wide docked side panel */}
-                      <div className="flex flex-wrap items-center gap-2.5 shrink-0 sm:self-center">
+                    {/* Actions Row: Distinct row with full width, clean responsive alignment */}
+                    <div className="pt-2 border-t border-[#334139]/10 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
                           onClick={() => {
                             setPanelTab("audit");
                             setIsPanelOpen(true);
                           }}
-                          className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-full text-xs sm:text-sm font-bold border border-[#D66F14]/40 bg-[#D66F14]/10 text-[#D66F14] hover:bg-[#D66F14] hover:text-[#FDFFFC] transition-all cursor-pointer"
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-bold border border-[#D66F14]/40 bg-[#D66F14]/10 text-[#D66F14] hover:bg-[#D66F14] hover:text-[#FDFFFC] transition-all cursor-pointer"
                         >
                           <Scale size={14} />
                           <span>Audit & KPIs ({selectedKpis.length})</span>
@@ -789,9 +806,23 @@ export function PlanProposalPage() {
 
                         <button
                           type="button"
+                          onClick={() => {
+                            setPanelTab("ddl");
+                            setIsPanelOpen(true);
+                          }}
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs sm:text-sm font-semibold border border-[#334139]/20 text-[#334139] hover:bg-[#334139]/5 transition-all cursor-pointer"
+                        >
+                          <FileCode size={14} />
+                          <span>View DDL</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
                           onClick={() => setIsPanelOpen(!isPanelOpen)}
                           className={cn(
-                            "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-sm",
+                            "flex items-center gap-2 px-5 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-xs",
                             isPanelOpen
                               ? "bg-[#334139] text-[#FDFFFC] hover:bg-[#1E2D24]"
                               : "bg-[#064C1C] text-[#FDFFFC] hover:bg-[#1E2D24]",
@@ -799,7 +830,7 @@ export function PlanProposalPage() {
                         >
                           <Eye size={15} />
                           <span>
-                            {isPanelOpen ? "Close Plan View" : "View Plan"}
+                            {isPanelOpen ? "Close Plan View" : "View Full Plan"}
                           </span>
                           <ChevronRight
                             size={15}
@@ -856,391 +887,392 @@ export function PlanProposalPage() {
               exit={{ x: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
               style={{ backgroundColor: "#FDFFFC" }}
-              className="w-full md:w-[50%] lg:w-[48%] shrink-0 h-full flex flex-col border-l border-[#334139]/12 z-20 overflow-hidden shadow-xl"
+              className="w-full md:w-[50%] lg:w-[48%] shrink-0 h-full flex flex-col border-l border-[#334139]/12 z-20 overflow-hidden shadow-xl font-sans"
               aria-label="Pipeline Architecture Plan Panel"
             >
-              {/* Panel Header */}
-              <div className="px-6 py-4 border-b border-[#334139]/12 flex items-center justify-between shrink-0 bg-[#FDFFFC]">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    style={{ backgroundColor: "#064C1C" }}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center text-[#FDFFFC] shadow-2xs shrink-0"
-                  >
-                    <Bot size={16} />
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="text-base font-bold text-[#334139] truncate">
-                      Pipeline Architecture Plan
-                    </h2>
-                    <p className="text-xs text-[#334139]/60 font-mono truncate">
-                      Retail Lakehouse Master Pipeline · 5 Stages · Isolated
-                      Audit Agent
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setIsPanelOpen(false)}
-                  className="p-1.5 rounded-lg text-[#334139]/60 hover:text-[#334139] hover:bg-[#334139]/8 transition-colors cursor-pointer shrink-0"
-                  aria-label="Close plan panel"
-                  title="Close panel"
-                >
-                  <PanelRightClose size={18} />
-                </button>
-              </div>
-
-              {/* Panel Nav Tabs & Export Actions */}
-              <div className="px-6 pt-3 border-b border-[#334139]/12 flex flex-wrap items-center justify-between gap-2 shrink-0 bg-[#FDFFFC]">
-                <div className="flex items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setPanelTab("overview")}
-                    className={cn(
-                      "pb-2.5 text-xs sm:text-sm font-bold border-b-2 -mb-px transition-colors cursor-pointer",
-                      panelTab === "overview"
-                        ? "border-[#064C1C] text-[#064C1C]"
-                        : "border-transparent text-[#334139]/50 hover:text-[#334139]",
-                    )}
-                  >
-                    Stages (5)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPanelTab("audit")}
-                    className={cn(
-                      "pb-2.5 text-xs sm:text-sm font-bold border-b-2 -mb-px transition-colors cursor-pointer inline-flex items-center gap-1.5",
-                      panelTab === "audit"
-                        ? "border-[#064C1C] text-[#064C1C]"
-                        : "border-transparent text-[#334139]/50 hover:text-[#334139]",
-                    )}
-                  >
-                    <ShieldCheck size={14} className="text-[#D66F14]" />
-                    <span>Audit & KPIs ({selectedKpis.length})</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPanelTab("ddl")}
-                    className={cn(
-                      "pb-2.5 text-xs sm:text-sm font-bold border-b-2 -mb-px transition-colors cursor-pointer",
-                      panelTab === "ddl"
-                        ? "border-[#064C1C] text-[#064C1C]"
-                        : "border-transparent text-[#334139]/50 hover:text-[#334139]",
-                    )}
-                  >
-                    Compiled DDL
-                  </button>
-                </div>
-
-                {/* Export Actions */}
-                <div className="flex items-center gap-1.5 pb-2">
-                  <button
-                    type="button"
-                    onClick={handleCopySql}
-                    className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
-                    title="Copy compiled DDL to clipboard"
-                  >
-                    {copiedFormat === "sql" ? (
-                      <Check
-                        size={13}
-                        strokeWidth={3}
-                        className="text-[#064C1C]"
-                      />
-                    ) : (
-                      <Copy size={13} />
-                    )}
-                    <span>{copiedFormat === "sql" ? "Copied" : "Copy"}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleExportSql}
-                    className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
-                    title="Export as .sql file"
-                  >
-                    <Download size={13} />
-                    <span>.SQL</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleExportJson}
-                    className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
-                    title="Export as .json specification"
-                  >
-                    <Download size={13} />
-                    <span>.JSON</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Panel Scrollable Body */}
-              <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-4 custom-scrollbar text-sm">
-                {panelTab === "overview" && (
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-2xl bg-[#064C1C]/5 border border-[#064C1C]/20 text-[#064C1C] space-y-1.5">
-                      <span className="font-bold flex items-center gap-1.5 text-sm md:text-[15px]">
-                        <Check size={16} strokeWidth={3} />
-                        Automated Schema & Independent Audit Verification Passed
-                      </span>
-                      <p className="text-xs sm:text-sm text-[#334139]/80 leading-relaxed">
-                        Surrogate keys, nullability checks, Zetaris
-                        virtualization mappings, and {selectedKpis.length} KPI
-                        reconciliation contracts have been verified.
+                {/* Panel Header */}
+                <div className="px-5 sm:px-6 py-4 border-b border-[#334139]/12 flex items-center justify-between shrink-0 bg-[#FDFFFC]">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      style={{ backgroundColor: "#064C1C" }}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center text-[#FDFFFC] shadow-2xs shrink-0"
+                    >
+                      <Bot size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="text-base font-bold text-[#1E2D24] truncate">
+                        Pipeline Architecture Plan
+                      </h2>
+                      <p className="text-xs text-[#334139]/65 font-sans truncate">
+                        Retail Lakehouse Master Pipeline · 5 Stages · Independent Audit Agent
                       </p>
                     </div>
-
-                    <div className="divide-y divide-[#334139]/10">
-                      {stages.map((stage) => (
-                        <div key={stage.id} className="py-4 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-mono text-xs font-bold text-[#064C1C]">
-                              STAGE {stage.number}
-                            </span>
-                            <span className="text-xs font-mono uppercase tracking-wider text-[#D66F14] font-semibold">
-                              {stage.category}
-                            </span>
-                          </div>
-
-                          <h4 className="font-bold text-base text-[#334139]">
-                            {stage.title}
-                          </h4>
-
-                          <p className="text-sm text-[#334139]/80 leading-relaxed">
-                            {stage.description}
-                          </p>
-
-                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                            {stage.tables.map((t) => (
-                              <code
-                                key={t}
-                                className="px-2.5 py-0.5 rounded bg-[#334139]/[0.06] font-mono text-xs text-[#334139]"
-                              >
-                                {t}
-                              </code>
-                            ))}
-                            <span className="text-xs text-[#334139]/50 pl-1">
-                              {stage.technologies.join(" · ")}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
                   </div>
-                )}
 
-                {panelTab === "audit" && (
-                  <div className="space-y-5">
-                    {/* Automated Verification Summary */}
-                    <div className="p-4 rounded-2xl bg-[#334139]/[0.03] border border-[#334139]/15 space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="inline-flex items-center gap-1.5 font-mono text-xs font-bold uppercase tracking-wider text-[#064C1C]">
-                          <ShieldCheck size={14} />
-                          Automated KPI Verification
-                        </span>
-                        <span className="px-2.5 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-mono text-xs font-bold">
-                          Independent Check
-                        </span>
-                      </div>
-                      <p className="text-sm text-[#334139]/85 leading-relaxed">
-                        To ensure numbers are accurate and trustworthy, an
-                        independent audit check reconciles your selected KPIs
-                        directly against raw source records before any reports
-                        are finalized.
-                      </p>
-                    </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsPanelOpen(false)}
+                    className="p-1.5 rounded-lg text-[#334139]/60 hover:text-[#1E2D24] hover:bg-[#334139]/8 transition-colors cursor-pointer shrink-0"
+                    aria-label="Close plan panel"
+                    title="Close panel"
+                  >
+                    <PanelRightClose size={18} />
+                  </button>
+                </div>
 
-                    {/* Interactive KPI Selection inside the Panel */}
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#334139]/70">
-                          Selected KPIs Under Audit ({selectedKpis.length})
-                        </span>
-                        <span className="text-xs text-[#334139]/55">
-                          Click to toggle KPI inclusion
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {kpis.map((kpi) => {
-                          const active = selectedKpiIds.includes(kpi.id);
-                          return (
-                            <button
-                              key={kpi.id}
-                              type="button"
-                              onClick={() => toggleKpiSelection(kpi.id)}
-                              className={cn(
-                                "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-all cursor-pointer",
-                                active
-                                  ? "bg-[#064C1C] text-[#FDFFFC] border-[#064C1C] shadow-2xs"
-                                  : "bg-[#FDFFFC] text-[#334139]/80 border-[#334139]/20 hover:border-[#334139]/50",
-                              )}
-                            >
-                              {active ? (
-                                <Check size={12} strokeWidth={3} />
-                              ) : (
-                                <Plus size={12} />
-                              )}
-                              <span>{kpi.name}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
+                {/* Panel Nav Tabs & Export Actions */}
+                <div className="px-5 sm:px-6 pt-3 border-b border-[#334139]/12 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 bg-[#FDFFFC]">
+                  <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto no-scrollbar -mb-px">
+                    <button
+                      type="button"
+                      onClick={() => setPanelTab("overview")}
+                      className={cn(
+                        "pb-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap",
+                        panelTab === "overview"
+                          ? "border-[#064C1C] text-[#064C1C]"
+                          : "border-transparent text-[#334139]/50 hover:text-[#334139]",
+                      )}
+                    >
+                      Stages (5)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPanelTab("audit")}
+                      className={cn(
+                        "pb-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap",
+                        panelTab === "audit"
+                          ? "border-[#064C1C] text-[#064C1C]"
+                          : "border-transparent text-[#334139]/50 hover:text-[#334139]",
+                      )}
+                    >
+                      <ShieldCheck size={14} className="text-[#D66F14]" />
+                      <span>Audit & KPIs ({selectedKpis.length})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPanelTab("ddl")}
+                      className={cn(
+                        "pb-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap",
+                        panelTab === "ddl"
+                          ? "border-[#064C1C] text-[#064C1C]"
+                          : "border-transparent text-[#334139]/50 hover:text-[#334139]",
+                      )}
+                    >
+                      Compiled DDL
+                    </button>
+                  </div>
 
-                    {/* Domain-Suited Presentation: Financial Reconciliation Table (with sticky column & row headers) */}
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-bold text-[#1E2D24] flex items-center gap-1.5">
-                          <Scale size={14} className="text-[#064C1C]" />
-                          <span>
-                            {selectedAnswers["audit-presentation-format"] ===
-                            "cohort-drift-matrix"
-                              ? "Audit Findings: Cohort & Distribution Drift Matrix"
-                              : selectedAnswers["audit-presentation-format"] ===
-                                  "checksum-parity-log"
-                                ? "Audit Findings: Cryptographic Checksum & Parity Log"
-                                : "Audit Findings: Financial Reconciliation Table"}
-                          </span>
-                        </h3>
-                        <span className="font-mono text-xs text-[#064C1C] font-bold">
-                          All {selectedKpis.length} KPIs Reconciled
+                  {/* Export Actions */}
+                  <div className="flex items-center gap-1.5 pb-2 sm:pb-0">
+                    <button
+                      type="button"
+                      onClick={handleCopySql}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
+                      title="Copy compiled DDL to clipboard"
+                    >
+                      {copiedFormat === "sql" ? (
+                        <Check
+                          size={13}
+                          strokeWidth={3}
+                          className="text-[#064C1C]"
+                        />
+                      ) : (
+                        <Copy size={13} />
+                      )}
+                      <span>{copiedFormat === "sql" ? "Copied" : "Copy"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleExportSql}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
+                      title="Export as .sql file"
+                    >
+                      <Download size={13} />
+                      <span>.SQL</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleExportJson}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
+                      title="Export as .json specification"
+                    >
+                      <Download size={13} />
+                      <span>.JSON</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Panel Scrollable Body */}
+                <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 space-y-4 custom-scrollbar text-sm">
+                  {panelTab === "overview" && (
+                    <div className="space-y-4">
+                      <div className="p-4 rounded-2xl bg-[#064C1C]/5 border border-[#064C1C]/20 text-[#064C1C] space-y-1.5">
+                        <span className="font-bold flex items-center gap-1.5 text-sm md:text-[15px] font-sans">
+                          <Check size={16} strokeWidth={3} />
+                          Automated Schema & Independent Audit Verification Passed
                         </span>
+                        <p className="text-xs sm:text-sm text-[#334139]/80 leading-relaxed font-sans">
+                          Surrogate keys, nullability checks, Zetaris
+                          virtualization mappings, and {selectedKpis.length} KPI
+                          reconciliation contracts have been verified.
+                        </p>
                       </div>
 
-                      <div className="overflow-x-auto no-scrollbar w-full [container-type:inline-size] rounded-2xl border border-[#334139]/15 bg-[#FDFFFC]">
-                        <table className="w-full text-left border-separate border-spacing-0 text-xs">
-                          <thead className="sticky top-0 z-10 bg-[#FDFFFC]">
-                            <tr className="font-mono text-xs uppercase tracking-wider text-[#334139]/70">
-                              <th
-                                scope="col"
-                                className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] sticky left-0 z-20"
-                              >
-                                KPI Metric
-                              </th>
-                              <th
-                                scope="col"
-                                className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC]"
-                              >
-                                Source Ledger (Raw)
-                              </th>
-                              <th
-                                scope="col"
-                                className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC]"
-                              >
-                                Warehouse Mart (Built)
-                              </th>
-                              <th
-                                scope="col"
-                                className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC]"
-                              >
-                                Variance (Δ)
-                              </th>
-                              <th
-                                scope="col"
-                                className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] text-right"
-                              >
-                                Audit Verdict
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="tabular-nums">
-                            {selectedKpis.map((kpi) => (
-                              <tr
-                                key={kpi.id}
-                                className="hover:bg-[#334139]/[0.02]"
-                              >
-                                <th
-                                  scope="row"
-                                  className="py-3.5 px-3.5 border-b border-[#334139]/10 font-semibold text-[#1E2D24] bg-[#FDFFFC] sticky left-0 z-10 align-top"
+                      <div className="divide-y divide-[#334139]/10">
+                        {stages.map((stage) => (
+                          <div key={stage.id} className="py-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="font-sans text-xs font-bold text-[#064C1C] tabular-nums">
+                                STAGE {stage.number}
+                              </span>
+                              <span className="text-xs font-sans uppercase tracking-wider text-[#D66F14] font-semibold">
+                                {stage.category}
+                              </span>
+                            </div>
+
+                            <h4 className="font-bold text-base text-[#1E2D24]">
+                              {stage.title}
+                            </h4>
+
+                            <p className="text-sm text-[#334139]/80 leading-relaxed font-sans">
+                              {stage.description}
+                            </p>
+
+                            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                              {stage.tables.map((t) => (
+                                <code
+                                  key={t}
+                                  className="px-2.5 py-0.5 rounded bg-[#334139]/[0.06] font-mono text-xs text-[#334139]"
                                 >
-                                  <div className="text-sm font-bold text-[#1E2D24]">{kpi.name}</div>
-                                  <div className="font-mono text-xs font-normal text-[#334139]/60 mt-0.5">
-                                    {kpi.formula}
-                                  </div>
-                                </th>
-                                <td className="py-3.5 px-3.5 border-b border-[#334139]/10 font-mono text-[#334139] align-top">
-                                  <div className="font-bold text-sm">
-                                    {kpi.sourceLedgerValue}
-                                  </div>
-                                  <div className="text-xs text-[#334139]/55 mt-0.5">
-                                    {kpi.sourceSystem}
-                                  </div>
-                                </td>
-                                <td className="py-3.5 px-3.5 border-b border-[#334139]/10 font-mono text-[#334139] align-top">
-                                  <div className="font-bold text-sm">
-                                    {kpi.martOutputValue}
-                                  </div>
-                                  <div className="text-xs text-[#334139]/55 mt-0.5">
-                                    {kpi.targetMart}
-                                  </div>
-                                </td>
-                                <td className="py-3.5 px-3.5 border-b border-[#334139]/10 font-mono text-[#064C1C] font-bold align-top">
-                                  <div className="text-sm">{kpi.variance}</div>
-                                  <div className="text-xs font-normal text-[#334139]/55 mt-0.5">
-                                    SLA: {kpi.tolerance}
-                                  </div>
-                                </td>
-                                <td className="py-3.5 px-3.5 border-b border-[#334139]/10 text-right align-top">
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-mono text-xs font-bold">
-                                    <Check size={11} strokeWidth={3} />
-                                    PASS
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                  {t}
+                                </code>
+                              ))}
+                              <span className="text-xs text-[#334139]/55 pl-1 font-sans">
+                                {stage.technologies.join(" · ")}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {panelTab === "ddl" && (
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between text-xs text-[#334139]/70 font-mono">
-                      <span>Dialect: ANSI SQL-92 / Zetaris</span>
-                      <button
-                        type="button"
-                        onClick={handleCopySql}
-                        className="hover:text-[#064C1C] underline cursor-pointer font-semibold"
-                      >
-                        Copy All
-                      </button>
+                  {panelTab === "audit" && (
+                    <div className="space-y-5">
+                      {/* Automated Verification Summary */}
+                      <div className="p-4 rounded-2xl bg-[#334139]/[0.03] border border-[#334139]/15 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 font-sans text-xs font-bold uppercase tracking-wider text-[#064C1C]">
+                            <ShieldCheck size={14} />
+                            Automated KPI Verification
+                          </span>
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-sans text-xs font-bold">
+                            Independent Check
+                          </span>
+                        </div>
+                        <p className="text-sm text-[#334139]/85 leading-relaxed font-sans">
+                          To ensure numbers are accurate and trustworthy, an
+                          independent audit check reconciles your selected KPIs
+                          directly against raw source records before any reports
+                          are finalized.
+                        </p>
+                      </div>
+
+                      {/* Interactive KPI Selection inside the Panel */}
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-sans text-xs font-bold uppercase tracking-wider text-[#334139]/70">
+                            Selected KPIs Under Audit ({selectedKpis.length})
+                          </span>
+                          <span className="text-xs text-[#334139]/55 font-sans">
+                            Click to toggle KPI inclusion
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {kpis.map((kpi) => {
+                            const active = selectedKpiIds.includes(kpi.id);
+                            return (
+                              <button
+                                key={kpi.id}
+                                type="button"
+                                onClick={() => toggleKpiSelection(kpi.id)}
+                                className={cn(
+                                  "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-all cursor-pointer font-sans",
+                                  active
+                                    ? "bg-[#064C1C] text-[#FDFFFC] border-[#064C1C] shadow-2xs"
+                                    : "bg-[#FDFFFC] text-[#334139]/80 border-[#334139]/20 hover:border-[#334139]/50",
+                                )}
+                              >
+                                {active ? (
+                                  <Check size={12} strokeWidth={3} />
+                                ) : (
+                                  <Plus size={12} />
+                                )}
+                                <span>{kpi.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Domain-Suited Presentation: Financial Reconciliation Table */}
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-bold text-[#1E2D24] flex items-center gap-1.5 font-sans">
+                            <Scale size={14} className="text-[#064C1C]" />
+                            <span>
+                              {selectedAnswers["audit-presentation-format"] ===
+                              "cohort-drift-matrix"
+                                ? "Audit Findings: Cohort & Distribution Drift Matrix"
+                                : selectedAnswers["audit-presentation-format"] ===
+                                    "checksum-parity-log"
+                                  ? "Audit Findings: Cryptographic Checksum & Parity Log"
+                                  : "Audit Findings: Financial Reconciliation Table"}
+                            </span>
+                          </h3>
+                          <span className="font-sans text-xs text-[#064C1C] font-bold tabular-nums">
+                            All {selectedKpis.length} KPIs Reconciled
+                          </span>
+                        </div>
+
+                        <div className="overflow-x-auto custom-scrollbar w-full rounded-2xl border border-[#334139]/15 bg-[#FDFFFC]">
+                          <table className="w-full text-left border-separate border-spacing-0 text-xs">
+                            <thead className="sticky top-0 z-10 bg-[#FDFFFC]">
+                              <tr className="font-sans text-xs uppercase tracking-wider text-[#334139]/70 font-semibold">
+                                <th
+                                  scope="col"
+                                  className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] sticky left-0 z-20 min-w-[170px]"
+                                >
+                                  KPI Metric
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] min-w-[130px]"
+                                >
+                                  Source Ledger (Raw)
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] min-w-[140px]"
+                                >
+                                  Warehouse Mart (Built)
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] min-w-[110px]"
+                                >
+                                  Variance (Δ)
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] text-right min-w-[100px]"
+                                >
+                                  Audit Verdict
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="tabular-nums">
+                              {selectedKpis.map((kpi) => (
+                                <tr
+                                  key={kpi.id}
+                                  className="hover:bg-[#334139]/[0.02]"
+                                >
+                                  <th
+                                    scope="row"
+                                    className="py-3.5 px-3.5 border-b border-[#334139]/10 font-semibold text-[#1E2D24] bg-[#FDFFFC] sticky left-0 z-10 align-top"
+                                  >
+                                    <div className="text-sm font-bold text-[#1E2D24] font-sans">
+                                      {kpi.name}
+                                    </div>
+                                    <div className="font-mono text-xs font-normal text-[#334139]/60 mt-0.5">
+                                      {kpi.formula}
+                                    </div>
+                                  </th>
+                                  <td className="py-3.5 px-3.5 border-b border-[#334139]/10 text-[#334139] align-top">
+                                    <div className="font-bold text-sm tabular-nums">
+                                      {kpi.sourceLedgerValue}
+                                    </div>
+                                    <div className="text-xs text-[#334139]/55 mt-0.5 font-sans">
+                                      {kpi.sourceSystem}
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-3.5 border-b border-[#334139]/10 text-[#334139] align-top">
+                                    <div className="font-bold text-sm tabular-nums">
+                                      {kpi.martOutputValue}
+                                    </div>
+                                    <div className="text-xs text-[#334139]/55 mt-0.5 font-sans">
+                                      {kpi.targetMart}
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-3.5 border-b border-[#334139]/10 text-[#064C1C] font-bold align-top">
+                                    <div className="text-sm tabular-nums">{kpi.variance}</div>
+                                    <div className="text-xs font-normal text-[#334139]/55 mt-0.5 font-sans">
+                                      SLA: {kpi.tolerance}
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-3.5 border-b border-[#334139]/10 text-right align-top">
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-sans text-xs font-bold">
+                                      <Check size={11} strokeWidth={3} />
+                                      PASS
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
                     </div>
+                  )}
 
-                    <pre className="p-4 rounded-2xl bg-[#334139]/[0.05] text-[#334139] font-mono text-xs leading-relaxed overflow-x-auto no-scrollbar">
-                      {compiledSql}
-                    </pre>
-                  </div>
-                )}
-              </div>
+                  {panelTab === "ddl" && (
+                    <div className="space-y-2.5 font-sans">
+                      <div className="flex items-center justify-between text-xs text-[#334139]/70">
+                        <span>Dialect: ANSI SQL-92 / Zetaris</span>
+                        <button
+                          type="button"
+                          onClick={handleCopySql}
+                          className="hover:text-[#064C1C] underline cursor-pointer font-semibold font-sans"
+                        >
+                          Copy All
+                        </button>
+                      </div>
 
-              {/* Panel Footer Action */}
-              <div className="px-6 py-4 border-t border-[#334139]/12 bg-[#FDFFFC] flex items-center justify-between gap-3 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsPanelOpen(false)}
-                  className="px-4.5 py-2 rounded-full text-xs sm:text-sm font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
-                >
-                  Close
-                </button>
+                      <pre className="p-4 rounded-2xl bg-[#334139]/[0.05] text-[#334139] font-mono text-xs leading-relaxed overflow-x-auto custom-scrollbar">
+                        {compiledSql}
+                      </pre>
+                    </div>
+                  )}
+                </div>
 
-                <button
-                  type="button"
-                  onClick={handleApprovePlan}
-                  disabled={isApproving}
-                  style={{ backgroundColor: "#064C1C" }}
-                  className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#FDFFFC] hover:opacity-90 transition-all cursor-pointer shadow-md disabled:opacity-50"
-                >
-                  <span>
-                    {isApproving
-                      ? "Building Pipeline…"
-                      : "Validate & Build Pipeline"}
-                  </span>
-                  <ArrowUpRight size={15} />
-                </button>
-              </div>
-            </motion.aside>
+                {/* Panel Footer Action */}
+                <div className="px-5 sm:px-6 py-4 border-t border-[#334139]/12 bg-[#FDFFFC] flex items-center justify-between gap-3 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsPanelOpen(false)}
+                    className="px-4.5 py-2 rounded-full text-xs sm:text-sm font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleApprovePlan}
+                    disabled={isApproving}
+                    style={{ backgroundColor: "#064C1C" }}
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#FDFFFC] hover:opacity-90 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                  >
+                    <span>
+                      {isApproving
+                        ? "Building Pipeline…"
+                        : "Validate & Build Pipeline"}
+                    </span>
+                    <ArrowUpRight size={15} />
+                  </button>
+                </div>
+              </motion.aside>
           )}
         </AnimatePresence>
       </div>

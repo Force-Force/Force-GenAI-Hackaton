@@ -24,7 +24,9 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
         )}
       >
         {isAI ? <Bot size={13} className="text-[#064C1C]" /> : null}
-        <span className="font-semibold text-slate-700">{isAI ? "AuraBI Assistant" : "You"}</span>
+        <span className="font-semibold text-slate-700">
+          {isAI ? "AuraBI Assistant" : "You"}
+        </span>
         {!isAI ? <User size={13} /> : null}
         <span className="text-slate-300">·</span>
         <span className="tabular-nums">{message.timestamp}</span>
@@ -49,10 +51,15 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
             >
               <Sparkles size={12} className="text-[#D66F14]" />
               <span>
-                Thought Process & Pipeline Operations ({message.uiop.operations.length})
+                Thought Process & Pipeline Operations (
+                {message.uiop.operations.length})
               </span>
               <span className="text-slate-400 ml-auto">
-                {openUiop ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                {openUiop ? (
+                  <ChevronDown size={13} />
+                ) : (
+                  <ChevronRight size={13} />
+                )}
               </span>
             </button>
             {openUiop && (

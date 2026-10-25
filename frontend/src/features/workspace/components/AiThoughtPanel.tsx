@@ -708,7 +708,8 @@ export function AiThoughtPanel() {
                         </span>
                         {msg.uiop && (
                           <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#D66F14]/10 text-[#D66F14] border border-[#D66F14]/20 tabular-nums shrink-0">
-                            {msg.uiop.operations.length} proposed operation{msg.uiop.operations.length === 1 ? "" : "s"}
+                            {msg.uiop.operations.length} proposed operation
+                            {msg.uiop.operations.length === 1 ? "" : "s"}
                           </span>
                         )}
                       </div>
@@ -754,9 +755,7 @@ export function AiThoughtPanel() {
                           </div>
                         )}
                         {/* UIOP Operations placed inside the thought process so it's transparent to the user unless expanded */}
-                        {msg.uiop && (
-                          <UiopBatchCard envelope={msg.uiop} />
-                        )}
+                        {msg.uiop && <UiopBatchCard envelope={msg.uiop} />}
                       </div>
                     )}
                   </div>
