@@ -31,7 +31,8 @@ import { cn } from "../utils/cn";
 import { useWorkspaceStore } from "../features/workspace/store/workspaceStore";
 import { useChatStore } from "../features/chat/store/chatStore";
 import { WorkspacePromptBar } from "../features/workspace/components/WorkspacePromptBar";
-import { usePlanStore } from "../features/uiop/store/planStore";
+import { usePlanStore, INITIAL_PLAN_MARKDOWN } from "../features/uiop/store/planStore";
+import { Markdown } from "../features/chat/components/Markdown";
 import { createUiopEnvelope } from "../features/uiop/adapter/promptToUiopAdapter";
 import { executeUiop } from "../features/uiop/runtime/uiopRuntime";
 import type { KpiDefinition, ReasoningPhase } from "../contracts/uiop";
@@ -51,7 +52,7 @@ export function PlanProposalPage() {
   const [panelTab, setPanelTab] = useState<"overview" | "audit" | "ddl">(
     "overview",
   );
-  const [copiedFormat, setCopiedFormat] = useState<"sql" | "json" | null>(null);
+  const [copiedFormat, setCopiedFormat] = useState<"sql" | "json" | "plan" | null>(null);
 
   // Stepped questions state & completion tracker
   const [activeQuestionIndex, setActiveQuestionIndex] = useState<number>(0);
@@ -65,6 +66,7 @@ export function PlanProposalPage() {
   const kpis = usePlanStore((s) => s.kpis);
   const selectedKpiIds = usePlanStore((s) => s.selectedKpiIds);
   const compiledSql = usePlanStore((s) => s.compiledSql);
+  const planMarkdown = usePlanStore((s) => s.planMarkdown) || INITIAL_PLAN_MARKDOWN;
   const toggleKpiSelection = usePlanStore((s) => s.toggleKpiSelection);
 
   const [customPromptOverride, setCustomPromptOverride] = useState<
@@ -208,6 +210,16 @@ export function PlanProposalPage() {
     }, 400);
   };
 
+  const handleExportMarkdown = () => {
+    const blob = new Blob([planMarkdown], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "aurabi_pipeline_plan.md";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleExportSql = () => {
     const blob = new Blob([compiledSql], { type: "text/sql" });
     const url = URL.createObjectURL(blob);
@@ -233,6 +245,7 @@ export function PlanProposalPage() {
         verifiedKpis: selectedKpis,
       },
       sql: compiledSql,
+      markdown: planMarkdown,
     };
     const blob = new Blob([JSON.stringify(planPayload, null, 2)], {
       type: "application/json",
@@ -248,6 +261,13 @@ export function PlanProposalPage() {
   const handleCopySql = async () => {
     await navigator.clipboard.writeText(compiledSql);
     setCopiedFormat("sql");
+    setTimeout(() => setCopiedFormat(null), 1600);
+  };
+
+  const handleCopyContent = async () => {
+    const textToCopy = panelTab === "ddl" ? compiledSql : planMarkdown;
+    await navigator.clipboard.writeText(textToCopy);
+    setCopiedFormat(panelTab === "ddl" ? "sql" : "plan");
     setTimeout(() => setCopiedFormat(null), 1600);
   };
 
@@ -933,7 +953,7 @@ export function PlanProposalPage() {
                           : "border-transparent text-[#334139]/50 hover:text-[#334139]",
                       )}
                     >
-                      Stages (5)
+                      Implementation Plan
                     </button>
                     <button
                       type="button"
@@ -966,11 +986,11 @@ export function PlanProposalPage() {
                   <div className="flex items-center gap-1.5 pb-2 sm:pb-0">
                     <button
                       type="button"
-                      onClick={handleCopySql}
+                      onClick={handleCopyContent}
                       className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
-                      title="Copy compiled DDL to clipboard"
+                      title={panelTab === "ddl" ? "Copy compiled DDL" : "Copy plan document"}
                     >
-                      {copiedFormat === "sql" ? (
+                      {copiedFormat ? (
                         <Check
                           size={13}
                           strokeWidth={3}
@@ -979,7 +999,17 @@ export function PlanProposalPage() {
                       ) : (
                         <Copy size={13} />
                       )}
-                      <span>{copiedFormat === "sql" ? "Copied" : "Copy"}</span>
+                      <span>{copiedFormat ? "Copied" : "Copy"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleExportMarkdown}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
+                      title="Export as .md file"
+                    >
+                      <Download size={13} />
+                      <span>.MD</span>
                     </button>
 
                     <button
@@ -1007,55 +1037,8 @@ export function PlanProposalPage() {
                 {/* Panel Scrollable Body */}
                 <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 space-y-4 custom-scrollbar text-sm">
                   {panelTab === "overview" && (
-                    <div className="space-y-4">
-                      <div className="p-4 rounded-2xl bg-[#064C1C]/5 border border-[#064C1C]/20 text-[#064C1C] space-y-1.5">
-                        <span className="font-bold flex items-center gap-1.5 text-sm md:text-[15px] font-sans">
-                          <Check size={16} strokeWidth={3} />
-                          Automated Schema & Independent Audit Verification Passed
-                        </span>
-                        <p className="text-xs sm:text-sm text-[#334139]/80 leading-relaxed font-sans">
-                          Surrogate keys, nullability checks, Zetaris
-                          virtualization mappings, and {selectedKpis.length} KPI
-                          reconciliation contracts have been verified.
-                        </p>
-                      </div>
-
-                      <div className="divide-y divide-[#334139]/10">
-                        {stages.map((stage) => (
-                          <div key={stage.id} className="py-4 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="font-sans text-xs font-bold text-[#064C1C] tabular-nums">
-                                STAGE {stage.number}
-                              </span>
-                              <span className="text-xs font-sans uppercase tracking-wider text-[#D66F14] font-semibold">
-                                {stage.category}
-                              </span>
-                            </div>
-
-                            <h4 className="font-bold text-base text-[#1E2D24]">
-                              {stage.title}
-                            </h4>
-
-                            <p className="text-sm text-[#334139]/80 leading-relaxed font-sans">
-                              {stage.description}
-                            </p>
-
-                            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                              {stage.tables.map((t) => (
-                                <code
-                                  key={t}
-                                  className="px-2.5 py-0.5 rounded bg-[#334139]/[0.06] font-mono text-xs text-[#334139]"
-                                >
-                                  {t}
-                                </code>
-                              ))}
-                              <span className="text-xs text-[#334139]/55 pl-1 font-sans">
-                                {stage.technologies.join(" · ")}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="p-5 sm:p-6 rounded-2xl bg-white border border-[#334139]/12 shadow-xs text-[#1E2D24] animate-fadeIn">
+                      <Markdown>{planMarkdown}</Markdown>
                     </div>
                   )}
 

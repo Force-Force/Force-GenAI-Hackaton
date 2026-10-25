@@ -380,6 +380,186 @@ SELECT
     (SELECT SUM(amount) FROM stg_raw_transactions) - (SELECT SUM(net_volume) FROM fact_daily_revenue) AS variance_delta;
 `;
 
+export const INITIAL_PLAN_MARKDOWN = `# Pipeline Implementation Architecture Plan
+
+## Executive Overview
+AuraBI has formulated an autonomous, production-grade lakehouse pipeline to ingest, cleanse, normalize, and dimensionalize transactional records from operational PostgreSQL and Stripe webhook streams into a certified Kimball Star Schema.
+
+---
+
+## Stage 1: Source Discovery & Ingestion Architecture (Bronze Layer)
+The ingestion tier establishes automated, idempotent extract streams directly from raw operational ledgers into append-only bronze landing storage.
+
+- **PostgreSQL Database Stream (\`src_postgres_web_orders\`)**:
+  - **Ingestion Mode**: 15-Minute Micro-batch Change Data Capture (CDC).
+  - **Landing Target**: \`stg_raw_transactions\`.
+  - **Data Invariants**: Strict primary key uniqueness on \`transaction_id\` and UTC timestamp alignment.
+  - **Partitioning**: Dynamic date partitioning on \`event_timestamp\` (\`yyyy/mm/dd\`) for high-throughput parallel staging.
+
+- **Stripe Webhook Gateway (\`src_stripe_charges\`)**:
+  - **Deduplication Strategy**: Payload SHA-256 fingerprint verification to enforce idempotent event handling.
+  - **Multi-Currency Normalization**: Automatic currency conversion to standardized base USD at point of capture.
+  - **Landing Target**: \`raw_stripe_charges\`.
+
+---
+
+## Stage 2: Cleansing, Normalization & Quality Assurance (Silver Layer)
+Raw incoming streams are parsed through schema validation, type enforcement, and automated deduplication rules to build audit-ready silver datasets.
+
+- **Order Cleansing & Quality Control (\`transform_orders_clean\`)**:
+  - **Error Boundary**: Dead-Letter Queue (DLQ) Quarantine (Routes invalid rows to isolation table).
+  - Calculate normalized line-item totals (\`gross_amount\`, \`tax_amount\`, \`discount_amount\`, \`net_amount\`).
+  - Standardize lifecycle status enumerations (\`completed\`, \`refunded\`, \`disputed\`).
+
+- **Customer Dimension Historical Tracking (\`dim_customer_360\`)**:
+  - **Historical Strategy**: Slowly Changing Dimension (SCD) Type-2.
+  - Generates integer surrogate keys (\`customer_key\`) and tracks profile, address, and tier changes over time.
+  - Effective interval tracking via \`valid_from\` and \`valid_to\` timestamps with a single \`is_current = TRUE\` active record per customer.
+
+---
+
+## Stage 3: Star Schema Dimensional Modeling (Gold Layer)
+The curated business intelligence layer arranges data into a Kimball-compliant star schema optimized for fast analytical aggregations.
+
+- **Central Daily Revenue Fact Table (\`fact_daily_revenue\`)**:
+  - **Grain**: One record per finalized customer order transaction per calendar day.
+  - **Dimensional Keys**: Foreign key references to \`dim_dates\`, \`dim_customer_360\`, and \`dim_products\`.
+  - **Additive Measures**: \`gross_volume\`, \`net_volume\`, \`tax_amount\`, and \`transaction_count\`.
+
+- **Conformed Supporting Dimensions**:
+  - **\`dim_dates\`**: Pre-computed corporate fiscal calendar supporting 4-4-5 accounting quarters, ISO weeks, and holiday flags.
+  - **\`dim_products\`**: Standardized SKU catalog hierarchy, department rollups, and category taxonomies.
+
+---
+
+## Stage 4: Virtualization & Analytical Query Delivery
+- **Zetaris Federated Endpoints (\`v_bi_executive_sales\`)**:
+  - Exposes certified ANSI SQL-92 query views for enterprise BI platforms (Tableau, PowerBI, Superset).
+  - Sub-second execution SLAs powered by zero-copy semantic caching.
+  - Dynamic column-level masking applied to sensitive customer PII (email, address, card fingerprint).
+
+---
+
+## Stage 5: Independent Verification & Audit Contracts
+Before pipeline promotion, an author-isolated verification agent audits output tables directly against source transactions:
+- **Net Recognized Revenue**: Reconciles Stripe settled net transactions with warehouse fact totals (0.00% variance tolerance).
+- **Gross Merchandise Volume (GMV)**: Verifies zero dollar leakage between raw ingestion and executive views.
+- **Idempotent Charge Parity**: Strict zero duplicate assertions on payment webhooks.
+- **Active Customer 360**: Validates SCD-2 timeline continuity with zero orphan records.
+`;
+
+export function generatePlanMarkdown(state?: {
+  planTitle?: string;
+  selectedAnswers?: Record<string, string>;
+  kpis?: KpiDefinition[];
+  selectedKpiIds?: string[];
+}): string {
+  if (!state) return INITIAL_PLAN_MARKDOWN;
+
+  const scd =
+    state.selectedAnswers?.["scd-strategy"] === "scd-1"
+      ? "SCD Type-1 (Overwrite in place, latest values only)"
+      : state.selectedAnswers?.["scd-strategy"] === "append-only"
+        ? "Immutable Event Log (Append-only delta stream)"
+        : "SCD Type-2 (Historical tracking with valid_from/valid_to)";
+
+  const freq =
+    state.selectedAnswers?.["ingestion-frequency"] === "streaming-realtime"
+      ? "Real-Time Continuous Change Data Capture (CDC < 30s)"
+      : state.selectedAnswers?.["ingestion-frequency"] === "hourly-batch"
+        ? "Hourly Scheduled Batch Sync"
+        : "15-Minute Micro-batch Change Data Capture (CDC)";
+
+  const quality =
+    state.selectedAnswers?.["data-quality-strategy"] === "strict-fail"
+      ? "Strict Fail-Fast (Immediate pipeline halt and alert on constraint breach)"
+      : state.selectedAnswers?.["data-quality-strategy"] === "impute-defaults"
+        ? "Auto-Coalesce Defaults (Automatic fallback replacement with audit warning)"
+        : "Dead-Letter Queue (DLQ) Quarantine (Routes invalid rows to isolation table)";
+
+  const activeKpis = (state.kpis || INITIAL_KPIS).filter((k) =>
+    (state.selectedKpiIds || []).includes(k.id),
+  );
+
+  const kpiLines =
+    activeKpis.length > 0
+      ? activeKpis
+          .map(
+            (k) =>
+              `- **${k.name}** (\`${k.targetMart}\`): Reconciles source ledger against mart outputs. Formula: \`${k.formula}\` (SLA: ${k.tolerance}).`,
+          )
+          .join("\n")
+      : "- **Net Recognized Revenue**: Reconciles Stripe settled net transactions with warehouse fact totals (0.00% tolerance).";
+
+  return `# Pipeline Implementation Architecture Plan
+
+## Executive Overview
+AuraBI has formulated an autonomous, production-grade lakehouse pipeline to ingest, cleanse, normalize, and dimensionalize transactional records from operational PostgreSQL and Stripe webhook streams into a certified Kimball Star Schema.
+
+---
+
+## Stage 1: Source Discovery & Ingestion Architecture (Bronze Layer)
+The ingestion tier establishes automated, idempotent extract streams directly from raw operational ledgers into append-only bronze landing storage.
+
+- **PostgreSQL Database Stream (\`src_postgres_web_orders\`)**:
+  - **Ingestion Mode**: ${freq}.
+  - **Landing Target**: \`stg_raw_transactions\`.
+  - **Data Invariants**: Strict primary key uniqueness on \`transaction_id\` and UTC timestamp alignment.
+  - **Partitioning**: Dynamic date partitioning on \`event_timestamp\` (\`yyyy/mm/dd\`) for high-throughput parallel staging.
+
+- **Stripe Webhook Gateway (\`src_stripe_charges\`)**:
+  - **Deduplication Strategy**: Payload SHA-256 fingerprint verification to enforce idempotent event handling.
+  - **Multi-Currency Normalization**: Automatic currency conversion to standardized base USD at point of capture.
+  - **Landing Target**: \`raw_stripe_charges\`.
+
+---
+
+## Stage 2: Cleansing, Normalization & Quality Assurance (Silver Layer)
+Raw incoming streams are parsed through schema validation, type enforcement, and automated deduplication rules to build audit-ready silver datasets.
+
+- **Order Cleansing & Quality Control (\`transform_orders_clean\`)**:
+  - **Error Boundary**: ${quality}.
+  - Calculate normalized line-item totals (\`gross_amount\`, \`tax_amount\`, \`discount_amount\`, \`net_amount\`).
+  - Standardize lifecycle status enumerations (\`completed\`, \`refunded\`, \`disputed\`).
+
+- **Customer Dimension Historical Tracking (\`dim_customer_360\`)**:
+  - **Historical Strategy**: ${scd}.
+  - Generates integer surrogate keys (\`customer_key\`) and tracks profile, address, and tier changes over time.
+  - Effective interval tracking via \`valid_from\` and \`valid_to\` timestamps with a single \`is_current = TRUE\` active record per customer.
+
+---
+
+## Stage 3: Star Schema Dimensional Modeling (Gold Layer)
+The curated business intelligence layer arranges data into a Kimball-compliant star schema optimized for fast analytical aggregations.
+
+- **Central Daily Revenue Fact Table (\`fact_daily_revenue\`)**:
+  - **Grain**: One record per finalized customer order transaction per calendar day.
+  - **Dimensional Keys**: Foreign key references to \`dim_dates\`, \`dim_customer_360\`, and \`dim_products\`.
+  - **Additive Measures**: \`gross_volume\`, \`net_volume\`, \`tax_amount\`, and \`transaction_count\`.
+
+- **Conformed Supporting Dimensions**:
+  - **\`dim_dates\`**: Pre-computed corporate fiscal calendar supporting 4-4-5 accounting quarters, ISO weeks, and holiday flags.
+  - **\`dim_products\`**: Standardized SKU catalog hierarchy, department rollups, and category taxonomies.
+
+---
+
+## Stage 4: Virtualization & Analytical Query Delivery
+- **Zetaris Federated Endpoints (\`v_bi_executive_sales\`)**:
+  - Exposes certified ANSI SQL-92 query views for enterprise BI platforms (Tableau, PowerBI, Superset).
+  - Sub-second execution SLAs powered by zero-copy semantic caching.
+  - Dynamic column-level masking applied to sensitive customer PII (email, address, card fingerprint).
+
+---
+
+## Stage 5: Independent Verification & Audit Contracts
+Before pipeline promotion, an author-isolated verification agent audits output tables directly against source transactions:
+${kpiLines}
+- **Zero Dollar Leakage**: Validates that all settled Stripe charges match revenue facts with 0.00% variance tolerance.
+- **Idempotency Assertions**: Guarantees zero duplicate transactions in cleansed marts.
+- **SCD-2 Timeline Integrity**: Verifies zero overlapping temporal ranges across customer dimension history.
+`;
+}
+
 export interface PlanAndProtocolState {
   // Protocol tracking
   workspaceId: string;
@@ -397,6 +577,7 @@ export interface PlanAndProtocolState {
   kpis: KpiDefinition[];
   selectedKpiIds: string[];
   compiledSql: string;
+  planMarkdown: string;
 
   // Proposed clarifying questions state
   questions: ClarifyingQuestion[];
@@ -407,6 +588,7 @@ export interface PlanAndProtocolState {
   reports: Record<string, ReportUpdateParams>;
 
   // Direct store actions
+  setPlanMarkdown: (markdown: string) => void;
   setAnswer: (questionId: string, optionId: string) => void;
   proposeQuestion: (question: ClarifyingQuestion) => void;
   removeQuestion: (questionId: string) => void;
@@ -442,6 +624,7 @@ export const usePlanStore = create<PlanAndProtocolState>()(
         "active-customer-360",
       ],
       compiledSql: INITIAL_COMPILED_SQL,
+      planMarkdown: INITIAL_PLAN_MARKDOWN,
 
       questions: INITIAL_CLARIFYING_QUESTIONS,
       selectedAnswers: {
@@ -454,10 +637,21 @@ export const usePlanStore = create<PlanAndProtocolState>()(
       panels: [],
       reports: {},
 
+      setPlanMarkdown: (markdown) => set({ planMarkdown: markdown }),
+
       setAnswer: (questionId, optionId) =>
-        set((s) => ({
-          selectedAnswers: { ...s.selectedAnswers, [questionId]: optionId },
-        })),
+        set((s) => {
+          const nextAnswers = { ...s.selectedAnswers, [questionId]: optionId };
+          return {
+            selectedAnswers: nextAnswers,
+            planMarkdown: generatePlanMarkdown({
+              planTitle: s.planTitle,
+              selectedAnswers: nextAnswers,
+              kpis: s.kpis,
+              selectedKpiIds: s.selectedKpiIds,
+            }),
+          };
+        }),
 
       proposeQuestion: (question) =>
         set((s) => {
@@ -483,25 +677,41 @@ export const usePlanStore = create<PlanAndProtocolState>()(
 
       toggleKpiSelection: (kpiId) =>
         set((s) => {
-          if (s.selectedKpiIds.includes(kpiId)) {
-            return {
-              selectedKpiIds:
-                s.selectedKpiIds.length > 1
-                  ? s.selectedKpiIds.filter((id) => id !== kpiId)
-                  : s.selectedKpiIds,
-            };
-          }
-          return { selectedKpiIds: [...s.selectedKpiIds, kpiId] };
+          const nextSelectedKpiIds = s.selectedKpiIds.includes(kpiId)
+            ? s.selectedKpiIds.length > 1
+              ? s.selectedKpiIds.filter((id) => id !== kpiId)
+              : s.selectedKpiIds
+            : [...s.selectedKpiIds, kpiId];
+
+          return {
+            selectedKpiIds: nextSelectedKpiIds,
+            planMarkdown: generatePlanMarkdown({
+              planTitle: s.planTitle,
+              selectedAnswers: s.selectedAnswers,
+              kpis: s.kpis,
+              selectedKpiIds: nextSelectedKpiIds,
+            }),
+          };
         }),
 
       addKpi: (kpi, select = true) =>
-        set((s) => ({
-          kpis: [...s.kpis.filter((k) => k.id !== kpi.id), kpi],
-          selectedKpiIds:
+        set((s) => {
+          const nextKpis = [...s.kpis.filter((k) => k.id !== kpi.id), kpi];
+          const nextSelectedKpiIds =
             select && !s.selectedKpiIds.includes(kpi.id)
               ? [...s.selectedKpiIds, kpi.id]
-              : s.selectedKpiIds,
-        })),
+              : s.selectedKpiIds;
+          return {
+            kpis: nextKpis,
+            selectedKpiIds: nextSelectedKpiIds,
+            planMarkdown: generatePlanMarkdown({
+              planTitle: s.planTitle,
+              selectedAnswers: s.selectedAnswers,
+              kpis: nextKpis,
+              selectedKpiIds: nextSelectedKpiIds,
+            }),
+          };
+        }),
 
       setPlanPrompt: (prompt) => set({ planPrompt: prompt }),
 
@@ -537,6 +747,7 @@ export const usePlanStore = create<PlanAndProtocolState>()(
             "active-customer-360",
           ],
           compiledSql: INITIAL_COMPILED_SQL,
+          planMarkdown: INITIAL_PLAN_MARKDOWN,
           questions: INITIAL_CLARIFYING_QUESTIONS,
           selectedAnswers: {
             "scd-strategy": "scd-2",
@@ -562,6 +773,7 @@ export const usePlanStore = create<PlanAndProtocolState>()(
         kpis: s.kpis,
         selectedKpiIds: s.selectedKpiIds,
         compiledSql: s.compiledSql,
+        planMarkdown: s.planMarkdown,
         questions: s.questions,
         selectedAnswers: s.selectedAnswers,
         panels: s.panels,
