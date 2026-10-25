@@ -23,6 +23,8 @@ export interface DropdownItem {
 export interface DropdownProps {
   /** Custom trigger element or string label */
   trigger: ReactNode;
+  /** Optional icon to render when trigger is a string */
+  icon?: ReactNode;
   /** List of dropdown actions */
   items: DropdownItem[];
   /** Alignment of popover: 'left' | 'right' */
@@ -33,6 +35,7 @@ export interface DropdownProps {
   showArrow?: boolean;
   className?: string;
   menuClassName?: string;
+  triggerClassName?: string;
 }
 
 /**
@@ -40,12 +43,14 @@ export interface DropdownProps {
  */
 export function Dropdown({
   trigger,
+  icon,
   items,
   align = 'right',
   width = 'w-52',
   showArrow = true,
   className,
   menuClassName,
+  triggerClassName,
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -77,8 +82,12 @@ export function Dropdown({
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer select-none"
+          className={cn(
+            'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer select-none',
+            triggerClassName,
+          )}
         >
+          {icon && <span className="shrink-0">{icon}</span>}
           <span>{trigger}</span>
           {showArrow && <DropdownArrow isOpen={isOpen} size={13} className="text-[#334139]/60" />}
         </button>

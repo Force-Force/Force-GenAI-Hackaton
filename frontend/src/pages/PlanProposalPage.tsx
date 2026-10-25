@@ -23,6 +23,7 @@ import {
   Scale,
   Plus,
   FileCode,
+  FileText,
   Sparkles,
   Database,
   TrendingUp,
@@ -31,6 +32,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { navigateTo } from "../utils/navigation";
 import { cn } from "../utils/cn";
+import { Dropdown } from "../components/ui";
 import { useWorkspaceStore } from "../features/workspace/store/workspaceStore";
 import { useChatStore } from "../features/chat/store/chatStore";
 import { WorkspacePromptBar } from "../features/workspace/components/WorkspacePromptBar";
@@ -983,12 +985,12 @@ export function PlanProposalPage() {
                     </button>
                   </div>
 
-                  {/* Export Actions */}
-                  <div className="flex items-center gap-1.5 pb-2 sm:pb-0">
+                  {/* Actions: Single Copy button + Single Export Dropdown */}
+                  <div className="flex items-center gap-2 pb-2 sm:pb-0">
                     <button
                       type="button"
                       onClick={handleCopyContent}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
                       title={panelTab === "ddl" ? "Copy compiled DDL" : "Copy plan document"}
                     >
                       {copiedFormat ? (
@@ -1003,35 +1005,35 @@ export function PlanProposalPage() {
                       <span>{copiedFormat ? "Copied" : "Copy"}</span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={handleExportMarkdown}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
-                      title="Export as .md file"
-                    >
-                      <Download size={13} />
-                      <span>.MD</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleExportSql}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
-                      title="Export as .sql file"
-                    >
-                      <Download size={13} />
-                      <span>.SQL</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleExportJson}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
-                      title="Export as .json specification"
-                    >
-                      <Download size={13} />
-                      <span>.JSON</span>
-                    </button>
+                    <Dropdown
+                      align="right"
+                      width="w-56"
+                      icon={<Download size={13} />}
+                      trigger="Export"
+                      items={[
+                        {
+                          id: "export-md",
+                          label: "Markdown Plan (.md)",
+                          shortcut: ".md",
+                          icon: <FileText size={13} className="text-[#064C1C]" />,
+                          onClick: handleExportMarkdown,
+                        },
+                        {
+                          id: "export-sql",
+                          label: "Compiled DDL (.sql)",
+                          shortcut: ".sql",
+                          icon: <FileCode size={13} className="text-[#D66F14]" />,
+                          onClick: handleExportSql,
+                        },
+                        {
+                          id: "export-json",
+                          label: "Protocol Spec (.json)",
+                          shortcut: ".json",
+                          icon: <Download size={13} className="text-[#334139]" />,
+                          onClick: handleExportJson,
+                        },
+                      ]}
+                    />
                   </div>
                 </div>
 
