@@ -424,7 +424,7 @@ export function WorkspacePromptBar({
           onSubmit={handleSubmit}
           style={{ backgroundColor: "#FDFFFC" }}
           className={cn(
-            "w-full flex flex-col gap-1.5 px-3 py-2.5 rounded-2xl md:rounded-3xl border border-[#334139]/20 shadow-lg transition-all",
+            "w-full flex flex-col gap-1.5 px-3.5 sm:px-4 py-2.5 rounded-3xl md:rounded-[36px] border border-[#334139]/20 shadow-lg transition-all",
             isDeactivated
               ? "opacity-70 bg-[#FDFFFC]/80 cursor-not-allowed border-[#334139]/15"
               : "focus-within:border-[#064C1C] focus-within:ring-2 focus-within:ring-[#064C1C]/15",
