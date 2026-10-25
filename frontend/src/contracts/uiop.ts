@@ -226,6 +226,8 @@ export const kpiDefinitionSchema = z.object({
   variance: z.string().default("$0.00 (0.00%)"),
   tolerance: z.string().default("±0.00%"),
   description: z.string().default(""),
+  dataRationale: z.string().optional(),
+  businessImpact: z.string().optional(),
 });
 
 export const planCreateParamsSchema = z.object({

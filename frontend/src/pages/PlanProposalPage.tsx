@@ -24,6 +24,10 @@ import {
   Scale,
   Plus,
   FileCode,
+  Sparkles,
+  Database,
+  TrendingUp,
+  Lightbulb,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { navigateTo } from "../utils/navigation";
@@ -429,7 +433,7 @@ export function PlanProposalPage() {
                         {liveStep === 3 &&
                           "Verifying constraints & compiling DDL"}
                         {liveStep === 4 &&
-                          "Provisioning Independent Audit Agent & KPI selection"}
+                          "Synthesizing domain KPIs & architectural recommendations"}
                       </span>
                     </div>
                   ) : (
@@ -437,13 +441,13 @@ export function PlanProposalPage() {
                       <Check size={14} strokeWidth={3} className="shrink-0" />
                       <span>
                         {questionsFinished
-                          ? "Architecture blueprint & KPI audit contract synthesized"
+                          ? "Architecture blueprint & proposed KPIs synthesized"
                           : "KPI selection & architectural decisions required"}
                       </span>
                       <span className="text-[#334139]/40">·</span>
                       <span className="text-[#334139]/65 font-normal">
                         {questionsFinished
-                          ? `${selectedKpis.length} KPIs verified by Independent Audit Agent`
+                          ? `${selectedKpis.length} KPIs proposed for pipeline build`
                           : `${questions.length} decisions pending`}
                       </span>
                     </div>
@@ -776,8 +780,8 @@ export function PlanProposalPage() {
                   <div className="flex flex-wrap items-center justify-between gap-2 text-sm px-1">
                     <span className="flex items-center gap-1.5 text-[#064C1C] font-semibold">
                       <Check size={15} strokeWidth={3} />
-                      Decisions & {selectedKpis.length} KPI audit contracts
-                      applied to final blueprint
+                      Decisions & {selectedKpis.length} proposed KPIs applied to
+                      final blueprint
                     </span>
                     <button
                       type="button"
@@ -820,8 +824,8 @@ export function PlanProposalPage() {
                           }}
                           className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-bold border border-[#D66F14]/40 bg-[#D66F14]/10 text-[#D66F14] hover:bg-[#D66F14] hover:text-[#FDFFFC] transition-all cursor-pointer"
                         >
-                          <Scale size={14} />
-                          <span>Audit & KPIs ({selectedKpis.length})</span>
+                          <Sparkles size={14} />
+                          <span>Proposed KPIs ({selectedKpis.length})</span>
                         </button>
 
                         <button
@@ -924,7 +928,7 @@ export function PlanProposalPage() {
                         Pipeline Architecture Plan
                       </h2>
                       <p className="text-xs text-[#334139]/65 font-sans truncate">
-                        Retail Lakehouse Master Pipeline · 5 Stages · Independent Audit Agent
+                        Retail Lakehouse Master Pipeline · 5 Stages · {selectedKpis.length} Proposed KPIs
                       </p>
                     </div>
                   </div>
@@ -965,8 +969,8 @@ export function PlanProposalPage() {
                           : "border-transparent text-[#334139]/50 hover:text-[#334139]",
                       )}
                     >
-                      <ShieldCheck size={14} className="text-[#D66F14]" />
-                      <span>Audit & KPIs ({selectedKpis.length})</span>
+                      <Sparkles size={14} className="text-[#D66F14]" />
+                      <span>Proposed KPIs ({selectedKpis.length})</span>
                     </button>
                     <button
                       type="button"
@@ -1043,169 +1047,163 @@ export function PlanProposalPage() {
                   )}
 
                   {panelTab === "audit" && (
-                    <div className="space-y-5">
-                      {/* Automated Verification Summary */}
-                      <div className="p-4 rounded-2xl bg-[#334139]/[0.03] border border-[#334139]/15 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="inline-flex items-center gap-1.5 font-sans text-xs font-bold uppercase tracking-wider text-[#064C1C]">
-                            <ShieldCheck size={14} />
-                            Automated KPI Verification
+                    <div className="space-y-4 font-sans">
+                      {/* AI Metric Discovery & Schema Insights Banner */}
+                      <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[#334139]/12 shadow-xs space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 font-sans text-xs font-bold uppercase tracking-wider text-[#D66F14]">
+                            <Sparkles size={14} />
+                            AI Metric Discovery & Schema Insights
                           </span>
-                          <span className="px-2.5 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-sans text-xs font-bold">
-                            Independent Check
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-sans text-xs font-bold tabular-nums">
+                            {selectedKpis.length} of {kpis.length} Selected
                           </span>
                         </div>
-                        <p className="text-sm text-[#334139]/85 leading-relaxed font-sans">
-                          To ensure numbers are accurate and trustworthy, an
-                          independent audit check reconciles your selected KPIs
-                          directly against raw source records before any reports
-                          are finalized.
+                        <p className="text-xs sm:text-sm text-[#334139]/80 leading-relaxed font-sans">
+                          AuraBI analyzed your raw PostgreSQL order tables and Stripe payment streams to identify high-value business metrics. Below are the proposed KPIs, with insights into how the data was interpreted and why each metric is critical to executive and financial operations.
                         </p>
-                      </div>
-
-                      {/* Interactive KPI Selection inside the Panel */}
-                      <div className="space-y-2.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-sans text-xs font-bold uppercase tracking-wider text-[#334139]/70">
-                            Selected KPIs Under Audit ({selectedKpis.length})
+                        <div className="flex flex-wrap items-center justify-between pt-2 border-t border-[#334139]/10 gap-2 text-xs">
+                          <span className="text-[#334139]/60 font-sans">
+                            Toggle metrics below to include or exclude them from the generated pipeline.
                           </span>
-                          <span className="text-xs text-[#334139]/55 font-sans">
-                            Click to toggle KPI inclusion
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {kpis.map((kpi) => {
-                            const active = selectedKpiIds.includes(kpi.id);
-                            return (
-                              <button
-                                key={kpi.id}
-                                type="button"
-                                onClick={() => toggleKpiSelection(kpi.id)}
-                                className={cn(
-                                  "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-all cursor-pointer font-sans",
-                                  active
-                                    ? "bg-[#064C1C] text-[#FDFFFC] border-[#064C1C] shadow-2xs"
-                                    : "bg-[#FDFFFC] text-[#334139]/80 border-[#334139]/20 hover:border-[#334139]/50",
-                                )}
-                              >
-                                {active ? (
-                                  <Check size={12} strokeWidth={3} />
-                                ) : (
-                                  <Plus size={12} />
-                                )}
-                                <span>{kpi.name}</span>
-                              </button>
-                            );
-                          })}
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                kpis.forEach((k) => {
+                                  if (!selectedKpiIds.includes(k.id)) toggleKpiSelection(k.id);
+                                });
+                              }}
+                              className="font-semibold text-[#064C1C] hover:underline cursor-pointer"
+                            >
+                              Select All
+                            </button>
+                            <span className="text-[#334139]/30">·</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                kpis.forEach((k) => {
+                                  if (selectedKpiIds.includes(k.id)) toggleKpiSelection(k.id);
+                                });
+                              }}
+                              className="font-semibold text-[#334139]/60 hover:text-[#334139] hover:underline cursor-pointer"
+                            >
+                              Deselect All
+                            </button>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Domain-Suited Presentation: Financial Reconciliation Table */}
-                      <div className="space-y-2.5">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-bold text-[#1E2D24] flex items-center gap-1.5 font-sans">
-                            <Scale size={14} className="text-[#064C1C]" />
-                            <span>
-                              {selectedAnswers["audit-presentation-format"] ===
-                              "cohort-drift-matrix"
-                                ? "Audit Findings: Cohort & Distribution Drift Matrix"
-                                : selectedAnswers["audit-presentation-format"] ===
-                                    "checksum-parity-log"
-                                  ? "Audit Findings: Cryptographic Checksum & Parity Log"
-                                  : "Audit Findings: Financial Reconciliation Table"}
-                            </span>
-                          </h3>
-                          <span className="font-sans text-xs text-[#064C1C] font-bold tabular-nums">
-                            All {selectedKpis.length} KPIs Reconciled
-                          </span>
-                        </div>
-
-                        <div className="overflow-x-auto custom-scrollbar w-full rounded-2xl border border-[#334139]/15 bg-[#FDFFFC]">
-                          <table className="w-full text-left border-separate border-spacing-0 text-xs">
-                            <thead className="sticky top-0 z-10 bg-[#FDFFFC]">
-                              <tr className="font-sans text-xs uppercase tracking-wider text-[#334139]/70 font-semibold">
-                                <th
-                                  scope="col"
-                                  className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] sticky left-0 z-20 min-w-[170px]"
-                                >
-                                  KPI Metric
-                                </th>
-                                <th
-                                  scope="col"
-                                  className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] min-w-[130px]"
-                                >
-                                  Source Ledger (Raw)
-                                </th>
-                                <th
-                                  scope="col"
-                                  className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] min-w-[140px]"
-                                >
-                                  Warehouse Mart (Built)
-                                </th>
-                                <th
-                                  scope="col"
-                                  className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] min-w-[110px]"
-                                >
-                                  Variance (Δ)
-                                </th>
-                                <th
-                                  scope="col"
-                                  className="py-3 px-3.5 border-b border-[#334139]/15 bg-[#FDFFFC] text-right min-w-[100px]"
-                                >
-                                  Audit Verdict
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody className="tabular-nums">
-                              {selectedKpis.map((kpi) => (
-                                <tr
-                                  key={kpi.id}
-                                  className="hover:bg-[#334139]/[0.02]"
-                                >
-                                  <th
-                                    scope="row"
-                                    className="py-3.5 px-3.5 border-b border-[#334139]/10 font-semibold text-[#1E2D24] bg-[#FDFFFC] sticky left-0 z-10 align-top"
+                      {/* Proposed KPI Cards */}
+                      <div className="space-y-3.5">
+                        {kpis.map((kpi) => {
+                          const isSelected = selectedKpiIds.includes(kpi.id);
+                          return (
+                            <div
+                              key={kpi.id}
+                              className={cn(
+                                "p-4 sm:p-5 rounded-2xl border transition-all duration-200 space-y-3.5 bg-white font-sans",
+                                isSelected
+                                  ? "border-[#064C1C]/35 shadow-xs ring-1 ring-[#064C1C]/15"
+                                  : "border-[#334139]/15 opacity-80 hover:opacity-100",
+                              )}
+                            >
+                              {/* Header Row: Checkbox, Name, Category, Inclusion Badge */}
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-start gap-3 min-w-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleKpiSelection(kpi.id)}
+                                    className={cn(
+                                      "mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors cursor-pointer",
+                                      isSelected
+                                        ? "bg-[#064C1C] border-[#064C1C] text-[#FDFFFC]"
+                                        : "bg-white border-[#334139]/30 hover:border-[#334139]/60",
+                                    )}
+                                    aria-label={`Toggle ${kpi.name} inclusion`}
                                   >
-                                    <div className="text-sm font-bold text-[#1E2D24] font-sans">
-                                      {kpi.name}
+                                    {isSelected && <Check size={13} strokeWidth={3} />}
+                                  </button>
+                                  <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <h4 className="text-sm sm:text-base font-bold text-[#1E2D24] leading-snug">
+                                        {kpi.name}
+                                      </h4>
+                                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#334139]/8 text-[#334139]">
+                                        {kpi.category}
+                                      </span>
                                     </div>
-                                    <div className="font-mono text-xs font-normal text-[#334139]/60 mt-0.5">
-                                      {kpi.formula}
-                                    </div>
-                                  </th>
-                                  <td className="py-3.5 px-3.5 border-b border-[#334139]/10 text-[#334139] align-top">
-                                    <div className="font-bold text-sm tabular-nums">
-                                      {kpi.sourceLedgerValue}
-                                    </div>
-                                    <div className="text-xs text-[#334139]/55 mt-0.5 font-sans">
-                                      {kpi.sourceSystem}
-                                    </div>
-                                  </td>
-                                  <td className="py-3.5 px-3.5 border-b border-[#334139]/10 text-[#334139] align-top">
-                                    <div className="font-bold text-sm tabular-nums">
-                                      {kpi.martOutputValue}
-                                    </div>
-                                    <div className="text-xs text-[#334139]/55 mt-0.5 font-sans">
+                                    <p className="text-xs sm:text-sm text-[#334139]/75 mt-1 leading-relaxed">
+                                      {kpi.description}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <span
+                                  className={cn(
+                                    "shrink-0 px-2.5 py-0.5 rounded-full text-xs font-bold",
+                                    isSelected
+                                      ? "bg-[#064C1C]/10 text-[#064C1C]"
+                                      : "bg-[#334139]/8 text-[#334139]/60",
+                                  )}
+                                >
+                                  {isSelected ? "Included" : "Excluded"}
+                                </span>
+                              </div>
+
+                              {/* AI Reasoning: Data Understanding & Business Relevance */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-0.5">
+                                {/* AI Data Understanding */}
+                                <div className="p-3.5 rounded-xl bg-[#334139]/[0.025] border border-[#334139]/10 space-y-1.5">
+                                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#064C1C]">
+                                    <Database size={13} className="shrink-0 text-[#064C1C]" />
+                                    <span>AI Data Understanding</span>
+                                  </div>
+                                  <p className="text-xs text-[#334139]/85 leading-relaxed font-normal">
+                                    {kpi.dataRationale ||
+                                      "Discovered from transaction schemas and lineage relationships during raw data profiling."}
+                                  </p>
+                                </div>
+
+                                {/* Business Relevance */}
+                                <div className="p-3.5 rounded-xl bg-[#D66F14]/[0.035] border border-[#D66F14]/20 space-y-1.5">
+                                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#D66F14]">
+                                    <TrendingUp size={13} className="shrink-0 text-[#D66F14]" />
+                                    <span>Business Relevance</span>
+                                  </div>
+                                  <p className="text-xs text-[#334139]/85 leading-relaxed font-normal">
+                                    {kpi.businessImpact ||
+                                      "Provides critical operational visibility and executive metrics for commercial decision-making."}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Lineage & Technical Details Footer */}
+                              <div className="pt-2.5 border-t border-[#334139]/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+                                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[#334139]/70">
+                                  <span>
+                                    <strong className="text-[#1E2D24] font-medium">Source:</strong>{" "}
+                                    {kpi.sourceSystem}
+                                  </span>
+                                  <span className="text-[#334139]/30">→</span>
+                                  <span>
+                                    <strong className="text-[#1E2D24] font-medium">Target Mart:</strong>{" "}
+                                    <code className="font-mono text-[11px] text-[#064C1C] bg-[#064C1C]/5 px-1 py-0.5 rounded">
                                       {kpi.targetMart}
-                                    </div>
-                                  </td>
-                                  <td className="py-3.5 px-3.5 border-b border-[#334139]/10 text-[#064C1C] font-bold align-top">
-                                    <div className="text-sm tabular-nums">{kpi.variance}</div>
-                                    <div className="text-xs font-normal text-[#334139]/55 mt-0.5 font-sans">
-                                      SLA: {kpi.tolerance}
-                                    </div>
-                                  </td>
-                                  <td className="py-3.5 px-3.5 border-b border-[#334139]/10 text-right align-top">
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-sans text-xs font-bold">
-                                      <Check size={11} strokeWidth={3} />
-                                      PASS
-                                    </span>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                                    </code>
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 text-[#334139]/70">
+                                  <span className="font-medium text-[#1E2D24]">Formula:</span>
+                                  <code className="font-mono text-[11px] text-[#334139] bg-slate-100 px-1.5 py-0.5 rounded border border-[#334139]/10">
+                                    {kpi.formula}
+                                  </code>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
