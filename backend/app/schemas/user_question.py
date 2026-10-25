@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.models.enums import AgentRole, UserQuestionStatus, WorkflowPhase
 
@@ -28,3 +28,10 @@ class UserQuestionRead(BaseModel):
 
 class UserQuestionAnswerRequest(BaseModel):
     answer: str = Field(min_length=1)
+
+    @field_validator("answer")
+    @classmethod
+    def answer_must_not_be_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("answer must not be blank")
+        return value

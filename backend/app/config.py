@@ -1,9 +1,6 @@
 from functools import lru_cache
-from pathlib import Path
-import os
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -15,17 +12,22 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,http://localhost:5173"
     cors_allow_all: bool = False
 
-    llm_provider: str = "cursor"
+    zetaris_rest_url: str = "http://localhost:8888/api/v1.0"
+    zetaris_api_url: str = ""
+    zetaris_sql_endpoint: str = "/sql-editor/sqls/run"
+    zetaris_org_id: int = 1
+    zetaris_api_key: str = ""
 
-    cursor_api_key: str = os.getenv("CURSOR_API_KEY")
-    cursor_model: str = "composer-2.5"
-    cursor_workspace: str = str(PROJECT_ROOT)
-
-    gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash"
-
-    openai_api_key: str = ""
-    openai_model: str = "gpt-4o-mini"
+    model_base_url: str = ""
+    model_api_key: str = ""
+    nemotron_model: str = ""
+    model_provider: str = "nightshift"
+    nightshift_base_url: str = ""
+    nightshift_api_key: str = ""
+    nightshift_model: str = ""
+    nvidia_base_url: str = ""
+    nvidia_api_key: str = ""
+    nvidia_model: str = ""
 
     chat_history_limit: int = 20
 
@@ -35,14 +37,25 @@ class Settings(BaseSettings):
 
     @property
     def llm_configured(self) -> bool:
-        provider = self.llm_provider.lower()
-        if provider == "cursor":
-            return bool(self.cursor_api_key)
-        if provider == "gemini":
-            return bool(self.gemini_api_key)
-        if provider == "openai":
-            return bool(self.openai_api_key)
+        if self.model_provider == "nightshift":
+            return bool(
+                (self.nightshift_base_url or self.model_base_url)
+                and self.nightshift_api_key
+                and (self.nightshift_model or self.nemotron_model)
+            )
+        if self.model_provider == "nvidia":
+            return bool(
+                (self.nvidia_base_url or self.model_base_url)
+                and (self.nvidia_api_key or self.model_api_key)
+                and (self.nvidia_model or self.nemotron_model)
+            )
         return False
+
+    @property
+    def active_model(self) -> str:
+        if self.model_provider == "nightshift":
+            return self.nightshift_model or self.nemotron_model
+        return self.nvidia_model or self.nemotron_model
 
 
 @lru_cache

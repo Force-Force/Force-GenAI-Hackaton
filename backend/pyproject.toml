@@ -1,5 +1,5 @@
 [project]
-name = "ora-bi-backend"
+name = "aurabi-backend"
 version = "0.1.0"
 description = "DataPipe - Visual ETL backend for banking pipelines"
 readme = "README.md"
@@ -13,8 +13,9 @@ dependencies = [
     "pydantic>=2.10.0",
     "pydantic-settings>=2.6.0",
     "httpx>=0.28.0",
+    "openai>=1.0.0",
+    "requests>=2.31.0",
     "python-multipart>=0.0.18",
-    "cursor-sdk>=0.1.6",
 ]
 
 [project.optional-dependencies]
@@ -22,9 +23,6 @@ dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
     "httpx>=0.28.0",
-]
-mcp = [
-    "fastmcp>=2.0.0",
 ]
 
 [build-system]

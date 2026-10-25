@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.models.enums import PipelineRunEventType, PipelineRunStatus
 from app.schemas.guardian import GuardianApprovalRead
@@ -46,3 +46,10 @@ class PipelineRunStartResponse(BaseModel):
 class GuardianQuestionAnswer(BaseModel):
     question_id: str = Field(description="ID de l'événement GUARDIAN_QUESTION")
     answer: str = Field(min_length=1)
+
+    @field_validator("answer")
+    @classmethod
+    def answer_must_not_be_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("answer must not be blank")
+        return value

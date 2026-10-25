@@ -1,4 +1,4 @@
-# DataPipe Backend (ORA-BI)
+# AuraBI Backend
 
 Visual ETL backend for banking data pipelines. Provides REST + WebSocket APIs for a ReactFlow frontend and a Master Agent chat orchestrator.
 
@@ -30,13 +30,35 @@ sudo -u postgres psql -f scripts/setup_postgres.sql
 
 ```bash
 cp .env.example .env
-# Éditez .env : CURSOR_API_KEY, CORS si besoin (voir docs/CURSOR_API_KEYS.md)
+# Éditez .env : les paramètres Nemotron/Zetaris et CORS si besoin
 
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-pip install -e ".[dev,mcp]"
+python -m pip install -r requirements.txt
 ```
+
+The `requirements.txt` file includes the complete runtime and test dependency
+set. Use `python -m pytest` to run tests and
+`python scripts/evaluate_scout_intent.py` for the reproducible Scout Intent
+evaluation.
+
+Generic Zetaris-shaped offline flow test:
+
+```bash
+python -m pytest -q tests/test_generic_data_flow.py
+```
+
+**Windows PowerShell**
+
+```powershell
+py -3 -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+For the complete cross-platform setup and troubleshooting guide, see
+[docs/DEVOPS_DOCKER.md](docs/DEVOPS_DOCKER.md).
 
 ### 3. Migrations
 
@@ -60,11 +82,27 @@ L’API écoute sur `0.0.0.0:8000` par défaut.
 | http://\<votre-ip\>:8000/health | Santé |
 Référence détaillée des routes (usage, utilité, exemples) : [docs/API_ROUTES.md](docs/API_ROUTES.md)
 
+Guide Docker/DevOps : [docs/DEVOPS_DOCKER.md](docs/DEVOPS_DOCKER.md)
+Guide d'intégration frontend : [docs/FRONTEND_INTEGRATION.md](docs/FRONTEND_INTEGRATION.md)
+Explication des technologies sponsors : [docs/SPONSOR_TECHNOLOGY.md](docs/SPONSOR_TECHNOLOGY.md)
+
+Evaluation reproductible Scout Intent : `python scripts/evaluate_scout_intent.py`
+
+Meterless H-MEM writes auditable memory evidence to
+`logs/meterless_memory.jsonl` and reinjects relevant memories into analysis
+requests. See [docs/SPONSOR_TECHNOLOGY.md](docs/SPONSOR_TECHNOLOGY.md) for the
+mounted engine and its boundaries. No separate Meterless installation or API
+key is required; the manual setup is documented in
+[docs/DEVOPS_DOCKER.md](docs/DEVOPS_DOCKER.md).
+
 ### Docker (API + DB)
 
 Guide détaillé partage réseau : **[docs/EXPOSITION_RESEAU.md](docs/EXPOSITION_RESEAU.md)**
 
-Référence des routes : **[docs/API_ROUTES.md](docs/API_ROUTES.md)**  
+Référence des routes : **[docs/API_ROUTES.md](docs/API_ROUTES.md)**
+Guide Docker/DevOps : **[docs/DEVOPS_DOCKER.md](docs/DEVOPS_DOCKER.md)**
+Guide d'intégration frontend : **[docs/FRONTEND_INTEGRATION.md](docs/FRONTEND_INTEGRATION.md)**
+Explication des technologies sponsors : **[docs/SPONSOR_TECHNOLOGY.md](docs/SPONSOR_TECHNOLOGY.md)**
 Workflow `curl` : **[docs/WORKFLOW_CURL.md](docs/WORKFLOW_CURL.md)** — démo rapide `./scripts/demo_workflow.sh`, **usage normal** `./scripts/workflow_normal.sh`
 
 ## Variables d’environnement
@@ -76,12 +114,15 @@ Workflow `curl` : **[docs/WORKFLOW_CURL.md](docs/WORKFLOW_CURL.md)** — démo r
 | `API_PORT` | Port HTTP (défaut `8000`) |
 | `CORS_ORIGINS` | URLs frontend autorisées (virgules) |
 | `CORS_ALLOW_ALL` | `true` = tout autoriser en dev LAN |
-| `LLM_PROVIDER` | `cursor` (défaut), `gemini`, ou `openai` |
-| `CURSOR_API_KEY` | Clé Cursor — modèle Composer ([guide](docs/CURSOR_API_KEYS.md)) |
-| `CURSOR_MODEL` | ex. `composer-2.5` |
-| `GEMINI_API_KEY` / `OPENAI_API_KEY` | Alternatives si autre `LLM_PROVIDER` |
+| `MODEL_PROVIDER` | Route active (`nvidia` or `nightshift`) |
+| `NVIDIA_BASE_URL` | Endpoint OpenAI-compatible NVIDIA (default `https://integrate.api.nvidia.com/v1`) |
+| `NVIDIA_API_KEY` | Clé NVIDIA API Catalog |
+| `NVIDIA_MODEL` | Identifiant du modèle Nemotron (tested: `nvidia/nemotron-3.5-lightning-30b-a3b`) |
+| `NIGHTSHIFT_BASE_URL` / `NIGHTSHIFT_API_KEY` / `NIGHTSHIFT_MODEL` | Route Nightshift séparée |
+| `ZETARIS_API_URL` / `ZETARIS_REST_URL` | Endpoint analytique Zetaris |
+| `ZETARIS_API_KEY` / `ZETARIS_ORG_ID` | Authentification et organisation Zetaris |
 
-Vérification : `GET /health` → `llm_provider`, `llm_configured`.
+Vérification : `GET /health` → `provider`, `model`, `llm_configured`.
 
 ## REST API (`/api/v1`)
 
@@ -123,12 +164,11 @@ Connect to: `ws://<host>:8000/api/v1/ws/pipelines/{pipeline_id}`
 | `chat.message` | New chat message |
 | `agent_task.updated` | Master delegated a task |
 
-## MCP server (IDE, optionnel)
+## MCP server
 
-```bash
-pip install -e ".[mcp]"
-fastmcp run app/mcp/server.py:mcp
-```
+The current project does not define an `mcp` optional dependency or include an
+`app/mcp/server.py` entry point. Do not run the old `pip install -e ".[mcp]"`
+command; use the REST and WebSocket APIs documented above.
 
 ## Manual MVP test
 

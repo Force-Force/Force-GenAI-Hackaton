@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import ProgrammingError
 
-from app.api.v1 import agent_tasks, chat, edges, etl, execution, guardian, nodes, pipelines, questions, ws
+from app.api.v1 import agent_tasks, analysis, chat, edges, etl, execution, guardian, nodes, pipelines, questions, ws
 from app.config import get_settings
 
 settings = get_settings()
@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="DataPipe API",
-    description="Visual ETL backend for banking pipelines (ORA-BI)",
+    description="AuraBI backend for governed business analysis and pipelines",
     version="0.1.0",
     lifespan=lifespan,
 )
@@ -50,6 +50,7 @@ app.include_router(guardian.router, prefix=api_prefix)
 app.include_router(agent_tasks.router, prefix=api_prefix)
 app.include_router(questions.router, prefix=api_prefix)
 app.include_router(etl.router, prefix=api_prefix)
+app.include_router(analysis.router, prefix=api_prefix)
 app.include_router(ws.router, prefix=api_prefix)
 
 
@@ -73,6 +74,7 @@ async def database_schema_error(_request: Request, exc: ProgrammingError) -> JSO
 async def health() -> dict[str, str | bool]:
     return {
         "status": "ok",
-        "llm_provider": settings.llm_provider,
+        "model": settings.active_model or None,
         "llm_configured": settings.llm_configured,
+        "provider": settings.model_provider,
     }
