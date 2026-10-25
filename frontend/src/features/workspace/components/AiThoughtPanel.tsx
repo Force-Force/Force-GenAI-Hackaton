@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  Bot,
   Check,
   ChevronDown,
   ChevronRight,
@@ -18,6 +17,7 @@ import { Markdown } from "../../chat/components/Markdown";
 import { UiopBatchCard } from "../../uiop/components/UiopBatchCard";
 import { cn } from "../../../utils/cn";
 import type { PipelineNode } from "../../../types/pipeline";
+import logoUrl from "../../../assets/logo.png";
 
 interface ThoughtBlock {
   id: string;
@@ -405,7 +405,11 @@ export function AiThoughtPanel() {
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#064C1C]" />
             )}
           </span>
-          <Bot size={16} className="text-[#064C1C]" />
+          <img
+            src={logoUrl}
+            alt="AuraBI"
+            className="w-4 h-4 object-contain select-none shrink-0"
+          />
           <span className="text-xs font-bold text-[#1E2D24]">
             AI Insights & Reasoning
           </span>
@@ -436,13 +440,17 @@ export function AiThoughtPanel() {
               "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors shadow-2xs",
               isGenerating
                 ? "bg-[#D66F14] text-white"
-                : "bg-[#064C1C] text-white",
+                : "bg-white border border-[#334139]/15",
             )}
           >
             {isGenerating ? (
               <Loader2 size={18} className="animate-spin" />
             ) : (
-              <Bot size={18} />
+              <img
+                src={logoUrl}
+                alt="AuraBI"
+                className="w-6 h-6 object-contain select-none"
+              />
             )}
           </div>
           <div className="min-w-0">
@@ -563,9 +571,11 @@ export function AiThoughtPanel() {
             {conversationTurns.length === 0 && !isGenerating && (
               <div className="rounded-2xl border border-[#334139]/15 bg-[#FDFFFC] p-4 space-y-3 shadow-2xs">
                 <div className="flex items-center gap-2.5">
-                  <span className="w-6 h-6 rounded-lg bg-[#064C1C] text-white flex items-center justify-center shrink-0">
-                    <Bot size={14} />
-                  </span>
+                  <img
+                    src={logoUrl}
+                    alt="AuraBI"
+                    className="w-6 h-6 object-contain shrink-0 select-none"
+                  />
                   <span className="text-sm font-bold text-[#1E2D24]">
                     Ready to assist with your business metrics
                   </span>
@@ -673,9 +683,11 @@ export function AiThoughtPanel() {
                   {/* Bot Persona Header */}
                   <div className="flex items-center justify-between px-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-md bg-[#064C1C] text-white flex items-center justify-center">
-                        <Bot size={12} />
-                      </span>
+                      <img
+                        src={logoUrl}
+                        alt="AuraBI"
+                        className="w-4.5 h-4.5 object-contain shrink-0 select-none"
+                      />
                       <span className="text-xs font-bold text-[#1E2D24]">
                         AuraBI Assistant
                       </span>

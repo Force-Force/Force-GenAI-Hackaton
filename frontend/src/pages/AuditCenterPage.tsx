@@ -1,8 +1,9 @@
-import { Bot, Workflow, Palette, FileText, RotateCcw } from "lucide-react";
+import { Workflow, Palette, FileText, RotateCcw } from "lucide-react";
 import { motion } from "motion/react";
 import { navigateTo } from "../utils/navigation";
 import { ValidationCenter } from "../features/validation/components/ValidationCenter";
 import { useWorkspaceStore } from "../features/workspace/store/workspaceStore";
+import logoUrl from "../assets/logo.png";
 
 export function AuditCenterPage() {
   const runValidation = useWorkspaceStore((s) => s.runValidation);
@@ -30,12 +31,11 @@ export function AuditCenterPage() {
           className="flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition-opacity"
           aria-label="Return to Welcome Page"
         >
-          <div
-            style={{ backgroundColor: "#064C1C" }}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#FDFFFC] shadow-xs"
-          >
-            <Bot size={15} />
-          </div>
+          <img
+            src={logoUrl}
+            alt="AuraBI"
+            className="w-7 h-7 object-contain drop-shadow-2xs select-none"
+          />
           <span className="font-bold text-base tracking-tight text-[#334139]">
             AuraBI
           </span>

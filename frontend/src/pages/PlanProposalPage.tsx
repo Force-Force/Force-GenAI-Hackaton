@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  Bot,
   Check,
   ChevronRight,
   ChevronLeft,
@@ -40,6 +39,7 @@ import { Markdown } from "../features/chat/components/Markdown";
 import { createUiopEnvelope } from "../features/uiop/adapter/promptToUiopAdapter";
 import { executeUiop } from "../features/uiop/runtime/uiopRuntime";
 import type { KpiDefinition, ReasoningPhase } from "../contracts/uiop";
+import logoUrl from "../assets/logo.png";
 
 export type { KpiDefinition };
 
@@ -343,12 +343,11 @@ export function PlanProposalPage() {
           className="flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition-opacity"
           aria-label="Return to Welcome Page"
         >
-          <div
-            style={{ backgroundColor: "#064C1C" }}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#FDFFFC] shadow-xs"
-          >
-            <Bot size={15} />
-          </div>
+          <img
+            src={logoUrl}
+            alt="AuraBI"
+            className="w-7 h-7 object-contain drop-shadow-2xs select-none"
+          />
           <span className="font-bold text-base tracking-tight text-[#334139]">
             AuraBI
           </span>
@@ -464,12 +463,11 @@ export function PlanProposalPage() {
                 <section className="space-y-2.5">
                   <div className="flex items-center justify-between pb-1 border-b border-[#334139]/12">
                     <div className="flex items-center gap-2">
-                      <div
-                        style={{ backgroundColor: "#064C1C" }}
-                        className="w-5 h-5 rounded-md flex items-center justify-center text-[#FDFFFC]"
-                      >
-                        <Bot size={13} />
-                      </div>
+                      <img
+                        src={logoUrl}
+                        alt="AuraBI"
+                        className="w-5 h-5 object-contain select-none shrink-0"
+                      />
                       <span className="text-sm font-bold text-[#334139]">
                         AI Thought Process
                       </span>
@@ -917,12 +915,11 @@ export function PlanProposalPage() {
                 {/* Panel Header */}
                 <div className="px-5 sm:px-6 py-4 border-b border-[#334139]/12 flex items-center justify-between shrink-0 bg-[#FDFFFC]">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      style={{ backgroundColor: "#064C1C" }}
-                      className="w-8 h-8 rounded-xl flex items-center justify-center text-[#FDFFFC] shadow-2xs shrink-0"
-                    >
-                      <Bot size={16} />
-                    </div>
+                    <img
+                      src={logoUrl}
+                      alt="AuraBI Plan"
+                      className="w-8 h-8 object-contain shrink-0 drop-shadow-2xs select-none"
+                    />
                     <div className="min-w-0">
                       <h2 className="text-base font-bold text-[#1E2D24] truncate">
                         Pipeline Architecture Plan

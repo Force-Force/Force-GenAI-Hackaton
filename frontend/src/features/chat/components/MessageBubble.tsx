@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Bot, User, ChevronDown, ChevronRight, Sparkles } from "lucide-react";
+import { User, ChevronDown, ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "../../../utils/cn";
 import { UiopBatchCard } from "../../uiop/components/UiopBatchCard";
 import type { ChatMessage } from "../types";
 import { AgentTaskList } from "./AgentTaskList";
 import { Markdown } from "./Markdown";
+import logoUrl from "../../../assets/logo.png";
 
 export function MessageBubble({ message }: { message: ChatMessage }) {
   const isAI = message.sender === "assistant";
@@ -23,7 +24,13 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
           isAI ? "justify-start" : "justify-end",
         )}
       >
-        {isAI ? <Bot size={13} className="text-[#064C1C]" /> : null}
+        {isAI ? (
+          <img
+            src={logoUrl}
+            alt="AuraBI"
+            className="w-3.5 h-3.5 object-contain select-none shrink-0"
+          />
+        ) : null}
         <span className="font-semibold text-slate-700">
           {isAI ? "AuraBI Assistant" : "You"}
         </span>

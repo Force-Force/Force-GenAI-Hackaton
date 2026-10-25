@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { Bot, Database, Scale, ShieldCheck, Sparkles, Workflow } from 'lucide-react';
+import { Database, Scale, ShieldCheck, Sparkles, Workflow } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import logoUrl from '../../assets/logo.png';
 
 export type AuraLoaderVariant =
   | 'orbital-synapse'
@@ -268,7 +269,12 @@ export function AuraLoader({
                 {clampedValue}%
               </span>
             ) : (
-              <Bot size={cfg.iconSize} className="text-[#FDFFFC]" />
+              <img
+                src={logoUrl}
+                alt="AuraBI"
+                style={{ width: cfg.iconSize, height: cfg.iconSize }}
+                className="object-contain select-none"
+              />
             )}
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { Bot } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { MessageBubble } from './MessageBubble';
+import logoUrl from '../../../assets/logo.png';
 
 export function MessageList() {
   const messages = useChatStore((s) => s.messages);
@@ -21,7 +21,11 @@ export function MessageList() {
       {isGenerating && (
         <div className="flex flex-col max-w-[85%] self-start gap-2 animate-pulse">
           <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-mono uppercase tracking-wider">
-            <Bot size={12} className="text-indigo-600" />
+            <img
+              src={logoUrl}
+              alt="AuraBI"
+              className="w-3.5 h-3.5 object-contain select-none"
+            />
             <span>AuraAI thinking...</span>
           </div>
           <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2.5 w-72">

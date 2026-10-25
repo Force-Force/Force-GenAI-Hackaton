@@ -1,7 +1,8 @@
-import { Bot, Sparkles, Palette, FileText } from 'lucide-react';
+import { Sparkles, Palette, FileText } from 'lucide-react';
 import { Badge } from '../components/ui';
 import { useWorkspaceStore } from '../features/workspace/store/workspaceStore';
 import { navigateTo } from '../utils/navigation';
+import logoUrl from '../assets/logo.png';
 
 export function TopNav() {
   const projectName = useWorkspaceStore((s) => s.projectName);
@@ -23,12 +24,11 @@ export function TopNav() {
           className="flex items-center gap-2.5 shrink-0 cursor-pointer hover:opacity-85 transition-opacity"
           aria-label="Return to Agent Home"
         >
-          <div
-            style={{ backgroundColor: '#064C1C' }}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#FDFFFC] shadow-xs"
-          >
-            <Bot size={15} />
-          </div>
+          <img
+            src={logoUrl}
+            alt="AuraBI"
+            className="w-7 h-7 object-contain drop-shadow-2xs select-none"
+          />
           <span className="font-bold text-base tracking-tight text-[#334139]">
             AuraBI
           </span>

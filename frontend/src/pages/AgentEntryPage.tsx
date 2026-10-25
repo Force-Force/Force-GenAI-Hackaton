@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, type ChangeEvent } from 'react';
-import { ArrowUp, Bot, Workflow, Palette, X, FileText, Mic, Square, Database, Globe, Boxes, Layers } from 'lucide-react';
+import { ArrowUp, Workflow, Palette, X, FileText, Mic, Square, Database, Globe, Boxes, Layers } from 'lucide-react';
 import { useChatStore } from '../features/chat/store/chatStore';
 import { usePipelineStore } from '../features/workspace/store/pipelineStore';
 import { parseCsv } from '../utils/parsers/csvParser';
@@ -8,6 +8,7 @@ import type { Column, PipelineNode, SourceFormat } from '../types/pipeline';
 import { navigateTo } from '../utils/navigation';
 import { cn } from '../utils/cn';
 import { ImportDataModal, type ImportModalTab } from '../features/sources/components/ImportDataModal';
+import logoUrl from '../assets/logo.png';
 
 interface AttachedResource {
   id: string;
@@ -329,12 +330,11 @@ export function AgentEntryPage() {
       <header className="w-full px-6 py-4 flex items-center justify-between shrink-0 bg-transparent">
         {/* Brand */}
         <div className="flex items-center gap-2.5">
-          <div
-            style={{ backgroundColor: '#064C1C' }}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#FDFFFC] shadow-xs"
-          >
-            <Bot size={15} />
-          </div>
+          <img
+            src={logoUrl}
+            alt="AuraBI"
+            className="w-7 h-7 object-contain drop-shadow-2xs select-none"
+          />
           <span className="font-bold text-base tracking-tight text-[#334139]">
             AuraBI
           </span>
@@ -370,7 +370,12 @@ export function AgentEntryPage() {
       {/* Center of the page: Welcome text & Prompt text zone rectangle */}
       <main className="flex-1 flex flex-col items-center justify-center px-4 md:px-6 max-w-3xl mx-auto w-full -mt-10">
         {/* "Welcome to AuraBI" Heading placed on top of the prompt rectangle */}
-        <div className="text-center mb-8 space-y-2">
+        <div className="text-center mb-8 space-y-3 flex flex-col items-center">
+          <img
+            src={logoUrl}
+            alt="AuraBI"
+            className="w-16 h-16 md:w-20 md:h-20 object-contain drop-shadow-sm select-none mb-1 animate-fadeIn"
+          />
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#334139]">
             Welcome to AuraBI
           </h1>
