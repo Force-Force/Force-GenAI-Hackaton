@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Workflow, Palette, FileText, RotateCcw } from "lucide-react";
+import { Workflow, FileText, RotateCcw } from "lucide-react";
 import { motion } from "motion/react";
 import { navigateTo } from "../utils/navigation";
 import { ValidationCenter } from "../features/validation/components/ValidationCenter";
@@ -19,11 +19,14 @@ export function AuditCenterPage() {
   const isLoadingInsights = useInsightStore((s) => s.isLoading);
 
   useEffect(() => {
-    void useBackendStore.getState().checkHealth().then((online) => {
-      if (online) {
-        void fetchLiveInsights(useBackendStore.getState().activePipelineId);
-      }
-    });
+    void useBackendStore
+      .getState()
+      .checkHealth()
+      .then((online) => {
+        if (online) {
+          void fetchLiveInsights(useBackendStore.getState().activePipelineId);
+        }
+      });
   }, [fetchLiveInsights]);
 
   const handleRefresh = async () => {
@@ -130,15 +133,6 @@ export function AuditCenterPage() {
           >
             <Workflow size={13} />
             <span>Workspace</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigateTo("/components")}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
-          >
-            <Palette size={13} />
-            <span className="hidden sm:inline">Design Tokens</span>
           </button>
         </nav>
       </header>

@@ -7,7 +7,6 @@ import {
   ChevronsUpDown,
   RotateCcw,
   Workflow,
-  Palette,
   ArrowUpRight,
   Loader2,
   FastForward,
@@ -42,7 +41,10 @@ import { useBackendStore } from "../services/session/backendSession";
 import { pipelineApi } from "../services/api/pipelineApi";
 import { toBackendNode } from "../services/mapping/backendGraphMapper";
 import { WorkspacePromptBar } from "../features/workspace/components/WorkspacePromptBar";
-import { usePlanStore, INITIAL_PLAN_MARKDOWN } from "../features/uiop/store/planStore";
+import {
+  usePlanStore,
+  INITIAL_PLAN_MARKDOWN,
+} from "../features/uiop/store/planStore";
 import { Markdown } from "../features/chat/components/Markdown";
 import { createUiopEnvelope } from "../features/uiop/adapter/promptToUiopAdapter";
 import { executeUiop } from "../features/uiop/runtime/uiopRuntime";
@@ -64,7 +66,9 @@ export function PlanProposalPage() {
   const [panelTab, setPanelTab] = useState<"overview" | "audit" | "ddl">(
     "overview",
   );
-  const [copiedFormat, setCopiedFormat] = useState<"sql" | "json" | "plan" | null>(null);
+  const [copiedFormat, setCopiedFormat] = useState<
+    "sql" | "json" | "plan" | null
+  >(null);
 
   // Stepped questions state & completion tracker
   const [activeQuestionIndex, setActiveQuestionIndex] = useState<number>(0);
@@ -78,7 +82,8 @@ export function PlanProposalPage() {
   const kpis = usePlanStore((s) => s.kpis);
   const selectedKpiIds = usePlanStore((s) => s.selectedKpiIds);
   const compiledSql = usePlanStore((s) => s.compiledSql);
-  const planMarkdown = usePlanStore((s) => s.planMarkdown) || INITIAL_PLAN_MARKDOWN;
+  const planMarkdown =
+    usePlanStore((s) => s.planMarkdown) || INITIAL_PLAN_MARKDOWN;
   const toggleKpiSelection = usePlanStore((s) => s.toggleKpiSelection);
 
   const [customPromptOverride, setCustomPromptOverride] = useState<
@@ -266,7 +271,10 @@ export function PlanProposalPage() {
           }
         }
       } catch (err) {
-        console.warn("Backend sync during plan approval failed, proceeding with local canvas:", err);
+        console.warn(
+          "Backend sync during plan approval failed, proceeding with local canvas:",
+          err,
+        );
       }
     }
 
@@ -445,13 +453,19 @@ export function PlanProposalPage() {
 
           {/* Connection Status Pill */}
           <div
-            title={useBackendStore((s) => s.isOnline) ? "Connected to FastAPI Backend (8000)" : "FastAPI Backend Offline (Running in Local Mode)"}
+            title={
+              useBackendStore((s) => s.isOnline)
+                ? "Connected to FastAPI Backend (8000)"
+                : "FastAPI Backend Offline (Running in Local Mode)"
+            }
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border border-[#334139]/15 bg-white/70"
           >
             <span
               className="w-1.5 h-1.5 rounded-full"
               style={{
-                backgroundColor: useBackendStore((s) => s.isOnline) ? '#10B981' : '#9CA3AF',
+                backgroundColor: useBackendStore((s) => s.isOnline)
+                  ? "#10B981"
+                  : "#9CA3AF",
               }}
             />
             {useBackendStore((s) => s.isOnline) ? (
@@ -474,15 +488,6 @@ export function PlanProposalPage() {
           >
             <Workflow size={13} />
             <span>Workspace</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigateTo("/components")}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
-          >
-            <Palette size={13} />
-            <span className="hidden sm:inline">Design Tokens</span>
           </button>
         </nav>
       </header>
@@ -997,345 +1002,371 @@ export function PlanProposalPage() {
               className="w-full md:w-[50%] lg:w-[48%] shrink-0 h-full flex flex-col border-l border-[#334139]/12 z-20 overflow-hidden shadow-xl font-sans"
               aria-label="Pipeline Architecture Plan Panel"
             >
-                {/* Panel Header */}
-                <div className="px-5 sm:px-6 py-4 border-b border-[#334139]/12 flex items-center justify-between shrink-0 bg-[#FDFFFC]">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={logoUrl}
-                      alt="AuraBI Plan"
-                      className="w-8 h-8 object-contain shrink-0 drop-shadow-2xs select-none"
-                    />
-                    <div className="min-w-0">
-                      <h2 className="text-base font-bold text-[#1E2D24] truncate">
-                        Pipeline Architecture Plan
-                      </h2>
-                      <p className="text-xs text-[#334139]/65 font-sans truncate">
-                        Retail Lakehouse Master Pipeline · 5 Stages · {selectedKpis.length} Proposed KPIs
-                      </p>
-                    </div>
+              {/* Panel Header */}
+              <div className="px-5 sm:px-6 py-4 border-b border-[#334139]/12 flex items-center justify-between shrink-0 bg-[#FDFFFC]">
+                <div className="flex items-center gap-3 min-w-0">
+                  <img
+                    src={logoUrl}
+                    alt="AuraBI Plan"
+                    className="w-8 h-8 object-contain shrink-0 drop-shadow-2xs select-none"
+                  />
+                  <div className="min-w-0">
+                    <h2 className="text-base font-bold text-[#1E2D24] truncate">
+                      Pipeline Architecture Plan
+                    </h2>
+                    <p className="text-xs text-[#334139]/65 font-sans truncate">
+                      Retail Lakehouse Master Pipeline · 5 Stages ·{" "}
+                      {selectedKpis.length} Proposed KPIs
+                    </p>
                   </div>
+                </div>
 
+                <button
+                  type="button"
+                  onClick={() => setIsPanelOpen(false)}
+                  className="p-1.5 rounded-lg text-[#334139]/60 hover:text-[#1E2D24] hover:bg-[#334139]/8 transition-colors cursor-pointer shrink-0"
+                  aria-label="Close plan panel"
+                  title="Close panel"
+                >
+                  <PanelRightClose size={18} />
+                </button>
+              </div>
+
+              {/* Panel Nav Tabs & Export Actions */}
+              <div className="px-5 sm:px-6 pt-3 border-b border-[#334139]/12 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 bg-[#FDFFFC]">
+                <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto no-scrollbar -mb-px">
                   <button
                     type="button"
-                    onClick={() => setIsPanelOpen(false)}
-                    className="p-1.5 rounded-lg text-[#334139]/60 hover:text-[#1E2D24] hover:bg-[#334139]/8 transition-colors cursor-pointer shrink-0"
-                    aria-label="Close plan panel"
-                    title="Close panel"
+                    onClick={() => setPanelTab("overview")}
+                    className={cn(
+                      "pb-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap",
+                      panelTab === "overview"
+                        ? "border-[#064C1C] text-[#064C1C]"
+                        : "border-transparent text-[#334139]/50 hover:text-[#334139]",
+                    )}
                   >
-                    <PanelRightClose size={18} />
+                    Implementation Plan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPanelTab("audit")}
+                    className={cn(
+                      "pb-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap",
+                      panelTab === "audit"
+                        ? "border-[#064C1C] text-[#064C1C]"
+                        : "border-transparent text-[#334139]/50 hover:text-[#334139]",
+                    )}
+                  >
+                    <Sparkles size={14} className="text-[#D66F14]" />
+                    <span>Proposed KPIs ({selectedKpis.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPanelTab("ddl")}
+                    className={cn(
+                      "pb-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap",
+                      panelTab === "ddl"
+                        ? "border-[#064C1C] text-[#064C1C]"
+                        : "border-transparent text-[#334139]/50 hover:text-[#334139]",
+                    )}
+                  >
+                    Compiled DDL
                   </button>
                 </div>
 
-                {/* Panel Nav Tabs & Export Actions */}
-                <div className="px-5 sm:px-6 pt-3 border-b border-[#334139]/12 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 bg-[#FDFFFC]">
-                  <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto no-scrollbar -mb-px">
-                    <button
-                      type="button"
-                      onClick={() => setPanelTab("overview")}
-                      className={cn(
-                        "pb-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap",
-                        panelTab === "overview"
-                          ? "border-[#064C1C] text-[#064C1C]"
-                          : "border-transparent text-[#334139]/50 hover:text-[#334139]",
-                      )}
-                    >
-                      Implementation Plan
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPanelTab("audit")}
-                      className={cn(
-                        "pb-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap",
-                        panelTab === "audit"
-                          ? "border-[#064C1C] text-[#064C1C]"
-                          : "border-transparent text-[#334139]/50 hover:text-[#334139]",
-                      )}
-                    >
-                      <Sparkles size={14} className="text-[#D66F14]" />
-                      <span>Proposed KPIs ({selectedKpis.length})</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPanelTab("ddl")}
-                      className={cn(
-                        "pb-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap",
-                        panelTab === "ddl"
-                          ? "border-[#064C1C] text-[#064C1C]"
-                          : "border-transparent text-[#334139]/50 hover:text-[#334139]",
-                      )}
-                    >
-                      Compiled DDL
-                    </button>
-                  </div>
+                {/* Actions: Single Copy button + Single Export Dropdown */}
+                <div className="flex items-center gap-2 pb-2 sm:pb-0">
+                  <button
+                    type="button"
+                    onClick={handleCopyContent}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
+                    title={
+                      panelTab === "ddl"
+                        ? "Copy compiled DDL"
+                        : "Copy plan document"
+                    }
+                  >
+                    {copiedFormat ? (
+                      <Check
+                        size={13}
+                        strokeWidth={3}
+                        className="text-[#064C1C]"
+                      />
+                    ) : (
+                      <Copy size={13} />
+                    )}
+                    <span>{copiedFormat ? "Copied" : "Copy"}</span>
+                  </button>
 
-                  {/* Actions: Single Copy button + Single Export Dropdown */}
-                  <div className="flex items-center gap-2 pb-2 sm:pb-0">
-                    <button
-                      type="button"
-                      onClick={handleCopyContent}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
-                      title={panelTab === "ddl" ? "Copy compiled DDL" : "Copy plan document"}
-                    >
-                      {copiedFormat ? (
-                        <Check
-                          size={13}
-                          strokeWidth={3}
-                          className="text-[#064C1C]"
-                        />
-                      ) : (
-                        <Copy size={13} />
-                      )}
-                      <span>{copiedFormat ? "Copied" : "Copy"}</span>
-                    </button>
-
-                    <Dropdown
-                      align="right"
-                      width="w-56"
-                      icon={<Download size={13} />}
-                      trigger="Export"
-                      items={[
-                        {
-                          id: "export-md",
-                          label: "Markdown Plan (.md)",
-                          shortcut: ".md",
-                          icon: <FileText size={13} className="text-[#064C1C]" />,
-                          onClick: handleExportMarkdown,
-                        },
-                        {
-                          id: "export-sql",
-                          label: "Compiled DDL (.sql)",
-                          shortcut: ".sql",
-                          icon: <FileCode size={13} className="text-[#D66F14]" />,
-                          onClick: handleExportSql,
-                        },
-                        {
-                          id: "export-json",
-                          label: "Protocol Spec (.json)",
-                          shortcut: ".json",
-                          icon: <Download size={13} className="text-[#334139]" />,
-                          onClick: handleExportJson,
-                        },
-                      ]}
-                    />
-                  </div>
+                  <Dropdown
+                    align="right"
+                    width="w-56"
+                    icon={<Download size={13} />}
+                    trigger="Export"
+                    items={[
+                      {
+                        id: "export-md",
+                        label: "Markdown Plan (.md)",
+                        shortcut: ".md",
+                        icon: <FileText size={13} className="text-[#064C1C]" />,
+                        onClick: handleExportMarkdown,
+                      },
+                      {
+                        id: "export-sql",
+                        label: "Compiled DDL (.sql)",
+                        shortcut: ".sql",
+                        icon: <FileCode size={13} className="text-[#D66F14]" />,
+                        onClick: handleExportSql,
+                      },
+                      {
+                        id: "export-json",
+                        label: "Protocol Spec (.json)",
+                        shortcut: ".json",
+                        icon: <Download size={13} className="text-[#334139]" />,
+                        onClick: handleExportJson,
+                      },
+                    ]}
+                  />
                 </div>
+              </div>
 
-                {/* Panel Scrollable Body */}
-                <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 space-y-4 custom-scrollbar text-sm">
-                  {panelTab === "overview" && (
-                    <div className="p-5 sm:p-6 rounded-2xl bg-white border border-[#334139]/12 shadow-xs text-[#1E2D24] animate-fadeIn">
-                      <Markdown>{planMarkdown}</Markdown>
-                    </div>
-                  )}
+              {/* Panel Scrollable Body */}
+              <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 space-y-4 custom-scrollbar text-sm">
+                {panelTab === "overview" && (
+                  <div className="p-5 sm:p-6 rounded-2xl bg-white border border-[#334139]/12 shadow-xs text-[#1E2D24] animate-fadeIn">
+                    <Markdown>{planMarkdown}</Markdown>
+                  </div>
+                )}
 
-                  {panelTab === "audit" && (
-                    <div className="space-y-4 font-sans">
-                      {/* AI Metric Discovery & Schema Insights Banner */}
-                      <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[#334139]/12 shadow-xs space-y-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="inline-flex items-center gap-1.5 font-sans text-xs font-bold uppercase tracking-wider text-[#D66F14]">
-                            <Sparkles size={14} />
-                            AI Metric Discovery & Schema Insights
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-sans text-xs font-bold tabular-nums">
-                            {selectedKpis.length} of {kpis.length} Selected
-                          </span>
-                        </div>
-                        <p className="text-xs sm:text-sm text-[#334139]/80 leading-relaxed font-sans">
-                          AuraBI analyzed your raw PostgreSQL order tables and Stripe payment streams to identify high-value business metrics. Below are the proposed KPIs, with insights into how the data was interpreted and why each metric is critical to executive and financial operations.
-                        </p>
-                        <div className="flex flex-wrap items-center justify-between pt-2 border-t border-[#334139]/10 gap-2 text-xs">
-                          <span className="text-[#334139]/60 font-sans">
-                            Toggle metrics below to include or exclude them from the generated pipeline.
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                kpis.forEach((k) => {
-                                  if (!selectedKpiIds.includes(k.id)) toggleKpiSelection(k.id);
-                                });
-                              }}
-                              className="font-semibold text-[#064C1C] hover:underline cursor-pointer"
-                            >
-                              Select All
-                            </button>
-                            <span className="text-[#334139]/30">·</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                kpis.forEach((k) => {
-                                  if (selectedKpiIds.includes(k.id)) toggleKpiSelection(k.id);
-                                });
-                              }}
-                              className="font-semibold text-[#334139]/60 hover:text-[#334139] hover:underline cursor-pointer"
-                            >
-                              Deselect All
-                            </button>
-                          </div>
+                {panelTab === "audit" && (
+                  <div className="space-y-4 font-sans">
+                    {/* AI Metric Discovery & Schema Insights Banner */}
+                    <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[#334139]/12 shadow-xs space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-1.5 font-sans text-xs font-bold uppercase tracking-wider text-[#D66F14]">
+                          <Sparkles size={14} />
+                          AI Metric Discovery & Schema Insights
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] font-sans text-xs font-bold tabular-nums">
+                          {selectedKpis.length} of {kpis.length} Selected
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-[#334139]/80 leading-relaxed font-sans">
+                        AuraBI analyzed your raw PostgreSQL order tables and
+                        Stripe payment streams to identify high-value business
+                        metrics. Below are the proposed KPIs, with insights into
+                        how the data was interpreted and why each metric is
+                        critical to executive and financial operations.
+                      </p>
+                      <div className="flex flex-wrap items-center justify-between pt-2 border-t border-[#334139]/10 gap-2 text-xs">
+                        <span className="text-[#334139]/60 font-sans">
+                          Toggle metrics below to include or exclude them from
+                          the generated pipeline.
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              kpis.forEach((k) => {
+                                if (!selectedKpiIds.includes(k.id))
+                                  toggleKpiSelection(k.id);
+                              });
+                            }}
+                            className="font-semibold text-[#064C1C] hover:underline cursor-pointer"
+                          >
+                            Select All
+                          </button>
+                          <span className="text-[#334139]/30">·</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              kpis.forEach((k) => {
+                                if (selectedKpiIds.includes(k.id))
+                                  toggleKpiSelection(k.id);
+                              });
+                            }}
+                            className="font-semibold text-[#334139]/60 hover:text-[#334139] hover:underline cursor-pointer"
+                          >
+                            Deselect All
+                          </button>
                         </div>
                       </div>
+                    </div>
 
-                      {/* Proposed KPI Cards */}
-                      <div className="space-y-3.5">
-                        {kpis.map((kpi) => {
-                          const isSelected = selectedKpiIds.includes(kpi.id);
-                          return (
-                            <div
-                              key={kpi.id}
-                              className={cn(
-                                "p-4 sm:p-5 rounded-2xl border transition-all duration-200 space-y-3.5 bg-white font-sans",
-                                isSelected
-                                  ? "border-[#064C1C]/35 shadow-xs ring-1 ring-[#064C1C]/15"
-                                  : "border-[#334139]/15 opacity-80 hover:opacity-100",
-                              )}
-                            >
-                              {/* Header Row: Checkbox, Name, Category, Inclusion Badge */}
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex items-start gap-3 min-w-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleKpiSelection(kpi.id)}
-                                    className={cn(
-                                      "mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors cursor-pointer",
-                                      isSelected
-                                        ? "bg-[#064C1C] border-[#064C1C] text-[#FDFFFC]"
-                                        : "bg-white border-[#334139]/30 hover:border-[#334139]/60",
-                                    )}
-                                    aria-label={`Toggle ${kpi.name} inclusion`}
-                                  >
-                                    {isSelected && <Check size={13} strokeWidth={3} />}
-                                  </button>
-                                  <div className="min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <h4 className="text-sm sm:text-base font-bold text-[#1E2D24] leading-snug">
-                                        {kpi.name}
-                                      </h4>
-                                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#334139]/8 text-[#334139]">
-                                        {kpi.category}
-                                      </span>
-                                    </div>
-                                    <p className="text-xs sm:text-sm text-[#334139]/75 mt-1 leading-relaxed">
-                                      {kpi.description}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <span
+                    {/* Proposed KPI Cards */}
+                    <div className="space-y-3.5">
+                      {kpis.map((kpi) => {
+                        const isSelected = selectedKpiIds.includes(kpi.id);
+                        return (
+                          <div
+                            key={kpi.id}
+                            className={cn(
+                              "p-4 sm:p-5 rounded-2xl border transition-all duration-200 space-y-3.5 bg-white font-sans",
+                              isSelected
+                                ? "border-[#064C1C]/35 shadow-xs ring-1 ring-[#064C1C]/15"
+                                : "border-[#334139]/15 opacity-80 hover:opacity-100",
+                            )}
+                          >
+                            {/* Header Row: Checkbox, Name, Category, Inclusion Badge */}
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-start gap-3 min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleKpiSelection(kpi.id)}
                                   className={cn(
-                                    "shrink-0 px-2.5 py-0.5 rounded-full text-xs font-bold",
+                                    "mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors cursor-pointer",
                                     isSelected
-                                      ? "bg-[#064C1C]/10 text-[#064C1C]"
-                                      : "bg-[#334139]/8 text-[#334139]/60",
+                                      ? "bg-[#064C1C] border-[#064C1C] text-[#FDFFFC]"
+                                      : "bg-white border-[#334139]/30 hover:border-[#334139]/60",
                                   )}
+                                  aria-label={`Toggle ${kpi.name} inclusion`}
                                 >
-                                  {isSelected ? "Included" : "Excluded"}
+                                  {isSelected && (
+                                    <Check size={13} strokeWidth={3} />
+                                  )}
+                                </button>
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <h4 className="text-sm sm:text-base font-bold text-[#1E2D24] leading-snug">
+                                      {kpi.name}
+                                    </h4>
+                                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#334139]/8 text-[#334139]">
+                                      {kpi.category}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs sm:text-sm text-[#334139]/75 mt-1 leading-relaxed">
+                                    {kpi.description}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <span
+                                className={cn(
+                                  "shrink-0 px-2.5 py-0.5 rounded-full text-xs font-bold",
+                                  isSelected
+                                    ? "bg-[#064C1C]/10 text-[#064C1C]"
+                                    : "bg-[#334139]/8 text-[#334139]/60",
+                                )}
+                              >
+                                {isSelected ? "Included" : "Excluded"}
+                              </span>
+                            </div>
+
+                            {/* AI Reasoning: Data Understanding & Business Relevance */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-0.5">
+                              {/* AI Data Understanding */}
+                              <div className="p-3.5 rounded-xl bg-[#334139]/[0.025] border border-[#334139]/10 space-y-1.5">
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-[#064C1C]">
+                                  <Database
+                                    size={13}
+                                    className="shrink-0 text-[#064C1C]"
+                                  />
+                                  <span>AI Data Understanding</span>
+                                </div>
+                                <p className="text-xs text-[#334139]/85 leading-relaxed font-normal">
+                                  {kpi.dataRationale ||
+                                    "Discovered from transaction schemas and lineage relationships during raw data profiling."}
+                                </p>
+                              </div>
+
+                              {/* Business Relevance */}
+                              <div className="p-3.5 rounded-xl bg-[#D66F14]/[0.035] border border-[#D66F14]/20 space-y-1.5">
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-[#D66F14]">
+                                  <TrendingUp
+                                    size={13}
+                                    className="shrink-0 text-[#D66F14]"
+                                  />
+                                  <span>Business Relevance</span>
+                                </div>
+                                <p className="text-xs text-[#334139]/85 leading-relaxed font-normal">
+                                  {kpi.businessImpact ||
+                                    "Provides critical operational visibility and executive metrics for commercial decision-making."}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Lineage & Technical Details Footer */}
+                            <div className="pt-2.5 border-t border-[#334139]/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+                              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[#334139]/70">
+                                <span>
+                                  <strong className="text-[#1E2D24] font-medium">
+                                    Source:
+                                  </strong>{" "}
+                                  {kpi.sourceSystem}
+                                </span>
+                                <span className="text-[#334139]/30">→</span>
+                                <span>
+                                  <strong className="text-[#1E2D24] font-medium">
+                                    Target Mart:
+                                  </strong>{" "}
+                                  <code className="font-mono text-[11px] text-[#064C1C] bg-[#064C1C]/5 px-1 py-0.5 rounded">
+                                    {kpi.targetMart}
+                                  </code>
                                 </span>
                               </div>
 
-                              {/* AI Reasoning: Data Understanding & Business Relevance */}
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-0.5">
-                                {/* AI Data Understanding */}
-                                <div className="p-3.5 rounded-xl bg-[#334139]/[0.025] border border-[#334139]/10 space-y-1.5">
-                                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#064C1C]">
-                                    <Database size={13} className="shrink-0 text-[#064C1C]" />
-                                    <span>AI Data Understanding</span>
-                                  </div>
-                                  <p className="text-xs text-[#334139]/85 leading-relaxed font-normal">
-                                    {kpi.dataRationale ||
-                                      "Discovered from transaction schemas and lineage relationships during raw data profiling."}
-                                  </p>
-                                </div>
-
-                                {/* Business Relevance */}
-                                <div className="p-3.5 rounded-xl bg-[#D66F14]/[0.035] border border-[#D66F14]/20 space-y-1.5">
-                                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#D66F14]">
-                                    <TrendingUp size={13} className="shrink-0 text-[#D66F14]" />
-                                    <span>Business Relevance</span>
-                                  </div>
-                                  <p className="text-xs text-[#334139]/85 leading-relaxed font-normal">
-                                    {kpi.businessImpact ||
-                                      "Provides critical operational visibility and executive metrics for commercial decision-making."}
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* Lineage & Technical Details Footer */}
-                              <div className="pt-2.5 border-t border-[#334139]/10 flex flex-wrap items-center justify-between gap-2 text-xs">
-                                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[#334139]/70">
-                                  <span>
-                                    <strong className="text-[#1E2D24] font-medium">Source:</strong>{" "}
-                                    {kpi.sourceSystem}
-                                  </span>
-                                  <span className="text-[#334139]/30">→</span>
-                                  <span>
-                                    <strong className="text-[#1E2D24] font-medium">Target Mart:</strong>{" "}
-                                    <code className="font-mono text-[11px] text-[#064C1C] bg-[#064C1C]/5 px-1 py-0.5 rounded">
-                                      {kpi.targetMart}
-                                    </code>
-                                  </span>
-                                </div>
-
-                                <div className="flex items-center gap-1.5 text-[#334139]/70">
-                                  <span className="font-medium text-[#1E2D24]">Formula:</span>
-                                  <code className="font-mono text-[11px] text-[#334139] bg-slate-100 px-1.5 py-0.5 rounded border border-[#334139]/10">
-                                    {kpi.formula}
-                                  </code>
-                                </div>
+                              <div className="flex items-center gap-1.5 text-[#334139]/70">
+                                <span className="font-medium text-[#1E2D24]">
+                                  Formula:
+                                </span>
+                                <code className="font-mono text-[11px] text-[#334139] bg-slate-100 px-1.5 py-0.5 rounded border border-[#334139]/10">
+                                  {kpi.formula}
+                                </code>
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {panelTab === "ddl" && (
-                    <div className="space-y-2.5 font-sans">
-                      <div className="flex items-center justify-between text-xs text-[#334139]/70">
-                        <span>Dialect: ANSI SQL-92 / Zetaris</span>
-                        <button
-                          type="button"
-                          onClick={handleCopySql}
-                          className="hover:text-[#064C1C] underline cursor-pointer font-semibold font-sans"
-                        >
-                          Copy All
-                        </button>
-                      </div>
-
-                      <pre className="p-4 rounded-2xl bg-[#334139]/[0.05] text-[#334139] font-mono text-xs leading-relaxed overflow-x-auto custom-scrollbar">
-                        {compiledSql}
-                      </pre>
+                {panelTab === "ddl" && (
+                  <div className="space-y-2.5 font-sans">
+                    <div className="flex items-center justify-between text-xs text-[#334139]/70">
+                      <span>Dialect: ANSI SQL-92 / Zetaris</span>
+                      <button
+                        type="button"
+                        onClick={handleCopySql}
+                        className="hover:text-[#064C1C] underline cursor-pointer font-semibold font-sans"
+                      >
+                        Copy All
+                      </button>
                     </div>
-                  )}
-                </div>
 
-                {/* Panel Footer Action */}
-                <div className="px-5 sm:px-6 py-4 border-t border-[#334139]/12 bg-[#FDFFFC] flex items-center justify-between gap-3 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setIsPanelOpen(false)}
-                    className="px-4.5 py-2 rounded-full text-xs sm:text-sm font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
-                  >
-                    Close
-                  </button>
+                    <pre className="p-4 rounded-2xl bg-[#334139]/[0.05] text-[#334139] font-mono text-xs leading-relaxed overflow-x-auto custom-scrollbar">
+                      {compiledSql}
+                    </pre>
+                  </div>
+                )}
+              </div>
 
-                  <button
-                    type="button"
-                    onClick={handleApprovePlan}
-                    disabled={isApproving}
-                    style={{ backgroundColor: "#064C1C" }}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#FDFFFC] hover:opacity-90 transition-all cursor-pointer shadow-md disabled:opacity-50"
-                  >
-                    <span>
-                      {isApproving
-                        ? "Building Pipeline…"
-                        : "Validate & Build Pipeline"}
-                    </span>
-                    <ArrowUpRight size={15} />
-                  </button>
-                </div>
-              </motion.aside>
+              {/* Panel Footer Action */}
+              <div className="px-5 sm:px-6 py-4 border-t border-[#334139]/12 bg-[#FDFFFC] flex items-center justify-between gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsPanelOpen(false)}
+                  className="px-4.5 py-2 rounded-full text-xs sm:text-sm font-semibold text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleApprovePlan}
+                  disabled={isApproving}
+                  style={{ backgroundColor: "#064C1C" }}
+                  className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#FDFFFC] hover:opacity-90 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                >
+                  <span>
+                    {isApproving
+                      ? "Building Pipeline…"
+                      : "Validate & Build Pipeline"}
+                  </span>
+                  <ArrowUpRight size={15} />
+                </button>
+              </div>
+            </motion.aside>
           )}
         </AnimatePresence>
       </div>

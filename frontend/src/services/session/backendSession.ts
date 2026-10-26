@@ -11,6 +11,7 @@ import { usePlanStore } from '../../features/uiop/store/planStore';
 import { useWorkspaceStore } from '../../features/workspace/store/workspaceStore';
 import { useInsightStore } from '../../features/insights/store/insightStore';
 import { useChatStore } from '../../features/chat/store/chatStore';
+import { useHistoryStore } from '../../features/history/store/historyStore';
 import { persistStateStorage } from '../../store/persistStorage';
 import type {
   BackendAgentTask,
@@ -81,6 +82,7 @@ export const useBackendStore = create<BackendSessionState>()(
             usePipelineStore.getState().clearMockGraphForLiveBackend();
             usePlanStore.getState().clearMockPlanForLiveBackend();
             useInsightStore.getState().clearMockDataForLiveBackend();
+            useHistoryStore.getState().clearMockHistoryForLiveBackend();
 
             const pid = get().activePipelineId;
             if (pid) {
@@ -140,6 +142,7 @@ export const useBackendStore = create<BackendSessionState>()(
           useWorkspaceStore.getState().setProjectName(pipeline.name);
           usePlanStore.getState().clearMockPlanForLiveBackend(pipeline.name);
           useInsightStore.getState().clearMockDataForLiveBackend();
+          useHistoryStore.getState().clearMockHistoryForLiveBackend();
 
           // Restore plan if persisted in architecture_design
           const design = (pipeline.architecture_design ?? {}) as Record<string, any>;
@@ -150,9 +153,10 @@ export const useBackendStore = create<BackendSessionState>()(
           // Connect socket
           pipelineSocket.connect(pipeline.id);
 
-          // Parallel fetch chat history, live insights, approvals, questions, tasks
+          // Parallel fetch chat history, live insights, approvals, questions, tasks, project history
           void useChatStore.getState().hydrateChatHistory(pipeline.id);
           void useInsightStore.getState().fetchLiveInsights(pipeline.id);
+          void useHistoryStore.getState().fetchHistory(pipeline.id);
           void get().refreshApprovals();
           void get().refreshQuestions();
           void get().refreshTasks();
@@ -312,7 +316,9 @@ queueMicrotask(() => {
     switch (event.type) {
       case 'ws.connected':
       case 'pipeline.updated':
+      case 'pipeline.revision_created':
         void state.loadPipeline(pid);
+        void useHistoryStore.getState().fetchHistory(pid);
         break;
       case 'chat.message':
         void useChatStore.getState().hydrateChatHistory(pid);
@@ -337,6 +343,7 @@ queueMicrotask(() => {
             .getRun(pid, runId)
             .then((run) => {
               useBackendStore.setState({ activeRun: run });
+              void useHistoryStore.getState().fetchHistory(pid);
               if (run.status === 'COMPLETED') {
                 void useInsightStore.getState().fetchLiveInsights(pid);
               }

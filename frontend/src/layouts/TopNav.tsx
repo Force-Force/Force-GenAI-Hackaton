@@ -1,10 +1,10 @@
-import { Sparkles, Palette, FileText, Wifi, WifiOff, Play } from 'lucide-react';
-import { Badge } from '../components/ui';
-import { useWorkspaceStore } from '../features/workspace/store/workspaceStore';
-import { useBackendStore } from '../services/session/backendSession';
-import { pipelineApi } from '../services/api/pipelineApi';
-import { navigateTo } from '../utils/navigation';
-import logoUrl from '../assets/logo.png';
+import { Sparkles, FileText, Wifi, WifiOff, Play } from "lucide-react";
+import { Badge } from "../components/ui";
+import { useWorkspaceStore } from "../features/workspace/store/workspaceStore";
+import { useBackendStore } from "../services/session/backendSession";
+import { pipelineApi } from "../services/api/pipelineApi";
+import { navigateTo } from "../utils/navigation";
+import logoUrl from "../assets/logo.png";
 
 export function TopNav() {
   const projectName = useWorkspaceStore((s) => s.projectName);
@@ -23,13 +23,13 @@ export function TopNav() {
     <header
       style={{
         background:
-          'linear-gradient(to bottom, rgba(253, 255, 252, 0.8) 0%, rgba(253, 255, 252, 0) 100%)',
+          "linear-gradient(to bottom, rgba(253, 255, 252, 0.8) 0%, rgba(253, 255, 252, 0) 100%)",
       }}
       className="w-full flex items-center justify-between px-6 pt-4 pb-5 shrink-0 z-20 pointer-events-auto"
     >
       <div className="flex items-center gap-3 min-w-0">
         <div
-          onClick={() => navigateTo('/')}
+          onClick={() => navigateTo("/")}
           className="flex items-center gap-2.5 shrink-0 cursor-pointer hover:opacity-85 transition-opacity"
           aria-label="Return to Agent Home"
         >
@@ -42,7 +42,7 @@ export function TopNav() {
             AuraBI
           </span>
           <span
-            style={{ backgroundColor: '#D66F14' }}
+            style={{ backgroundColor: "#D66F14" }}
             className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full text-white uppercase tracking-wider ml-1"
           >
             Agent First
@@ -55,7 +55,9 @@ export function TopNav() {
           onBlur={(e) => {
             const nextName = e.target.value.trim();
             if (isOnline && activePipelineId && nextName) {
-              void pipelineApi.updatePipeline(activePipelineId, { name: nextName }).catch(() => {});
+              void pipelineApi
+                .updatePipeline(activePipelineId, { name: nextName })
+                .catch(() => {});
             }
           }}
           aria-label="Project name"
@@ -68,30 +70,36 @@ export function TopNav() {
         <button
           type="button"
           onClick={() => void checkHealth()}
-          title={isOnline ? `Backend connected (${wsStatus}) — click to re-check` : 'Backend offline — click to retry connection'}
+          title={
+            isOnline
+              ? `Backend connected (${wsStatus}) — click to re-check`
+              : "Backend offline — click to retry connection"
+          }
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors cursor-pointer select-none bg-white/70"
           style={{
-            borderColor: isOnline ? 'rgba(6, 76, 28, 0.25)' : 'rgba(51, 65, 57, 0.2)',
-            color: isOnline ? '#064C1C' : '#6B7280',
+            borderColor: isOnline
+              ? "rgba(6, 76, 28, 0.25)"
+              : "rgba(51, 65, 57, 0.2)",
+            color: isOnline ? "#064C1C" : "#6B7280",
           }}
         >
           <span
             className="w-1.5 h-1.5 rounded-full"
             style={{
               backgroundColor: !isOnline
-                ? '#9CA3AF'
-                : wsStatus === 'connected'
-                ? '#10B981'
-                : wsStatus === 'reconnecting'
-                ? '#F59E0B'
-                : '#064C1C',
+                ? "#9CA3AF"
+                : wsStatus === "connected"
+                  ? "#10B981"
+                  : wsStatus === "reconnecting"
+                    ? "#F59E0B"
+                    : "#064C1C",
             }}
           />
           {isOnline ? (
             <span className="flex items-center gap-1">
               <Wifi size={11} className="text-[#064C1C]" />
               <span className="font-mono text-[10px]">
-                {wsStatus === 'connected' ? 'LIVE' : 'ONLINE'}
+                {wsStatus === "connected" ? "LIVE" : "ONLINE"}
               </span>
             </span>
           ) : (
@@ -112,12 +120,14 @@ export function TopNav() {
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#064C1C] text-[#FDFFFC] hover:bg-[#1E2D24] transition-colors cursor-pointer"
           >
             <Play size={12} />
-            <span>{activeRun?.status === 'RUNNING' ? 'Running…' : 'Run Pipeline'}</span>
+            <span>
+              {activeRun?.status === "RUNNING" ? "Running…" : "Run Pipeline"}
+            </span>
           </button>
         )}
         <button
           type="button"
-          onClick={() => navigateTo('/plan')}
+          onClick={() => navigateTo("/plan")}
           aria-label="View AI Architecture Proposal"
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
         >
@@ -126,18 +136,9 @@ export function TopNav() {
         </button>
         <button
           type="button"
-          onClick={() => navigateTo('/components')}
-          aria-label="View components palette"
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
-        >
-          <Palette size={13} />
-          <span className="hidden sm:inline">Design Tokens</span>
-        </button>
-        <button
-          type="button"
           onClick={() => {
             void runValidation();
-            navigateTo('/audit');
+            navigateTo("/audit");
           }}
           aria-label="AI Dynamic Insights Dashboard"
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/20 hover:border-[#064C1C] hover:text-[#064C1C] transition-colors cursor-pointer"

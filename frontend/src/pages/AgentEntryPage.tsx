@@ -1,16 +1,39 @@
-import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, type ChangeEvent } from 'react';
-import { ArrowUp, Workflow, Palette, X, FileText, Mic, Square, Database, Globe, Boxes, Layers, Wifi, WifiOff } from 'lucide-react';
-import { useChatStore } from '../features/chat/store/chatStore';
-import { usePipelineStore } from '../features/workspace/store/pipelineStore';
-import { useBackendStore } from '../services/session/backendSession';
-import { pipelineApi } from '../services/api/pipelineApi';
-import { parseCsv } from '../utils/parsers/csvParser';
-import { parseSqlDdl } from '../utils/parsers/sqlDdlParser';
-import type { Column, PipelineNode, SourceFormat } from '../types/pipeline';
-import { navigateTo } from '../utils/navigation';
-import { cn } from '../utils/cn';
-import { ImportDataModal, type ImportModalTab } from '../features/sources/components/ImportDataModal';
-import logoUrl from '../assets/logo.png';
+import {
+  useState,
+  useRef,
+  useEffect,
+  type FormEvent,
+  type KeyboardEvent,
+  type ChangeEvent,
+} from "react";
+import {
+  ArrowUp,
+  Workflow,
+  X,
+  FileText,
+  Mic,
+  Square,
+  Database,
+  Globe,
+  Boxes,
+  Layers,
+  Wifi,
+  WifiOff,
+} from "lucide-react";
+import { useChatStore } from "../features/chat/store/chatStore";
+import { usePipelineStore } from "../features/workspace/store/pipelineStore";
+import { useBackendStore } from "../services/session/backendSession";
+import { pipelineApi } from "../services/api/pipelineApi";
+import { parseCsv } from "../utils/parsers/csvParser";
+import { parseSqlDdl } from "../utils/parsers/sqlDdlParser";
+import type { Column, PipelineNode, SourceFormat } from "../types/pipeline";
+import { navigateTo } from "../utils/navigation";
+import { cn } from "../utils/cn";
+import {
+  ImportDataModal,
+  type ImportModalTab,
+} from "../features/sources/components/ImportDataModal";
+import logoUrl from "../assets/logo.png";
 
 interface AttachedResource {
   id: string;
@@ -21,23 +44,25 @@ interface AttachedResource {
 }
 
 const TYPICAL_PROMPTS = [
-  'Build an ETL pipeline for daily web sales...',
-  'Connect PostgreSQL source and Snowflake mart...',
-  'Add a customer loyalty dimension table with SCD type 2...',
-  'Audit warehouse schema constraints and primary keys...',
-  'Transform raw clickstream events into a star schema...',
-  'Suggest an aggregation pipeline for monthly active users...',
+  "Build an ETL pipeline for daily web sales...",
+  "Connect PostgreSQL source and Snowflake mart...",
+  "Add a customer loyalty dimension table with SCD type 2...",
+  "Audit warehouse schema constraints and primary keys...",
+  "Transform raw clickstream events into a star schema...",
+  "Suggest an aggregation pipeline for monthly active users...",
 ];
 
 export function AgentEntryPage() {
-  const [prompt, setPrompt] = useState('');
-  const [attachedResources, setAttachedResources] = useState<AttachedResource[]>([]);
+  const [prompt, setPrompt] = useState("");
+  const [attachedResources, setAttachedResources] = useState<
+    AttachedResource[]
+  >([]);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [importModalTab, setImportModalTab] = useState<ImportModalTab>('files');
+  const [importModalTab, setImportModalTab] = useState<ImportModalTab>("files");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const openImportModal = (tab: ImportModalTab = 'files') => {
+  const openImportModal = (tab: ImportModalTab = "files") => {
     setImportModalTab(tab);
     setIsImportModalOpen(true);
   };
@@ -63,7 +88,7 @@ export function AgentEntryPage() {
 
   const [isFocused, setIsFocused] = useState(false);
   const [promptIndex, setPromptIndex] = useState(0);
-  const [animatedPrompt, setAnimatedPrompt] = useState('');
+  const [animatedPrompt, setAnimatedPrompt] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Probe backend server health on mount
@@ -108,7 +133,7 @@ export function AgentEntryPage() {
 
   const [isListening, setIsListening] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
-  const [interimTranscript, setInterimTranscript] = useState('');
+  const [interimTranscript, setInterimTranscript] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -128,14 +153,16 @@ export function AgentEntryPage() {
 
   const startVoiceInput = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRecognition = typeof window !== 'undefined'
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-      : null;
+    const SpeechRecognition =
+      typeof window !== "undefined"
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any).SpeechRecognition ||
+          (window as any).webkitSpeechRecognition
+        : null;
 
     setIsListening(true);
     setVoiceDuration(0);
-    setInterimTranscript('');
+    setInterimTranscript("");
 
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
@@ -147,12 +174,12 @@ export function AgentEntryPage() {
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
-        recognition.lang = 'en-US';
+        recognition.lang = "en-US";
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         recognition.onresult = (event: any) => {
-          let finalTranscript = '';
-          let currentInterim = '';
+          let finalTranscript = "";
+          let currentInterim = "";
           for (let i = event.resultIndex; i < event.results.length; i++) {
             const transcript = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
@@ -162,7 +189,11 @@ export function AgentEntryPage() {
             }
           }
           if (finalTranscript) {
-            setPrompt((prev) => (prev ? `${prev.trim()} ${finalTranscript.trim()}` : finalTranscript.trim()));
+            setPrompt((prev) =>
+              prev
+                ? `${prev.trim()} ${finalTranscript.trim()}`
+                : finalTranscript.trim(),
+            );
           }
           setInterimTranscript(currentInterim);
         };
@@ -186,7 +217,7 @@ export function AgentEntryPage() {
 
   const stopVoiceInput = () => {
     setIsListening(false);
-    setInterimTranscript('');
+    setInterimTranscript("");
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -215,31 +246,51 @@ export function AgentEntryPage() {
 
     try {
       const text = await file.text();
-      const baseName = file.name.replace(/\.[^/.]+$/, '').toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      const baseName = file.name
+        .replace(/\.[^/.]+$/, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, "_");
 
-      if (file.name.endsWith('.sql')) {
+      if (file.name.endsWith(".sql")) {
         const result = parseSqlDdl(text);
         if (result.tables.length > 0) {
-          const newResources: AttachedResource[] = result.tables.map((table) => ({
-            id: `res_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-            name: table.name,
-            columns: table.columns,
-            format: 'postgresql',
-            fileName: file.name,
-          }));
+          const newResources: AttachedResource[] = result.tables.map(
+            (table) => ({
+              id: `res_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+              name: table.name,
+              columns: table.columns,
+              format: "postgresql",
+              fileName: file.name,
+            }),
+          );
           setAttachedResources((prev) => [...prev, ...newResources]);
         }
       } else {
         // Default to CSV parser
-        const result = parseCsv(text, { tableName: baseName || 'uploaded_resource' });
+        const result = parseCsv(text, {
+          tableName: baseName || "uploaded_resource",
+        });
         const newResource: AttachedResource = {
           id: `res_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
           name: result.tableName,
-          columns: result.columns.length > 0 ? result.columns : [
-            { name: 'id', type: 'INT', isPrimaryKey: true, isForeignKey: false },
-            { name: 'data', type: 'VARCHAR(255)', isPrimaryKey: false, isForeignKey: false },
-          ],
-          format: 'csv',
+          columns:
+            result.columns.length > 0
+              ? result.columns
+              : [
+                  {
+                    name: "id",
+                    type: "INT",
+                    isPrimaryKey: true,
+                    isForeignKey: false,
+                  },
+                  {
+                    name: "data",
+                    type: "VARCHAR(255)",
+                    isPrimaryKey: false,
+                    isForeignKey: false,
+                  },
+                ],
+          format: "csv",
           fileName: file.name,
         };
         setAttachedResources((prev) => [...prev, newResource]);
@@ -248,19 +299,24 @@ export function AgentEntryPage() {
       // Fallback simple resource if parse fails
       const fallback: AttachedResource = {
         id: `res_${Date.now()}`,
-        name: file.name.replace(/\.[^/.]+$/, '') || 'uploaded_data',
+        name: file.name.replace(/\.[^/.]+$/, "") || "uploaded_data",
         columns: [
-          { name: 'id', type: 'INT', isPrimaryKey: true, isForeignKey: false },
-          { name: 'payload', type: 'VARCHAR(255)', isPrimaryKey: false, isForeignKey: false },
+          { name: "id", type: "INT", isPrimaryKey: true, isForeignKey: false },
+          {
+            name: "payload",
+            type: "VARCHAR(255)",
+            isPrimaryKey: false,
+            isForeignKey: false,
+          },
         ],
-        format: 'generic',
+        format: "generic",
         fileName: file.name,
       };
       setAttachedResources((prev) => [...prev, fallback]);
     } finally {
       // Clear input so same file can be re-uploaded if desired
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
   };
@@ -279,13 +335,16 @@ export function AgentEntryPage() {
     let currentPipelineId = backendStore.activePipelineId;
     if (backendStore.isOnline && !currentPipelineId) {
       try {
-        const pipelineName = trimmed.slice(0, 48) || 'Data Lakehouse Pipeline';
+        const pipelineName = trimmed.slice(0, 48) || "Data Lakehouse Pipeline";
         const newPipe = await backendStore.createPipeline(pipelineName);
         if (newPipe) {
           currentPipelineId = newPipe.id;
         }
       } catch (err) {
-        console.warn('Backend pipeline creation failed, falling back to local session:', err);
+        console.warn(
+          "Backend pipeline creation failed, falling back to local session:",
+          err,
+        );
       }
     }
 
@@ -293,14 +352,14 @@ export function AgentEntryPage() {
     attachedResources.forEach((res, index) => {
       const node: PipelineNode = {
         id: `node_${Date.now()}_${index}`,
-        type: 'resource',
+        type: "resource",
         position: { x: 80 + index * 260, y: 100 + (index % 2) * 80 },
         data: {
-          category: 'resource',
-          kind: res.format === 'csv' ? 'external' : 'source',
+          category: "resource",
+          kind: res.format === "csv" ? "external" : "source",
           label: res.name,
           description: `Uploaded resource from ${res.fileName} (${res.columns.length} columns).`,
-          warehouseRole: 'source',
+          warehouseRole: "source",
           format: res.format,
           columns: res.columns,
         },
@@ -311,18 +370,20 @@ export function AgentEntryPage() {
       if (backendStore.isOnline && currentPipelineId) {
         pipelineApi
           .createNode(currentPipelineId, {
-            type: 'SOURCE',
-            subtype: res.format === 'csv' ? 'csv' : 'generic',
+            type: "SOURCE",
+            subtype: res.format === "csv" ? "csv" : "generic",
             label: res.name,
             position: node.position,
-            status: 'IDLE',
+            status: "IDLE",
             data: {
               format: res.format,
               fileName: res.fileName,
               columns: res.columns,
             },
           })
-          .catch((err) => console.warn('Could not sync source node to backend:', err));
+          .catch((err) =>
+            console.warn("Could not sync source node to backend:", err),
+          );
       }
     });
 
@@ -330,8 +391,14 @@ export function AgentEntryPage() {
     let messageContent = trimmed;
     if (attachedResources.length > 0) {
       const resourceSummary = attachedResources
-        .map((r) => `${r.name} (${r.columns.length} columns: ${r.columns.map((c) => c.name).slice(0, 4).join(', ')}${r.columns.length > 4 ? '...' : ''})`)
-        .join(', ');
+        .map(
+          (r) =>
+            `${r.name} (${r.columns.length} columns: ${r.columns
+              .map((c) => c.name)
+              .slice(0, 4)
+              .join(", ")}${r.columns.length > 4 ? "..." : ""})`,
+        )
+        .join(", ");
 
       messageContent = trimmed
         ? `[Attached Resource(s): ${resourceSummary}]\n\n${trimmed}`
@@ -340,18 +407,23 @@ export function AgentEntryPage() {
 
     // 4. Send message to AI architect and transition to the AI Planning & Proposal stage
     void sendMessage(messageContent);
-    setPrompt('');
+    setPrompt("");
     setAttachedResources([]);
-    navigateTo('/plan');
+    navigateTo("/plan");
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab' && !prompt && attachedResources.length === 0 && animatedPrompt) {
+    if (
+      e.key === "Tab" &&
+      !prompt &&
+      attachedResources.length === 0 &&
+      animatedPrompt
+    ) {
       e.preventDefault();
-      setPrompt(animatedPrompt.replace(/\.\.\.$/, ''));
+      setPrompt(animatedPrompt.replace(/\.\.\.$/, ""));
       return;
     }
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       void handleSubmit();
     }
@@ -359,7 +431,7 @@ export function AgentEntryPage() {
 
   return (
     <div
-      style={{ backgroundColor: '#FDFFFC' }}
+      style={{ backgroundColor: "#FDFFFC" }}
       className="min-h-screen flex flex-col font-sans text-[#334139] selection:bg-[#064C1C]/15 antialiased"
     >
       {/* 
@@ -379,7 +451,7 @@ export function AgentEntryPage() {
             AuraBI
           </span>
           <span
-            style={{ backgroundColor: '#D66F14' }}
+            style={{ backgroundColor: "#D66F14" }}
             className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full text-white uppercase tracking-wider ml-1"
           >
             Agent First
@@ -390,13 +462,19 @@ export function AgentEntryPage() {
         <nav className="flex items-center gap-2">
           {/* Live Backend Connection Indicator */}
           <div
-            title={useBackendStore((s) => s.isOnline) ? "Connected to FastAPI Backend (8000)" : "FastAPI Backend Offline (Running in Local Mode)"}
+            title={
+              useBackendStore((s) => s.isOnline)
+                ? "Connected to FastAPI Backend (8000)"
+                : "FastAPI Backend Offline (Running in Local Mode)"
+            }
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border border-[#334139]/15 bg-white/70"
           >
             <span
               className="w-1.5 h-1.5 rounded-full"
               style={{
-                backgroundColor: useBackendStore((s) => s.isOnline) ? '#10B981' : '#9CA3AF',
+                backgroundColor: useBackendStore((s) => s.isOnline)
+                  ? "#10B981"
+                  : "#9CA3AF",
               }}
             />
             {useBackendStore((s) => s.isOnline) ? (
@@ -413,20 +491,12 @@ export function AgentEntryPage() {
           </div>
 
           <button
-            onClick={() => navigateTo('/workspace')}
+            onClick={() => navigateTo("/workspace")}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
             aria-label="Open Workspace Canvas"
           >
             <Workflow size={13} />
             <span>Workspace</span>
-          </button>
-          <button
-            onClick={() => navigateTo('/components')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
-            aria-label="View Design System Components"
-          >
-            <Palette size={13} />
-            <span>Design Tokens</span>
           </button>
         </nav>
       </header>
@@ -444,7 +514,8 @@ export function AgentEntryPage() {
             Welcome to AuraBI
           </h1>
           <p className="text-sm md:text-base text-[#334139]/80 max-w-md mx-auto leading-relaxed">
-            Your autonomous AI agent for end-to-end data pipelines and warehouse architecture.
+            Your autonomous AI agent for end-to-end data pipelines and warehouse
+            architecture.
           </p>
         </div>
 
@@ -472,8 +543,12 @@ export function AgentEntryPage() {
                   className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#064C1C]/10 text-[#064C1C] border border-[#064C1C]/20 text-xs font-mono"
                 >
                   <FileText size={12} />
-                  <span className="font-semibold max-w-[170px] truncate">{res.name}</span>
-                  <span className="text-[10px] opacity-75 font-sans">({res.columns.length} cols)</span>
+                  <span className="font-semibold max-w-[170px] truncate">
+                    {res.name}
+                  </span>
+                  <span className="text-[10px] opacity-75 font-sans">
+                    ({res.columns.length} cols)
+                  </span>
                   <button
                     type="button"
                     onClick={() => removeAttachment(res.id)}
@@ -500,8 +575,8 @@ export function AgentEntryPage() {
               disabled={isGenerating}
               aria-label="Agent prompt input"
               style={{
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
               }}
               className="w-full bg-transparent resize-none outline-none text-[#334139] text-sm md:text-base leading-relaxed font-sans relative z-10 no-scrollbar"
             />
@@ -554,7 +629,7 @@ export function AgentEntryPage() {
                   <span className="text-[11px] text-[#334139]/80 font-mono">
                     {interimTranscript
                       ? `"${interimTranscript}"`
-                      : `0:${voiceDuration.toString().padStart(2, '0')} • Speak clearly into your microphone`}
+                      : `0:${voiceDuration.toString().padStart(2, "0")} • Speak clearly into your microphone`}
                   </span>
                 </div>
               </div>
@@ -575,7 +650,8 @@ export function AgentEntryPage() {
             <div className="flex items-center gap-2">
               {attachedResources.length > 0 && (
                 <span className="text-[11px] text-[#334139]/60 font-medium">
-                  {attachedResources.length} resource{attachedResources.length > 1 ? 's' : ''} attached
+                  {attachedResources.length} resource
+                  {attachedResources.length > 1 ? "s" : ""} attached
                 </span>
               )}
             </div>
@@ -587,23 +663,39 @@ export function AgentEntryPage() {
                 type="button"
                 onClick={toggleListening}
                 className={cn(
-                  'w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-2xs',
+                  "w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-2xs",
                   isListening
-                    ? 'bg-[#D66F14] text-[#FDFFFC] ring-4 ring-[#D66F14]/25 animate-pulse'
-                    : 'bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#064C1C] border border-[#334139]/15'
+                    ? "bg-[#D66F14] text-[#FDFFFC] ring-4 ring-[#D66F14]/25 animate-pulse"
+                    : "bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#064C1C] border border-[#334139]/15",
                 )}
-                title={isListening ? 'Stop recording voice' : 'Start voice prompt (dictate)'}
-                aria-label={isListening ? 'Stop recording voice' : 'Start voice recording'}
+                title={
+                  isListening
+                    ? "Stop recording voice"
+                    : "Start voice prompt (dictate)"
+                }
+                aria-label={
+                  isListening ? "Stop recording voice" : "Start voice recording"
+                }
               >
-                {isListening ? <Square size={12} className="fill-current" /> : <Mic size={15} />}
+                {isListening ? (
+                  <Square size={12} className="fill-current" />
+                ) : (
+                  <Mic size={15} />
+                )}
               </button>
 
               {/* Send CTA Button */}
               <button
                 type="submit"
-                disabled={(!prompt.trim() && attachedResources.length === 0) || isGenerating}
+                disabled={
+                  (!prompt.trim() && attachedResources.length === 0) ||
+                  isGenerating
+                }
                 style={{
-                  backgroundColor: prompt.trim() || attachedResources.length > 0 ? '#064C1C' : '#334139',
+                  backgroundColor:
+                    prompt.trim() || attachedResources.length > 0
+                      ? "#064C1C"
+                      : "#334139",
                 }}
                 className="flex items-center gap-1.5 px-4.5 py-2 rounded-full text-xs font-bold text-[#FDFFFC] transition-all hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-xs"
                 aria-label="Submit prompt to agent"
@@ -625,12 +717,12 @@ export function AgentEntryPage() {
             {/* Database Button */}
             <button
               type="button"
-              onClick={() => openImportModal('databases')}
+              onClick={() => openImportModal("databases")}
               className={cn(
-                'inline-flex items-center justify-center gap-2 px-5.5 py-2.5 text-sm font-semibold rounded-full border transition-all cursor-pointer shadow-2xs',
-                isImportModalOpen && importModalTab === 'databases'
-                  ? 'bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]'
-                  : 'bg-transparent text-[#334139] border-[#334139]/30 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] active:bg-[#064C1C] active:text-[#FDFFFC] active:border-[#064C1C]'
+                "inline-flex items-center justify-center gap-2 px-5.5 py-2.5 text-sm font-semibold rounded-full border transition-all cursor-pointer shadow-2xs",
+                isImportModalOpen && importModalTab === "databases"
+                  ? "bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]"
+                  : "bg-transparent text-[#334139] border-[#334139]/30 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] active:bg-[#064C1C] active:text-[#FDFFFC] active:border-[#064C1C]",
               )}
               aria-label="Connect database sources"
             >
@@ -641,12 +733,12 @@ export function AgentEntryPage() {
             {/* Files Button */}
             <button
               type="button"
-              onClick={() => openImportModal('files')}
+              onClick={() => openImportModal("files")}
               className={cn(
-                'inline-flex items-center justify-center gap-2 px-5.5 py-2.5 text-sm font-semibold rounded-full border transition-all cursor-pointer shadow-2xs',
-                isImportModalOpen && importModalTab === 'files'
-                  ? 'bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]'
-                  : 'bg-transparent text-[#334139] border-[#334139]/30 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] active:bg-[#064C1C] active:text-[#FDFFFC] active:border-[#064C1C]'
+                "inline-flex items-center justify-center gap-2 px-5.5 py-2.5 text-sm font-semibold rounded-full border transition-all cursor-pointer shadow-2xs",
+                isImportModalOpen && importModalTab === "files"
+                  ? "bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]"
+                  : "bg-transparent text-[#334139] border-[#334139]/30 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] active:bg-[#064C1C] active:text-[#FDFFFC] active:border-[#064C1C]",
               )}
               aria-label="Import data files"
             >
@@ -657,12 +749,12 @@ export function AgentEntryPage() {
             {/* Web APIs Button */}
             <button
               type="button"
-              onClick={() => openImportModal('api')}
+              onClick={() => openImportModal("api")}
               className={cn(
-                'inline-flex items-center justify-center gap-2 px-5.5 py-2.5 text-sm font-semibold rounded-full border transition-all cursor-pointer shadow-2xs',
-                isImportModalOpen && importModalTab === 'api'
-                  ? 'bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]'
-                  : 'bg-transparent text-[#334139] border-[#334139]/30 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] active:bg-[#064C1C] active:text-[#FDFFFC] active:border-[#064C1C]'
+                "inline-flex items-center justify-center gap-2 px-5.5 py-2.5 text-sm font-semibold rounded-full border transition-all cursor-pointer shadow-2xs",
+                isImportModalOpen && importModalTab === "api"
+                  ? "bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]"
+                  : "bg-transparent text-[#334139] border-[#334139]/30 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] active:bg-[#064C1C] active:text-[#FDFFFC] active:border-[#064C1C]",
               )}
               aria-label="Configure REST API endpoints"
             >
@@ -673,12 +765,12 @@ export function AgentEntryPage() {
             {/* Zetaris Virtual Layer Button */}
             <button
               type="button"
-              onClick={() => openImportModal('zetaris')}
+              onClick={() => openImportModal("zetaris")}
               className={cn(
-                'inline-flex items-center justify-center gap-2 px-5.5 py-2.5 text-sm font-semibold rounded-full border transition-all cursor-pointer shadow-2xs',
-                isImportModalOpen && importModalTab === 'zetaris'
-                  ? 'bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]'
-                  : 'bg-transparent text-[#334139] border-[#334139]/30 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] active:bg-[#064C1C] active:text-[#FDFFFC] active:border-[#064C1C]'
+                "inline-flex items-center justify-center gap-2 px-5.5 py-2.5 text-sm font-semibold rounded-full border transition-all cursor-pointer shadow-2xs",
+                isImportModalOpen && importModalTab === "zetaris"
+                  ? "bg-[#064C1C] text-[#FDFFFC] border-[#064C1C]"
+                  : "bg-transparent text-[#334139] border-[#334139]/30 hover:bg-[#064C1C] hover:text-[#FDFFFC] hover:border-[#064C1C] active:bg-[#064C1C] active:text-[#FDFFFC] active:border-[#064C1C]",
               )}
               aria-label="Inspect Zetaris Virtual Layer"
             >
@@ -704,4 +796,3 @@ export function AgentEntryPage() {
     </div>
   );
 }
-

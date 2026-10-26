@@ -18,6 +18,20 @@ export const runAndGovernanceApi = {
     );
   },
 
+  /** GET /pipelines/{pipeline_id}/runs */
+  async listRuns(
+    pipelineId: string,
+    params?: { status?: string; limit?: number; offset?: number },
+    signal?: AbortSignal,
+  ): Promise<BackendRun[]> {
+    const q = new URLSearchParams();
+    if (params?.status) q.set('status', params.status);
+    if (params?.limit) q.set('limit', String(params.limit));
+    if (params?.offset) q.set('offset', String(params.offset));
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return getJson<BackendRun[]>(`/pipelines/${pipelineId}/runs${qs}`, { signal });
+  },
+
   /** GET /pipelines/{pipeline_id}/runs/{run_id} */
   async getRun(pipelineId: string, runId: string, signal?: AbortSignal): Promise<BackendRun> {
     return getJson<BackendRun>(`/pipelines/${pipelineId}/runs/${runId}`, { signal });

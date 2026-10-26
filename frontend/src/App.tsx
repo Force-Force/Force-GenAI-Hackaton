@@ -5,10 +5,14 @@ import { WorkspacePage } from './pages/WorkspacePage';
 import { ComponentsPage } from './pages/ComponentsPage';
 import { PlanProposalPage } from './pages/PlanProposalPage';
 import { AuditCenterPage } from './pages/AuditCenterPage';
+import { ProjectHistoryPage } from './pages/ProjectHistoryPage';
 
 function resolveRoute() {
   const path = window.location.pathname;
   const hash = window.location.hash;
+  if (path === '/history' || hash === '#/history' || hash === '#history') {
+    return 'history';
+  }
   if (path === '/components' || hash === '#/components' || hash === '#components') {
     return 'components';
   }
@@ -56,6 +60,7 @@ export default function App() {
       {route === 'workspace' && <WorkspacePage />}
       {route === 'plan' && <PlanProposalPage />}
       {route === 'audit' && <AuditCenterPage />}
+      {route === 'history' && <ProjectHistoryPage />}
       {route === 'entry' && <AgentEntryPage />}
     </AppProviders>
   );
