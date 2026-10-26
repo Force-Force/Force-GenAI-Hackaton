@@ -98,6 +98,26 @@ def test_sql_error_keeps_engine_message_without_stack(monkeypatch) -> None:
     assert caught.value.detail == "no viable alternative at input 'selec'(line 1, pos 0)"
 
 
+def test_nemotron_client_sends_the_tool_definitions(monkeypatch) -> None:
+    from app.analysis import model as model_module
+
+    sent: dict = {}
+
+    class FakeCompletions:
+        def create(self, **request):
+            sent.update(request)
+            return SimpleNamespace(usage=None)
+
+    fake_openai = SimpleNamespace(chat=SimpleNamespace(completions=FakeCompletions()))
+    monkeypatch.setattr(model_module, "OpenAI", lambda **kwargs: fake_openai)
+    tools = [{"type": "function", "function": {"name": "run_sql", "parameters": {"type": "object"}}}]
+
+    model_module.NemotronClient("http://nim/v1", "key", "nemotron").chat_with_tools([{"role": "user", "content": "?"}], tools)
+
+    assert sent["tools"] == tools
+    assert sent["tool_choice"] == "auto"
+
+
 class ScriptedLlm:
     provider = "nvidia"
 

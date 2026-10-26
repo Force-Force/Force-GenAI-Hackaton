@@ -58,6 +58,7 @@ class NemotronClient:
                     "timeout": timeout,
                 }
                 if tools is not None:
+                    request["tools"] = tools
                     request["tool_choice"] = "auto"
                 response = client.chat.completions.create(**request)
                 usage = getattr(response, "usage", None)
