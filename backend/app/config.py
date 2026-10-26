@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     model_base_url: str = ""
     model_api_key: str = ""
     nemotron_model: str = ""
-    model_provider: str = "nightshift"
+    model_provider: str = "nvidia"
     nightshift_base_url: str = ""
     nightshift_api_key: str = ""
     nightshift_model: str = ""
@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     nvidia_model: str = ""
 
     chat_history_limit: int = 20
+
+    @property
+    def resolved_zetaris_url(self) -> str:
+        return self.zetaris_api_url or self.zetaris_rest_url
 
     @property
     def cors_origin_list(self) -> list[str]:
@@ -50,6 +54,20 @@ class Settings(BaseSettings):
                 and (self.nvidia_model or self.nemotron_model)
             )
         return False
+
+    @property
+    def active_model_config(self) -> tuple[str, str, str]:
+        if self.model_provider == "nightshift":
+            return (
+                self.nightshift_base_url or self.model_base_url,
+                self.nightshift_api_key,
+                self.nightshift_model or self.nemotron_model,
+            )
+        return (
+            self.nvidia_base_url or self.model_base_url,
+            self.nvidia_api_key or self.model_api_key,
+            self.nvidia_model or self.nemotron_model,
+        )
 
     @property
     def active_model(self) -> str:
