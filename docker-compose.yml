@@ -69,6 +69,10 @@ services:
 
   backend:
     <<: *backend
+    volumes:
+      - ${ZETARIS_PLATFORM_DIR:-./zetaris-platform}/.env:/run/zetaris-platform.env:ro
+      # Meterless H-MEM agent memory (logs/meterless_memory.jsonl) survives restarts and updates.
+      - aurabi-memory:/app/logs
     ports:
       - "127.0.0.1:${AURABI_API_PORT:-8000}:8000"
     depends_on:
@@ -111,3 +115,4 @@ services:
 
 volumes:
   aurabi-pgdata:
+  aurabi-memory:
