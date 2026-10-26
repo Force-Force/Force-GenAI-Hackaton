@@ -8,6 +8,8 @@ class AnalysisSettings(BaseSettings):
 
     zetaris_rest_url: str = "http://localhost:8888/api/v1.0"
     zetaris_api_url: str = ""
+    zetaris_cloud_url: str = ""
+    zetaris_mode: str = "cloud"
     zetaris_sql_endpoint: str = "/sql-editor/sqls/run"
     zetaris_org_id: int = 1
     zetaris_api_key: str = ""
@@ -28,7 +30,11 @@ class AnalysisSettings(BaseSettings):
 
     @property
     def resolved_zetaris_url(self) -> str:
-        return self.zetaris_api_url or self.zetaris_rest_url
+        if self.zetaris_mode == "cloud" and self.zetaris_cloud_url:
+            return self.zetaris_cloud_url
+        if self.zetaris_api_url:
+            return self.zetaris_api_url
+        return self.zetaris_rest_url
 
     @property
     def missing_required_fields(self) -> list[str]:
