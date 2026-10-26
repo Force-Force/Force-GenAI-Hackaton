@@ -1,9 +1,11 @@
 from functools import lru_cache
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import SettingsConfigDict
+
+from app.analysis.config import ZetarisPlatformDefaults
 
 
-class Settings(BaseSettings):
+class Settings(ZetarisPlatformDefaults):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     database_url: str = "postgresql+asyncpg://datapipe:datapipe@localhost:5432/datapipe"
@@ -22,6 +24,7 @@ class Settings(BaseSettings):
     zetaris_auth_url: str = ""
     zetaris_username: str = ""
     zetaris_password: str = ""
+    zetaris_platform_env: str = ""
     zetaris_bank_database: str = "AURABI_BANK"
 
     model_base_url: str = ""

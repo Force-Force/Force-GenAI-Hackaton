@@ -1,11 +1,19 @@
-# AuraBI — database + Zetaris registration + backend + web app.
+# AuraBI — the whole platform in one command:  docker compose up -d --build
 #
-#   db (healthy) --> zetaris-setup (completed) --> backend (healthy) --> web
+#   Zetaris platform (included from ./zetaris-platform)      AuraBI
+#   postgres -> driver -> api -> ui ------------------+
+#                                                     v
+#   db (bank data) ----------------------------> zetaris-setup -> backend -> web
+#                                                                    |
+#                                                                    +-> demo-seed
 #
-# Requires the Zetaris platform to be running on this machine: AuraBI joins its Docker
-# network so Zetaris can read the bank database and the backend can query Zetaris.
+# zetaris-platform/ is the unzipped zetaris-platform.zip (not committed: proprietary).
 
 name: aurabi
+
+include:
+  - path: ${ZETARIS_PLATFORM_DIR:-./zetaris-platform}/docker-compose.yml
+    env_file: ${ZETARIS_PLATFORM_DIR:-./zetaris-platform}/.env
 
 x-backend: &backend
   build: ./backend
@@ -13,7 +21,19 @@ x-backend: &backend
   env_file: .env
   environment:
     DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-datapipe}:${POSTGRES_PASSWORD:-datapipe}@db:5432/${POSTGRES_DB:-datapipe}
-  networks: [default, zetaris]
+    POSTGRES_USER: ${POSTGRES_USER:-datapipe}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-datapipe}
+    POSTGRES_DB: ${POSTGRES_DB:-datapipe}
+    BANK_READER_USER: ${BANK_READER_USER:-zetaris_reader}
+    BANK_READER_PASSWORD: ${BANK_READER_PASSWORD:-aurabi_reader}
+    # Zetaris services are reached by name on the shared network.
+    ZETARIS_API_URL: ${ZETARIS_API_URL:-http://api:8888/api/v1.0}
+    ZETARIS_AUTH_URL: ${ZETARIS_AUTH_URL:-http://ui:3000/api/auth/login}
+    BANK_DB_HOST_FOR_ZETARIS: db
+    # Admin account of the bundled Zetaris platform, read when ZETARIS_PASSWORD is not set.
+    ZETARIS_PLATFORM_ENV: /run/zetaris-platform.env
+  volumes:
+    - ${ZETARIS_PLATFORM_DIR:-./zetaris-platform}/.env:/run/zetaris-platform.env:ro
 
 services:
   db:
@@ -23,11 +43,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-datapipe}
       POSTGRES_DB: ${POSTGRES_DB:-datapipe}
       BANK_READER_USER: ${BANK_READER_USER:-zetaris_reader}
-      BANK_READER_PASSWORD: ${BANK_READER_PASSWORD:?set BANK_READER_PASSWORD in .env}
+      BANK_READER_PASSWORD: ${BANK_READER_PASSWORD:-aurabi_reader}
     ports:
-      - "127.0.0.1:${DB_PORT:-5433}:5432"
+      - "127.0.0.1:${AURABI_DB_PORT:-5433}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - aurabi-pgdata:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       # TCP only answers once the init scripts (schema + data) have finished.
@@ -35,11 +55,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 60
-    networks:
-      default: {}
-      zetaris:
-        aliases: [aurabi-db]
 
+  # Registers the bank database in Zetaris as AURABI_BANK, then exits.
   zetaris-setup:
     <<: *backend
     command: ["python", "-m", "app.cli.register_zetaris"]
@@ -47,11 +64,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      ui:
+        condition: service_healthy
 
   backend:
     <<: *backend
     ports:
-      - "127.0.0.1:${API_PORT:-8000}:8000"
+      - "127.0.0.1:${AURABI_API_PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -63,11 +82,11 @@ services:
       timeout: 5s
       retries: 30
 
-  # End-to-end check against the real services: docker compose run --rm verify
-  verify:
+  # Creates the demo pipeline (canvas, history, a first AI conversation) on an empty install.
+  demo-seed:
     <<: *backend
-    command: ["python", "-m", "app.cli.verify"]
-    profiles: ["tools"]
+    command: ["python", "-m", "app.cli.seed_demo"]
+    restart: "no"
     depends_on:
       backend:
         condition: service_healthy
@@ -76,15 +95,19 @@ services:
     build: ./frontend
     image: aurabi-web:local
     ports:
-      - "127.0.0.1:${WEB_PORT:-8080}:80"
+      - "${AURABI_WEB_PORT:-8080}:80"
     depends_on:
       backend:
         condition: service_healthy
 
-networks:
-  zetaris:
-    external: true
-    name: ${ZETARIS_NETWORK:-zetaris_default}
+  # End-to-end check against the real services:  docker compose run --rm verify
+  verify:
+    <<: *backend
+    command: ["python", "-m", "app.cli.verify"]
+    profiles: ["tools"]
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
-  pgdata:
+  aurabi-pgdata:

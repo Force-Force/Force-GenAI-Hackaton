@@ -19,7 +19,8 @@ import requests
 from app.analysis.config import AnalysisSettings
 from app.analysis.data import ZetarisClient, ZetarisError
 
-WAIT_FOR_ZETARIS_S = int(os.environ.get("ZETARIS_WAIT_SECONDS", "300"))
+# A first start of the Zetaris platform takes several minutes.
+WAIT_FOR_ZETARIS_S = int(os.environ.get("ZETARIS_WAIT_SECONDS", "900"))
 
 
 def log(message: str) -> None:

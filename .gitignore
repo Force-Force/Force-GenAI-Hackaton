@@ -22,3 +22,7 @@ test-results/
 Thumbs.db
 .vscode/
 .idea/
+
+# Zetaris platform (proprietary, unzipped locally from zetaris-platform.zip)
+zetaris-platform/
+zetaris-platform.zip

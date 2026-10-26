@@ -1,9 +1,45 @@
 from functools import lru_cache
+from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class AnalysisSettings(BaseSettings):
+def platform_admin_credentials(path: str) -> tuple[str, str]:
+    """ZETARIS_ADMIN_EMAIL / ZETARIS_ADMIN_PASSWORD of a bundled Zetaris platform .env.
+
+    Only those two lines are read; the file is never executed or parsed as a whole.
+    """
+    email = password = ""
+    try:
+        for line in Path(path).read_text(encoding="utf-8").splitlines():
+            if line.startswith("ZETARIS_ADMIN_EMAIL="):
+                email = line.split("=", 1)[1].strip()
+            elif line.startswith("ZETARIS_ADMIN_PASSWORD="):
+                password = line.split("=", 1)[1].strip()
+    except OSError:
+        pass
+    return email, password
+
+
+class ZetarisPlatformDefaults(BaseSettings):
+    """Fill the Zetaris login from the bundled platform when .env does not set it."""
+
+    zetaris_username: str = ""
+    zetaris_password: str = ""
+
+    zetaris_platform_env: str = ""
+
+    @model_validator(mode="after")
+    def _platform_login(self):
+        if self.zetaris_platform_env and not (self.zetaris_username and self.zetaris_password):
+            email, password = platform_admin_credentials(self.zetaris_platform_env)
+            self.zetaris_username = self.zetaris_username or email
+            self.zetaris_password = self.zetaris_password or password
+        return self
+
+
+class AnalysisSettings(ZetarisPlatformDefaults):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     zetaris_rest_url: str = "http://localhost:8888/api/v1.0"
@@ -17,6 +53,8 @@ class AnalysisSettings(BaseSettings):
     zetaris_auth_url: str = ""
     zetaris_username: str = ""
     zetaris_password: str = ""
+    # .env of a bundled Zetaris platform, used for the login when the two fields above are empty.
+    zetaris_platform_env: str = ""
     # Lightning database under which the AuraBI bank datasource is registered.
     zetaris_bank_database: str = "AURABI_BANK"
 

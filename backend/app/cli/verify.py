@@ -166,7 +166,11 @@ def main() -> int:
         return f"{len(body['insights'])} charts; {cards}"
     check("insights computed by Zetaris", insights)
 
-    failed = [name for name, ok in results if not ok]
+    # Leave the workspace as it was: the app opens the most recent pipeline.
+    if state.get("pipeline"):
+        http.delete(f"/api/v1/pipelines/{state['pipeline']}")
+
+    failed =[name for name, ok in results if not ok]
     print()
     if failed:
         print(f"{len(failed)} of {len(results)} checks failed: {', '.join(failed)}")

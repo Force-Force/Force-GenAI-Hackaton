@@ -169,3 +169,20 @@ def test_agent_does_not_mask_authentication_failures(monkeypatch) -> None:
 
     with pytest.raises(ZetarisError):
         AnalysisAgent(zetaris, ScriptedLlm("SELECT 1"), memory_store=NullMemory()).run("Combien de clients ?")
+
+
+def test_zetaris_login_defaults_to_the_bundled_platform(tmp_path, monkeypatch) -> None:
+    from app.analysis.config import AnalysisSettings
+    from app.config import Settings
+
+    platform_env = tmp_path / "zetaris.env"
+    platform_env.write_text("POSTGRES_USER=zetaris\nZETARIS_ADMIN_EMAIL=admin@zetaris.com\nZETARIS_ADMIN_PASSWORD=Secret1@\n")
+    for name in ("ZETARIS_USERNAME", "ZETARIS_PASSWORD"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("ZETARIS_PLATFORM_ENV", str(platform_env))
+
+    for settings in (AnalysisSettings(_env_file=None), Settings(_env_file=None)):
+        assert (settings.zetaris_username, settings.zetaris_password) == ("admin@zetaris.com", "Secret1@")
+
+    monkeypatch.setenv("ZETARIS_PASSWORD", "explicit")
+    assert AnalysisSettings(_env_file=None).zetaris_password == "explicit"
