@@ -101,7 +101,8 @@ class AnalysisAgent:
             {
                 "role": "user",
                 "content": (
-                    f"Relevant H-MEM context:\n{memory_context}\n\nQuestion: {question}"
+                    "Mémoire H-MEM (pistes issues d'analyses précédentes ; revérifie tout chiffre "
+                    f"avec run_sql avant de l'affirmer) :\n{memory_context}\n\nQuestion : {question}"
                     if memory_context
                     else question
                 ),

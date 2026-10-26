@@ -44,6 +44,9 @@ class HMemMemoryStore:
         for record in records:
             terms = self._terms(record.content)
             overlap = len(query_terms & terms)
+            if overlap == 0:
+                # Unrelated memories only add noise to the model's context.
+                continue
             scope_boost = 1.5 if run_id and record.run_id == run_id else 0.0
             layer_boost = {"long_term": 1.0, "working": 0.5, "short_term": 0.0}.get(record.layer, 0.0)
             score = overlap + scope_boost + layer_boost + record.confidence
