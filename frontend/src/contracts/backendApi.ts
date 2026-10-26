@@ -240,6 +240,14 @@ export const backendQuestionSchema = z.object({
   id: z.string().min(1),
   run_id: z.string().nullable().optional(),
   status: questionStatusSchema.default('PENDING'),
+  // Fields sent by the backend (UserQuestionRead)
+  agent_role: z.string().optional(),
+  phase: z.string().optional(),
+  question_text: z.string().optional(),
+  choices: z.array(z.string()).optional(),
+  answer_text: z.string().nullable().optional(),
+  context_snapshot: z.record(z.string(), z.unknown()).optional(),
+  // Older names, kept for compatibility
   question: z.string().optional(),
   answer: z.string().nullable().optional(),
   created_at: z.string().optional(),

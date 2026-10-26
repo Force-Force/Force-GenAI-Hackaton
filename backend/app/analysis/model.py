@@ -18,11 +18,19 @@ class NemotronClient:
     def _client(self) -> OpenAI:
         return OpenAI(base_url=self.base_url, api_key=self.api_key)
 
-    def chat(self, messages: list[dict[str, Any]], temperature: float = 0.2, timeout: float = 90.0) -> Any:
+    def chat(
+        self,
+        messages: list[dict[str, Any]],
+        temperature: float = 0.2,
+        timeout: float = 90.0,
+        thinking: bool = True,
+    ) -> Any:
+        """thinking=False skips the model's hidden reasoning: about 10x faster for structured output."""
         return self._complete(
             messages=messages,
             temperature=temperature,
             timeout=timeout,
+            thinking=thinking,
         )
 
     def chat_with_tools(
@@ -45,6 +53,7 @@ class NemotronClient:
         temperature: float,
         timeout: float,
         tools: list[dict[str, Any]] | None = None,
+        thinking: bool = True,
     ) -> Any:
         client = self._client()
         last_error: Exception | None = None
@@ -60,6 +69,8 @@ class NemotronClient:
                 if tools is not None:
                     request["tools"] = tools
                     request["tool_choice"] = "auto"
+                if not thinking:
+                    request["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
                 response = client.chat.completions.create(**request)
                 usage = getattr(response, "usage", None)
                 self.last_call_metadata = {

@@ -48,6 +48,23 @@ export const pipelineApi = {
     });
   },
 
+  /**
+   * POST /pipelines/{pipeline_id}/plan/generate — the planner agent designs the pipeline
+   * with Nemotron from the live Zetaris catalog and measures each KPI on Zetaris.
+   * Takes one to three minutes.
+   */
+  async generatePlan(
+    pipelineId: string,
+    prompt: string,
+    signal?: AbortSignal,
+  ): Promise<{ reply: string; markdown: string; uiop: unknown }> {
+    return postJson<{ prompt: string }, { reply: string; markdown: string; uiop: unknown }>(
+      `/pipelines/${pipelineId}/plan/generate`,
+      { prompt },
+      { signal },
+    );
+  },
+
   /** DELETE /pipelines/{pipeline_id} */
   async deletePipeline(pipelineId: string, signal?: AbortSignal): Promise<void> {
     return del(`/pipelines/${pipelineId}`, { signal });

@@ -158,17 +158,28 @@ export function handleBackendEdgeDeleted(edgeId: string): UiopExecutionReport {
  * Bridges a backend user_input.required event into a UIOP question.propose operation.
  */
 export function handleBackendQuestionPrompt(question: BackendQuestion): UiopExecutionReport {
+  // The agent's own choices are the options; their label is the answer sent back.
+  const choices = (question.choices ?? []).filter((c) => c.trim());
+  const options =
+    choices.length >= 2
+      ? choices.map((c, i) => ({ id: c, label: c, description: '', isRecommended: i === 0 }))
+      : [
+          { id: 'approve', label: 'Approve & Continue', description: 'Proceed with the pipeline operation', isRecommended: true },
+          { id: 'reject', label: 'Reject / Cancel', description: 'Abort or pause the operation' },
+        ];
+  const snapshot = question.context_snapshot ?? {};
+  const role = question.agent_role ? `${question.agent_role} · ` : '';
   const op: UiopOperation = {
     op: 'question.propose',
     params: {
       id: question.id,
-      question: question.question || 'Action requires user input:',
-      context: `Pipeline question for run ${question.run_id || 'active'}`,
-      options: [
-        { id: 'approve', label: 'Approve & Continue', description: 'Proceed with the pipeline operation', isRecommended: true },
-        { id: 'reject', label: 'Reject / Cancel', description: 'Abort or pause the operation' },
-      ],
-      selectedOptionId: question.answer || undefined,
+      question: question.question_text || question.question || 'Action requires user input:',
+      context:
+        typeof snapshot.context === 'string' && snapshot.context
+          ? `${role}${snapshot.context}`
+          : `${role}${question.run_id ? `Pipeline run ${question.run_id}` : 'Pipeline design'}`,
+      options,
+      selectedOptionId: question.answer_text || question.answer || undefined,
     },
   };
 

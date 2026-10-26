@@ -87,6 +87,8 @@ export function PlanProposalPage() {
   const planMarkdown =
     usePlanStore((s) => s.planMarkdown) || INITIAL_PLAN_MARKDOWN;
   const toggleKpiSelection = usePlanStore((s) => s.toggleKpiSelection);
+  const isPlanning = usePlanStore((s) => s.isPlanning);
+  const planError = usePlanStore((s) => s.planError);
 
   const [customPromptOverride, setCustomPromptOverride] = useState<
     string | null
@@ -120,7 +122,8 @@ export function PlanProposalPage() {
       timerRef.current = setTimeout(() => setLiveStep(3), 1000);
     } else if (liveStep === 3) {
       timerRef.current = setTimeout(() => setLiveStep(4), 1000);
-    } else if (liveStep === 4) {
+    } else if (liveStep === 4 && !isPlanning) {
+      // While the planner agent works on the backend, stay on this step.
       timerRef.current = setTimeout(() => {
         setLiveStep(5);
         setIsSimulating(false);
@@ -130,7 +133,7 @@ export function PlanProposalPage() {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [liveStep, isSimulating]);
+  }, [liveStep, isSimulating, isPlanning]);
 
   // Live elapsed counter
   useEffect(() => {
@@ -534,8 +537,17 @@ export function PlanProposalPage() {
                         {liveStep === 3 &&
                           "Verifying constraints & compiling DDL"}
                         {liveStep === 4 &&
-                          "Synthesizing domain KPIs & architectural recommendations"}
+                          (isPlanning
+                            ? "Nemotron is designing the plan from the Zetaris catalog and measuring each KPI on Zetaris (1–3 min)"
+                            : "Synthesizing domain KPIs & architectural recommendations")}
                       </span>
+                    </div>
+                  ) : planError ? (
+                    <div className="flex items-center gap-2 text-[#B42318] font-medium">
+                      <X size={14} strokeWidth={3} className="shrink-0" />
+                      <span>The planner agent could not produce a plan</span>
+                      <span className="text-[#334139]/40">·</span>
+                      <span className="text-[#334139]/70 font-normal">{planError}</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 text-[#064C1C] font-medium">

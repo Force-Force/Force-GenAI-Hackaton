@@ -657,6 +657,10 @@ export interface PlanAndProtocolState {
   panels: ActiveUiopPanel[];
   reports: Record<string, ReportUpdateParams>;
   isMockSeedData: boolean;
+  /** The planner agent is designing a plan on the backend (Nemotron + Zetaris). */
+  isPlanning: boolean;
+  planError: string | null;
+  setPlanning: (isPlanning: boolean, planError?: string | null) => void;
 
   // Direct store actions
   setPlanMarkdown: (markdown: string) => void;
@@ -711,6 +715,9 @@ export const usePlanStore = create<PlanAndProtocolState>()(
       isMockSeedData: true,
 
       setPlanMarkdown: (markdown) => set({ planMarkdown: markdown, isMockSeedData: false }),
+      isPlanning: false,
+      planError: null,
+      setPlanning: (isPlanning, planError = null) => set({ isPlanning, planError }),
 
       setAnswer: (questionId, optionId) =>
         set((s) => {

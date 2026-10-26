@@ -30,6 +30,9 @@ import { parseCsv } from "../utils/parsers/csvParser";
 import { parseSqlDdl } from "../utils/parsers/sqlDdlParser";
 import type { Column, PipelineNode, SourceFormat } from "../types/pipeline";
 import { navigateTo } from "../utils/navigation";
+import { usePlanStore } from "../features/uiop/store/planStore";
+import { executeUiop } from "../features/uiop/runtime/uiopRuntime";
+import { uiopEnvelopeSchema } from "../contracts/uiop";
 import { cn } from "../utils/cn";
 import {
   ImportDataModal,
@@ -407,10 +410,48 @@ export function AgentEntryPage() {
         : `I have uploaded the following resource(s): ${resourceSummary}. Please analyze and propose a pipeline integration.`;
     }
 
-    // 4. Send message to AI architect and transition to the AI Planning & Proposal stage
-    void sendMessage(messageContent);
     setPrompt("");
     setAttachedResources([]);
+
+    // 4. The planner agent designs the plan on the backend (Nemotron + live Zetaris catalog,
+    //    KPIs measured on Zetaris). The Plan page shows its progress until the plan arrives.
+    if (backendStore.isOnline && currentPipelineId) {
+      const chat = useChatStore.getState();
+      chat.appendMessage({
+        id: `user_${Date.now()}`,
+        sender: "user",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        text: messageContent,
+      });
+      usePlanStore.getState().setPlanning(true);
+      navigateTo("/plan");
+      try {
+        const res = await pipelineApi.generatePlan(currentPipelineId, messageContent);
+        const envelope = uiopEnvelopeSchema.safeParse(res.uiop);
+        if (!envelope.success) {
+          throw new Error(`Plan rejected by the UIOP contract: ${envelope.error.issues[0]?.message}`);
+        }
+        const report = executeUiop(envelope.data, { allowRebase: true });
+        if (!report.ok) {
+          throw new Error(report.errors.map((e) => e.message).join("; "));
+        }
+        usePlanStore.getState().setPlanMarkdown(res.markdown);
+        chat.appendMessage({
+          id: `assistant_${Date.now()}`,
+          sender: "assistant",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          text: res.reply,
+        });
+        usePlanStore.getState().setPlanning(false);
+      } catch (err) {
+        usePlanStore
+          .getState()
+          .setPlanning(false, err instanceof Error ? err.message : "The planner agent failed.");
+      }
+      return;
+    }
+
+    void sendMessage(messageContent);
     navigateTo("/plan");
   };
 

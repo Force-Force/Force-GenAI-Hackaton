@@ -1,24 +1,46 @@
 """Live schema discovery: what Zetaris exposes, read from Zetaris itself."""
 
+import re
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-from app.analysis.data import ZetarisClient
+from app.analysis.data import ZetarisClient, ZetarisError
 
 _CACHE_TTL_S = 1800
 _cache: dict[str, tuple[float, str]] = {}
 _lock = threading.Lock()
 
+# Text columns whose name suggests a small set of codes: their values are listed so the
+# model writes `status = 'DEFAULT'`, not a guessed `status = 'Default'`.
+_CATEGORICAL = re.compile(r"(status|type|category|segment|channel|direction|currency|rating|level|role|product|network|kind|quote)$")
+_MAX_VALUES = 12
+
+
+def _values(client: ZetarisClient, identifier: str, column: str) -> list[str] | None:
+    try:
+        rows = client.run_sql(f"SELECT DISTINCT {column} AS v FROM {identifier} LIMIT {_MAX_VALUES + 1}", limit=_MAX_VALUES + 1)
+    except (ZetarisError, ValueError):
+        return None
+    values = sorted(str(r["v"]) for r in rows if r.get("v") is not None)
+    return values if len(values) <= _MAX_VALUES else None
+
 
 def _describe(client: ZetarisClient, identifier: str) -> str:
-    columns = client.run_sql(f"DESCRIBE {identifier}", limit=500)
-    names = [
-        f"{col.get('col_name')} {col.get('data_type', '')}".strip()
-        for col in columns
+    columns = [
+        (str(col["col_name"]), str(col.get("data_type", "")))
+        for col in client.run_sql(f"DESCRIBE {identifier}", limit=500)
         if col.get("col_name") and not str(col.get("col_name")).startswith("#")
     ]
-    return f"- {identifier}({', '.join(names)})"
+    parts = []
+    for name, data_type in columns:
+        part = f"{name} {data_type}".strip()
+        if data_type == "string" and _CATEGORICAL.search(name):
+            values = _values(client, identifier, name)
+            if values:
+                part += " ∈ {" + ", ".join(values) + "}"
+        parts.append(part)
+    return f"- {identifier}({', '.join(parts)})"
 
 
 def describe_database(client: ZetarisClient, database: str) -> str:
