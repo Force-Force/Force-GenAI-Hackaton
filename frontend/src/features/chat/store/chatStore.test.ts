@@ -3,6 +3,8 @@ import { useChatStore } from "./chatStore";
 import { usePipelineStore } from "../../workspace/store/pipelineStore";
 import { useWorkspaceStore } from "../../workspace/store/workspaceStore";
 import { usePlanStore } from "../../uiop/store/planStore";
+import { synthesizeUiopFromPrompt } from "../../uiop/adapter/promptToUiopAdapter";
+import { useBackendStore } from "../../../services/session/backendSession";
 import type { ProcessingNode } from "../../../types/pipeline";
 
 describe("chatStore", () => {
@@ -29,7 +31,9 @@ describe("chatStore", () => {
     expect(useChatStore.getState().isGenerating).toBe(false);
   });
 
-  it("records user message and synthesizes a UIOP envelope from prompt", async () => {
+  it("records the question but never invents an answer when the backend is unreachable", async () => {
+    useBackendStore.setState({ isOnline: false, checkHealth: async () => false });
+
     await useChatStore.getState().sendMessage("Add a new dimension table");
 
     const msgs = useChatStore.getState().messages;
@@ -37,17 +41,15 @@ describe("chatStore", () => {
     expect(msgs[0].sender).toBe("user");
     expect(msgs[0].text).toBe("Add a new dimension table");
     expect(msgs[1].sender).toBe("assistant");
-    expect(msgs[1].uiop).toBeDefined();
-    expect(msgs[1].uiop?.protocol).toBe("uiop");
-    expect(msgs[1].uiop?.version).toBe("1.0");
+    expect(msgs[1].text).toContain("Backend unreachable");
+    expect(msgs[1].uiop).toBeFalsy();
   });
 
-  it("applies synthesized UIOP batch when applyUiop is called", async () => {
-    await useChatStore.getState().sendMessage("Add a new dimension table");
-    const assistantMsg = useChatStore.getState().messages[1];
-    expect(assistantMsg.uiop).toBeTruthy();
+  it("applies a UIOP batch when applyUiop is called", () => {
+    const { envelope } = synthesizeUiopFromPrompt("Add a new dimension table");
+    expect(envelope).toBeTruthy();
 
-    const report = useChatStore.getState().applyUiop(assistantMsg.uiop!);
+    const report = useChatStore.getState().applyUiop(envelope!);
     expect(report.ok).toBe(true);
     expect(usePipelineStore.getState().nodes.length).toBeGreaterThan(0);
   });

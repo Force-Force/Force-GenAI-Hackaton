@@ -4,7 +4,6 @@ import {
   type UiopEnvelope,
   type UiopExecutionReport,
 } from "../../../contracts/uiop";
-import { synthesizeUiopFromPrompt } from "../../uiop/adapter/promptToUiopAdapter";
 import { executeUiop } from "../../uiop/runtime/uiopRuntime";
 import { usePipelineStore } from "../../workspace/store/pipelineStore";
 import { genId } from "../../../utils/graph";
@@ -139,8 +138,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((s) => ({ messages: [...s.messages, userMsg], isGenerating: true }));
 
     const backendStore = useBackendStore.getState();
-    const isOnline = backendStore.isOnline;
-    let activePipelineId = backendStore.activePipelineId;
+    // The backend may have come back since the last check: ask it before giving up.
+    const isOnline = backendStore.isOnline || (await backendStore.checkHealth());
+    let activePipelineId = useBackendStore.getState().activePipelineId;
+    if (isOnline && !activePipelineId) {
+      // Reconnected: open the most recent pipeline rather than creating a new one.
+      const list = await backendStore.refreshPipelines();
+      if (list.length > 0) {
+        activePipelineId = (await backendStore.loadPipeline(list[0].id))?.id ?? null;
+      }
+    }
 
     if (isOnline) {
       try {
@@ -217,10 +224,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }
     }
 
-    // Offline Mode only: Local UIOP synthesis fallback
-    const synthesized = synthesizeUiopFromPrompt(trimmed);
+    // Never answer without the backend: a locally made-up reply would look real.
     get().appendMessage(
-      assistant(synthesized.replyMarkdown, synthesized.envelope),
+      assistant(
+        "### Backend unreachable\n\nAuraBI could not reach its backend, so no answer was generated. " +
+          "Check that every service is running (`docker compose ps`), then ask again.",
+      ),
     );
     set({ isGenerating: false });
   },

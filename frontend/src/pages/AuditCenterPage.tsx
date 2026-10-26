@@ -7,8 +7,6 @@ import { useWorkspaceStore } from "../features/workspace/store/workspaceStore";
 import { useInsightStore } from "../features/insights/store/insightStore";
 import { useBackendStore } from "../services/session/backendSession";
 import { useHistoryStore } from "../features/history/store/historyStore";
-import { synthesizeUiopFromPrompt } from "../features/uiop/adapter/promptToUiopAdapter";
-import { executeUiop } from "../features/uiop/runtime/uiopRuntime";
 import { WorkspacePromptBar } from "../features/workspace/components/WorkspacePromptBar";
 import logoUrl from "../assets/logo.png";
 
@@ -47,14 +45,8 @@ export function AuditCenterPage() {
   };
 
   const handlePromptSubmit = async (text: string) => {
-    const res = await queryNightshiftAgent(text);
-    // In offline mode only, allow local UIOP synthesis if backend is unreachable
-    if (!res && !useBackendStore.getState().isOnline) {
-      const synth = synthesizeUiopFromPrompt(text);
-      if (synth.envelope) {
-        executeUiop(synth.envelope, { allowRebase: true });
-      }
-    }
+    // Charts come only from the analysis agent's real query results.
+    await queryNightshiftAgent(text);
   };
 
   return (

@@ -57,6 +57,19 @@ interface BackendSessionState {
   resumePipelineRun: (runId: string) => Promise<BackendRun | null>;
 }
 
+// While the backend is unreachable, keep checking so the app reconnects by itself
+// (e.g. after a container restart) instead of staying in offline mode.
+const HEALTH_RETRY_MS = 10_000;
+let healthRetry: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleHealthRetry() {
+  if (healthRetry) return;
+  healthRetry = setTimeout(() => {
+    healthRetry = null;
+    void useBackendStore.getState().checkHealth();
+  }, HEALTH_RETRY_MS);
+}
+
 export const useBackendStore = create<BackendSessionState>()(
   persist(
     (set, get) => ({
@@ -99,10 +112,13 @@ export const useBackendStore = create<BackendSessionState>()(
                   }
                 });
             }
+          } else {
+            scheduleHealthRetry();
           }
           return online;
         } catch {
           set({ isOnline: false, health: null });
+          scheduleHealthRetry();
           return false;
         }
       },
