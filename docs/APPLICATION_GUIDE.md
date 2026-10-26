@@ -142,9 +142,12 @@ SQL and source table it came from. The search bar sends a question to the analys
 and turns the returned rows into a new chart.
 
 ### Plan — `/plan`
-The architecture plan for the pipeline (stages, KPIs, compiled SQL) as proposed by the
-agents. Approving a plan creates its nodes on the canvas through the API. On a fresh
-install the plan is empty until an agent proposes one.
+Describe a pipeline on the home page and the **planner agent** designs it: Nemotron reads
+the live Zetaris catalog (tables, columns and the real values of code columns) and proposes
+stages, reasoning, KPIs and architecture decisions. **Every KPI is measured on Zetaris**
+before it is shown; a KPI whose SQL fails or does not return one number gets one repair
+round, otherwise it is marked *Non vérifié*. Decisions are stored as questions and your
+answers are saved. Planning takes one to three minutes; the page shows its progress.
 
 ### History — `/history`
 Two timelines for the active pipeline:
@@ -263,7 +266,7 @@ docker compose up -d --build backend
   questions); they do not move data between systems.
 - **ETL execute** turns an instruction into SQL with keyword rules and runs it read-only on
   the source table in PostgreSQL; the AI analysis goes through Zetaris.
-- **Plan page** fills when an agent proposes a plan; `POST /plan/generate` is not yet called
-  by the interface.
+- **Planning is slow** (one to three minutes): the design step keeps Nemotron's full
+  reasoning, which is what keeps KPI names, units and currencies consistent.
 - Personal-data detection recognises French phone formats, not yet Cameroonian ones.
 - No user authentication: run AuraBI on your machine or a trusted network only.
