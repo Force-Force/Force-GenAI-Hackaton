@@ -29,6 +29,7 @@ import {
   Lightbulb,
   Wifi,
   WifiOff,
+  History,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { navigateTo } from "../utils/navigation";
@@ -38,6 +39,7 @@ import { useWorkspaceStore } from "../features/workspace/store/workspaceStore";
 import { useChatStore } from "../features/chat/store/chatStore";
 import { usePipelineStore } from "../features/workspace/store/pipelineStore";
 import { useBackendStore } from "../services/session/backendSession";
+import { useHistoryStore } from "../features/history/store/historyStore";
 import { pipelineApi } from "../services/api/pipelineApi";
 import { toBackendNode } from "../services/mapping/backendGraphMapper";
 import { WorkspacePromptBar } from "../features/workspace/components/WorkspacePromptBar";
@@ -480,6 +482,16 @@ export function PlanProposalPage() {
               </span>
             )}
           </div>
+
+          <button
+            type="button"
+            onClick={() => useHistoryStore.getState().openHistory('revisions')}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
+            title="View Project History & Revisions"
+          >
+            <History size={13} />
+            <span>History</span>
+          </button>
 
           <button
             type="button"

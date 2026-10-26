@@ -1,11 +1,12 @@
 import { useEffect } from "react";
-import { Workflow, FileText, RotateCcw } from "lucide-react";
+import { Workflow, FileText, RotateCcw, History } from "lucide-react";
 import { motion } from "motion/react";
 import { navigateTo } from "../utils/navigation";
 import { ValidationCenter } from "../features/validation/components/ValidationCenter";
 import { useWorkspaceStore } from "../features/workspace/store/workspaceStore";
 import { useInsightStore } from "../features/insights/store/insightStore";
 import { useBackendStore } from "../services/session/backendSession";
+import { useHistoryStore } from "../features/history/store/historyStore";
 import { synthesizeUiopFromPrompt } from "../features/uiop/adapter/promptToUiopAdapter";
 import { executeUiop } from "../features/uiop/runtime/uiopRuntime";
 import { WorkspacePromptBar } from "../features/workspace/components/WorkspacePromptBar";
@@ -115,6 +116,16 @@ export function AuditCenterPage() {
                 ? "Analyzing…"
                 : "Refresh Insights"}
             </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => useHistoryStore.getState().openHistory("runs")}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
+            title="View Execution Runs & Revision History"
+          >
+            <History size={13} />
+            <span>History</span>
           </button>
 
           <button

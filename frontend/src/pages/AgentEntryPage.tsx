@@ -19,10 +19,12 @@ import {
   Layers,
   Wifi,
   WifiOff,
+  History,
 } from "lucide-react";
 import { useChatStore } from "../features/chat/store/chatStore";
 import { usePipelineStore } from "../features/workspace/store/pipelineStore";
 import { useBackendStore } from "../services/session/backendSession";
+import { useHistoryStore } from "../features/history/store/historyStore";
 import { pipelineApi } from "../services/api/pipelineApi";
 import { parseCsv } from "../utils/parsers/csvParser";
 import { parseSqlDdl } from "../utils/parsers/sqlDdlParser";
@@ -489,6 +491,16 @@ export function AgentEntryPage() {
               </span>
             )}
           </div>
+
+          <button
+            type="button"
+            onClick={() => useHistoryStore.getState().openHistory('projects')}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
+            aria-label="View Project History"
+          >
+            <History size={13} />
+            <span>History</span>
+          </button>
 
           <button
             onClick={() => navigateTo("/workspace")}

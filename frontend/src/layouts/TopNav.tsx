@@ -1,7 +1,8 @@
-import { Sparkles, FileText, Wifi, WifiOff, Play } from "lucide-react";
+import { Sparkles, FileText, Wifi, WifiOff, Play, History } from "lucide-react";
 import { Badge } from "../components/ui";
 import { useWorkspaceStore } from "../features/workspace/store/workspaceStore";
 import { useBackendStore } from "../services/session/backendSession";
+import { useHistoryStore } from "../features/history/store/historyStore";
 import { pipelineApi } from "../services/api/pipelineApi";
 import { navigateTo } from "../utils/navigation";
 import logoUrl from "../assets/logo.png";
@@ -18,6 +19,10 @@ export function TopNav() {
   const wsStatus = useBackendStore((s) => s.wsStatus);
   const checkHealth = useBackendStore((s) => s.checkHealth);
   const startPipelineRun = useBackendStore((s) => s.startPipelineRun);
+
+  const openHistory = useHistoryStore((s) => s.openHistory);
+  const revisions = useHistoryStore((s) => s.revisions);
+  const currentVersion = revisions[0]?.revision || 1;
 
   return (
     <header
@@ -112,6 +117,20 @@ export function TopNav() {
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => openHistory("revisions")}
+          aria-label="View Project History & Revisions"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-[#334139]/20 hover:border-[#064C1C] hover:text-[#064C1C] transition-colors cursor-pointer shadow-2xs"
+          title="Open Project History & Revisions"
+        >
+          <History size={13} className="text-[#064C1C]" />
+          <span>History</span>
+          <span className="px-1.5 py-0.2 rounded-full font-mono text-[10px] bg-[#064C1C]/10 text-[#064C1C] font-bold">
+            v{currentVersion}
+          </span>
+        </button>
+
         {isOnline && activePipelineId && (
           <button
             type="button"

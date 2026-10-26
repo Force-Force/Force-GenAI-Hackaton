@@ -6,6 +6,7 @@ import { ComponentsPage } from './pages/ComponentsPage';
 import { PlanProposalPage } from './pages/PlanProposalPage';
 import { AuditCenterPage } from './pages/AuditCenterPage';
 import { ProjectHistoryPage } from './pages/ProjectHistoryPage';
+import { ProjectHistoryModal } from './features/history/components/ProjectHistoryModal';
 
 function resolveRoute() {
   const path = window.location.pathname;
@@ -62,6 +63,7 @@ export default function App() {
       {route === 'audit' && <AuditCenterPage />}
       {route === 'history' && <ProjectHistoryPage />}
       {route === 'entry' && <AgentEntryPage />}
+      <ProjectHistoryModal />
     </AppProviders>
   );
 }
