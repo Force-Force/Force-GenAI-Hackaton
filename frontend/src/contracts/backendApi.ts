@@ -302,8 +302,23 @@ export const agentQueryResponseSchema = z.object({
   intent: agentQueryIntentSchema.optional().default('informational'),
   risk_level: z.string().optional(),
   approval_required: z.boolean().optional().default(false),
+  uiop: z.unknown().optional(),
+  chart: z.unknown().optional(),
 });
 export type AgentQueryResponse = z.infer<typeof agentQueryResponseSchema>;
+
+export interface PipelineInsightsGenerateResponse {
+  reply?: string;
+  uiop?: unknown;
+  summaryCards?: unknown[];
+  insights?: unknown[];
+}
+
+export interface PipelineInsightsSnapshotResponse {
+  summaryCards?: unknown[];
+  insights?: unknown[];
+  uiop?: unknown;
+}
 
 // ============================================================================
 // 8. WebSocket Frames

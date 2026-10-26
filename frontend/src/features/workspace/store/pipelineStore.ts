@@ -18,6 +18,14 @@ import { exportSchemaToSql } from "../../../utils/ddlExport";
 import { flattenGraph, genId } from "../../../utils/graph";
 import { persistStateStorage } from "../../../store/persistStorage";
 import { createInitialPipeline } from "../data/initialPipeline";
+import { pipelineApi } from "../../../services/api/pipelineApi";
+import {
+  toBackendNodePayload,
+  toBackendNodeUpdatePayload,
+  toFrontendNode,
+} from "../../../services/mapping/backendGraphMapper";
+import { useBackendStore } from "../../../services/session/backendSession";
+import { ApiError } from "../../../services/http/client";
 
 interface ViewFrame {
   datamartId: string;
@@ -31,6 +39,7 @@ interface PipelineState {
   edges: PipelineEdge[];
   selectedNodeId: string | null;
   viewStack: ViewFrame[];
+  isMockSeedData: boolean;
 
   onNodesChange: (changes: NodeChange[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
@@ -47,6 +56,7 @@ interface PipelineState {
   generateEtl: () => string;
   exportSql: (projectName: string) => string;
   resetWorkspace: () => void;
+  clearMockGraphForLiveBackend: () => void;
 
   enterDatamart: (id: string) => void;
   exitToRoot: () => void;
@@ -69,6 +79,7 @@ export const usePipelineStore = create<PipelineState>()(
       edges: initial.edges,
       selectedNodeId: "dw_core",
       viewStack: [],
+      isMockSeedData: true,
 
       onNodesChange: (changes) => {
         set((s) => ({
@@ -77,14 +88,26 @@ export const usePipelineStore = create<PipelineState>()(
       },
 
       onEdgesChange: (changes) => {
+        const { isOnline, activePipelineId } = useBackendStore.getState();
+        if (isOnline && activePipelineId) {
+          for (const change of changes) {
+            if (change.type === "remove") {
+              pipelineApi.deleteEdge(activePipelineId, change.id).catch(() => {
+                // Refetch authoritative state if edge deletion failed
+                void useBackendStore.getState().loadPipeline(activePipelineId);
+              });
+            }
+          }
+        }
         set((s) => ({
           edges: applyEdgeChanges(changes, s.edges) as PipelineEdge[],
         }));
       },
 
       onConnect: (connection) => {
+        const tempId = genId("edge");
         const edge: PipelineEdge = {
-          id: genId("edge"),
+          id: tempId,
           source: connection.source!,
           target: connection.target!,
           sourceHandle: connection.sourceHandle ?? undefined,
@@ -92,6 +115,26 @@ export const usePipelineStore = create<PipelineState>()(
           data: { relationship: "data_flow" },
         };
         set((s) => ({ edges: addEdge(edge, s.edges) as PipelineEdge[] }));
+
+        const { isOnline, activePipelineId } = useBackendStore.getState();
+        if (isOnline && activePipelineId && connection.source && connection.target) {
+          pipelineApi
+            .createEdge(activePipelineId, connection.source, connection.target)
+            .then((serverEdge) => {
+              // Replace temporary client edge ID with server-generated ID
+              set((s) => ({
+                edges: s.edges.map((e) =>
+                  e.id === tempId ? { ...e, id: serverEdge.id } : e,
+                ),
+              }));
+            })
+            .catch(() => {
+              // Revert optimistic edge on backend rejection
+              set((s) => ({
+                edges: s.edges.filter((e) => e.id !== tempId),
+              }));
+            });
+        }
       },
 
       selectNode: (id) => set({ selectedNodeId: id }),
@@ -113,7 +156,29 @@ export const usePipelineStore = create<PipelineState>()(
         })),
 
       addNode: (node) => {
-        set((s) => ({ nodes: [...s.nodes, node], selectedNodeId: node.id }));
+        set((s) => ({
+          isMockSeedData: false,
+          nodes: [...(s.isMockSeedData ? [] : s.nodes), node],
+          selectedNodeId: node.id,
+        }));
+
+        const { isOnline, activePipelineId } = useBackendStore.getState();
+        if (isOnline && activePipelineId) {
+          pipelineApi
+            .createNode(activePipelineId, toBackendNodePayload(node))
+            .then((serverNode) => {
+              const mapped = toFrontendNode(serverNode);
+              // Update local node with authoritative server ID
+              set((s) => ({
+                nodes: s.nodes.map((n) => (n.id === node.id ? mapped : n)),
+                selectedNodeId:
+                  s.selectedNodeId === node.id ? mapped.id : s.selectedNodeId,
+              }));
+            })
+            .catch(() => {
+              // Keep local or reload authoritative state
+            });
+        }
       },
 
       updateNodeData: (id, data) => {
@@ -124,6 +189,19 @@ export const usePipelineStore = create<PipelineState>()(
               : n,
           ),
         }));
+
+        const { isOnline, activePipelineId } = useBackendStore.getState();
+        if (isOnline && activePipelineId) {
+          pipelineApi
+            .updateNode(activePipelineId, id, toBackendNodeUpdatePayload(data))
+            .catch((err) => {
+              if (err instanceof ApiError && err.status === 409) {
+                // Guardian approval conflict -> refresh approvals and reload authoritative graph
+                void useBackendStore.getState().refreshApprovals();
+                void useBackendStore.getState().loadPipeline(activePipelineId);
+              }
+            });
+        }
       },
 
       updateProcessingCode: (id, code) => {
@@ -134,6 +212,22 @@ export const usePipelineStore = create<PipelineState>()(
               : n,
           ),
         }));
+
+        const { isOnline, activePipelineId } = useBackendStore.getState();
+        if (isOnline && activePipelineId) {
+          pipelineApi
+            .updateNode(
+              activePipelineId,
+              id,
+              toBackendNodeUpdatePayload({ code } as Partial<PipelineNodeData>),
+            )
+            .catch((err) => {
+              if (err instanceof ApiError && err.status === 409) {
+                void useBackendStore.getState().refreshApprovals();
+                void useBackendStore.getState().loadPipeline(activePipelineId);
+              }
+            });
+        }
       },
 
       deleteNode: (id) => {
@@ -142,6 +236,13 @@ export const usePipelineStore = create<PipelineState>()(
           edges: s.edges.filter((e) => e.source !== id && e.target !== id),
           selectedNodeId: s.selectedNodeId === id ? null : s.selectedNodeId,
         }));
+
+        const { isOnline, activePipelineId } = useBackendStore.getState();
+        if (isOnline && activePipelineId) {
+          pipelineApi.deleteNode(activePipelineId, id).catch(() => {
+            void useBackendStore.getState().loadPipeline(activePipelineId);
+          });
+        }
       },
 
       generateEtl: () => {
@@ -195,7 +296,25 @@ FROM staging;`,
       },
 
       resetWorkspace: () =>
-        set({ nodes: [], edges: [], selectedNodeId: null, viewStack: [] }),
+        set({
+          nodes: [],
+          edges: [],
+          selectedNodeId: null,
+          viewStack: [],
+          isMockSeedData: false,
+        }),
+
+      clearMockGraphForLiveBackend: () => {
+        if (get().isMockSeedData) {
+          set({
+            nodes: [],
+            edges: [],
+            selectedNodeId: null,
+            viewStack: [],
+            isMockSeedData: false,
+          });
+        }
+      },
 
       enterDatamart: (id) => {
         const { nodes, edges } = get();
@@ -239,7 +358,14 @@ FROM staging;`,
         });
       },
 
-      hydrateGraph: (nodes, edges) => set({ nodes, edges, viewStack: [] }),
+      hydrateGraph: (nodes, edges) =>
+        set({
+          nodes,
+          edges,
+          selectedNodeId: nodes[0]?.id ?? null,
+          viewStack: [],
+          isMockSeedData: false,
+        }),
 
       applyRemoteNode: (node) =>
         set((s) => {
@@ -289,6 +415,7 @@ FROM staging;`,
         nodes: s.nodes,
         edges: s.edges,
         viewStack: s.viewStack,
+        isMockSeedData: s.isMockSeedData,
       }),
     },
   ),

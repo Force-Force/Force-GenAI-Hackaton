@@ -5,9 +5,12 @@ import { chatApi } from '../api/chatApi';
 import { runAndGovernanceApi } from '../api/runAndGovernanceApi';
 import { pipelineSocket, type WebSocketStatus } from '../realtime/pipelineSocket';
 import { toFrontendGraph } from '../mapping/backendGraphMapper';
+import { handleBackendQuestionPrompt } from '../mapping/backendToUiopBridge';
 import { usePipelineStore } from '../../features/workspace/store/pipelineStore';
 import { usePlanStore } from '../../features/uiop/store/planStore';
 import { useWorkspaceStore } from '../../features/workspace/store/workspaceStore';
+import { useInsightStore } from '../../features/insights/store/insightStore';
+import { useChatStore } from '../../features/chat/store/chatStore';
 import { persistStateStorage } from '../../store/persistStorage';
 import type {
   BackendAgentTask,
@@ -73,6 +76,27 @@ export const useBackendStore = create<BackendSessionState>()(
           const res = await pipelineApi.getHealth();
           const online = res.status === 'ok';
           set({ isOnline: online, health: res });
+          if (online) {
+            // Immediately purge offline mock seed data when connected to a live backend
+            usePipelineStore.getState().clearMockGraphForLiveBackend();
+            usePlanStore.getState().clearMockPlanForLiveBackend();
+            useInsightStore.getState().clearMockDataForLiveBackend();
+
+            const pid = get().activePipelineId;
+            if (pid) {
+              void get().loadPipeline(pid);
+            } else {
+              void get()
+                .refreshPipelines()
+                .then((list) => {
+                  if (list.length > 0 && !get().activePipelineId) {
+                    void get().loadPipeline(list[0].id);
+                  } else if (list.length === 0) {
+                    useWorkspaceStore.getState().setProjectName('New Pipeline');
+                  }
+                });
+            }
+          }
           return online;
         } catch {
           set({ isOnline: false, health: null });
@@ -109,13 +133,13 @@ export const useBackendStore = create<BackendSessionState>()(
             isLoading: false,
           });
 
-          // Hydrate frontend stores
+          // Hydrate frontend stores (unconditionally overwrite so empty backend pipelines clear mock nodes)
           const { nodes, edges } = toFrontendGraph(pipeline);
-          if (nodes.length > 0) {
-            usePipelineStore.getState().hydrateGraph(nodes, edges);
-          }
+          usePipelineStore.getState().hydrateGraph(nodes, edges);
 
           useWorkspaceStore.getState().setProjectName(pipeline.name);
+          usePlanStore.getState().clearMockPlanForLiveBackend(pipeline.name);
+          useInsightStore.getState().clearMockDataForLiveBackend();
 
           // Restore plan if persisted in architecture_design
           const design = (pipeline.architecture_design ?? {}) as Record<string, any>;
@@ -126,7 +150,9 @@ export const useBackendStore = create<BackendSessionState>()(
           // Connect socket
           pipelineSocket.connect(pipeline.id);
 
-          // Parallel fetch approvals, questions, tasks
+          // Parallel fetch chat history, live insights, approvals, questions, tasks
+          void useChatStore.getState().hydrateChatHistory(pipeline.id);
+          void useInsightStore.getState().fetchLiveInsights(pipeline.id);
           void get().refreshApprovals();
           void get().refreshQuestions();
           void get().refreshTasks();
@@ -148,6 +174,10 @@ export const useBackendStore = create<BackendSessionState>()(
             isLoading: false,
           });
 
+          // Clear mock data and start with a clean live pipeline state
+          usePipelineStore.getState().hydrateGraph([], []);
+          usePlanStore.getState().clearMockPlanForLiveBackend(pipeline.name);
+          useInsightStore.getState().clearMockDataForLiveBackend();
           useWorkspaceStore.getState().setProjectName(pipeline.name);
           pipelineSocket.connect(pipeline.id);
           void get().refreshPipelines();
@@ -188,6 +218,9 @@ export const useBackendStore = create<BackendSessionState>()(
         try {
           const list = await runAndGovernanceApi.listQuestions(pid, { pending_only: true });
           set({ pendingQuestions: list });
+          for (const q of list) {
+            handleBackendQuestionPrompt(q);
+          }
           return list;
         } catch {
           return [];
@@ -264,8 +297,57 @@ export const useBackendStore = create<BackendSessionState>()(
   ),
 );
 
-// Synchronize socket status into session store
-pipelineSocket.onStatusChange((status) => {
-  useBackendStore.setState({ wsStatus: status });
+// Synchronize socket status and real-time events into session store (FRONTEND_INTEGRATION.md §10)
+queueMicrotask(() => {
+  if (!pipelineSocket) return;
+  pipelineSocket.onStatusChange((status) => {
+    useBackendStore.setState({ wsStatus: status });
+  });
+
+  pipelineSocket.on('*', (event) => {
+    const state = useBackendStore.getState();
+    const pid = state.activePipelineId;
+    if (!pid) return;
+
+    switch (event.type) {
+      case 'ws.connected':
+      case 'pipeline.updated':
+        void state.loadPipeline(pid);
+        break;
+      case 'chat.message':
+        void useChatStore.getState().hydrateChatHistory(pid);
+        break;
+      case 'agent_task.updated':
+        void state.refreshTasks();
+        break;
+      case 'guardian.approval_required':
+      case 'guardian.approval_resolved':
+        void state.refreshApprovals();
+        break;
+      case 'user_input.required':
+      case 'user_input.answered':
+        void state.refreshQuestions();
+        break;
+      case 'pipeline.run_updated':
+      case 'pipeline.run_event': {
+        const payload = (event.payload ?? {}) as Record<string, unknown>;
+        const runId = state.activeRun?.id || (payload.run_id as string | undefined);
+        if (runId) {
+          void runAndGovernanceApi
+            .getRun(pid, runId)
+            .then((run) => {
+              useBackendStore.setState({ activeRun: run });
+              if (run.status === 'COMPLETED') {
+                void useInsightStore.getState().fetchLiveInsights(pid);
+              }
+            })
+            .catch(() => {
+              // Ignore transient fetch errors
+            });
+        }
+        break;
+      }
+    }
+  });
 });
 

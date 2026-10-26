@@ -4,6 +4,8 @@ import type {
   EtlExecuteResponse,
   EtlIntrospectResponse,
   EtlResultsResponse,
+  PipelineInsightsGenerateResponse,
+  PipelineInsightsSnapshotResponse,
 } from '../../contracts/backendApi';
 
 export const etlAndAgentApi = {
@@ -35,6 +37,30 @@ export const etlAndAgentApi = {
   /** GET /pipelines/{pipeline_id}/etl/results */
   async getEtlResults(pipelineId: string, signal?: AbortSignal): Promise<EtlResultsResponse> {
     return getJson<EtlResultsResponse>(`/pipelines/${pipelineId}/etl/results`, { signal });
+  },
+
+  /** GET /pipelines/{pipeline_id}/insights */
+  async getPipelineInsights(
+    pipelineId: string,
+    signal?: AbortSignal,
+  ): Promise<PipelineInsightsSnapshotResponse> {
+    return getJson<PipelineInsightsSnapshotResponse>(
+      `/pipelines/${pipelineId}/insights`,
+      { signal },
+    );
+  },
+
+  /** POST /pipelines/{pipeline_id}/insights/generate */
+  async generatePipelineInsights(
+    pipelineId: string,
+    payload: { prompt?: string; domains?: string[] },
+    signal?: AbortSignal,
+  ): Promise<PipelineInsightsGenerateResponse> {
+    return postJson<{ prompt?: string; domains?: string[] }, PipelineInsightsGenerateResponse>(
+      `/pipelines/${pipelineId}/insights/generate`,
+      payload,
+      { signal },
+    );
   },
 
   /** POST /agent/query (Nightshift standalone analysis agent) */

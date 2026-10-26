@@ -1,9 +1,13 @@
+import { useEffect } from "react";
 import { Workflow, Palette, FileText, RotateCcw } from "lucide-react";
 import { motion } from "motion/react";
 import { navigateTo } from "../utils/navigation";
 import { ValidationCenter } from "../features/validation/components/ValidationCenter";
 import { useWorkspaceStore } from "../features/workspace/store/workspaceStore";
 import { useInsightStore } from "../features/insights/store/insightStore";
+import { useBackendStore } from "../services/session/backendSession";
+import { synthesizeUiopFromPrompt } from "../features/uiop/adapter/promptToUiopAdapter";
+import { executeUiop } from "../features/uiop/runtime/uiopRuntime";
 import { WorkspacePromptBar } from "../features/workspace/components/WorkspacePromptBar";
 import logoUrl from "../assets/logo.png";
 
@@ -11,19 +15,42 @@ export function AuditCenterPage() {
   const runValidation = useWorkspaceStore((s) => s.runValidation);
   const isValidating = useWorkspaceStore((s) => s.isValidating);
   const queryNightshiftAgent = useInsightStore((s) => s.queryNightshiftAgent);
+  const fetchLiveInsights = useInsightStore((s) => s.fetchLiveInsights);
   const isLoadingInsights = useInsightStore((s) => s.isLoading);
 
+  useEffect(() => {
+    void useBackendStore.getState().checkHealth().then((online) => {
+      if (online) {
+        void fetchLiveInsights(useBackendStore.getState().activePipelineId);
+      }
+    });
+  }, [fetchLiveInsights]);
+
   const handleRefresh = async () => {
+    const { isOnline, activePipelineId } = useBackendStore.getState();
     await Promise.allSettled([
       runValidation(),
-      queryNightshiftAgent(
-        "Analyze latest settled transactions and customer cohorts for variance or drift.",
-      ),
+      isOnline
+        ? fetchLiveInsights(activePipelineId).then(() =>
+            queryNightshiftAgent(
+              "Analyze latest settled transactions and customer cohorts for variance or drift.",
+            ),
+          )
+        : queryNightshiftAgent(
+            "Analyze latest settled transactions and customer cohorts for variance or drift.",
+          ),
     ]);
   };
 
   const handlePromptSubmit = async (text: string) => {
-    await queryNightshiftAgent(text);
+    const res = await queryNightshiftAgent(text);
+    // In offline mode only, allow local UIOP synthesis if backend is unreachable
+    if (!res && !useBackendStore.getState().isOnline) {
+      const synth = synthesizeUiopFromPrompt(text);
+      if (synth.envelope) {
+        executeUiop(synth.envelope, { allowRebase: true });
+      }
+    }
   };
 
   return (

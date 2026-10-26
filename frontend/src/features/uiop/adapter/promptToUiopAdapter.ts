@@ -65,6 +65,83 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
       )
     : null;
 
+  // 0. Insights & Dynamic Chart Visualization Intent
+  if (
+    lower.includes("chart") ||
+    lower.includes("graph") ||
+    lower.includes("pie") ||
+    lower.includes("bar") ||
+    lower.includes("trend") ||
+    lower.includes("insight") ||
+    lower.includes("visual")
+  ) {
+    const isPie = lower.includes("pie") || lower.includes("share") || lower.includes("mix");
+    const isLine = lower.includes("line") || lower.includes("trend") || lower.includes("monthly");
+    const insightId = genId("ins_uiop");
+
+    const op: UiopOperation = {
+      op: "insight.add",
+      params: {
+        id: insightId,
+        domain: lower.includes("customer") ? "customers" : lower.includes("anomal") ? "anomalies" : "sales",
+        categoryLabel: isPie ? "Part-to-Whole Share" : isLine ? "Time-Series Trend" : "Categorical Breakdown",
+        title: cleanBody.length > 52 ? `${cleanBody.slice(0, 52)}…` : cleanBody,
+        summary: `Synthesized ${isPie ? "Pie/Donut" : isLine ? "Trend Line" : "Categorical Bar"} visualization from warehouse tables.`,
+        aiReasoning: isPie
+          ? "Selected Pie/Donut chart because query groups total volume into mutually exclusive shares summing to 100%."
+          : isLine
+            ? "Selected Trend Line chart to highlight continuous sequential trajectory across time intervals."
+            : "Selected Categorical Bar chart to compare discrete dimensional values side-by-side.",
+        aiConfidenceScore: 98.4,
+        chart: isPie
+          ? {
+              type: "pie",
+              data: [
+                { label: "Stripe Credit Card", value: 738300, sharePct: 64.2, formatted: "$738.3K" },
+                { label: "SEPA Direct Debit", value: 250700, sharePct: 21.8, formatted: "$250.7K" },
+                { label: "Apple Pay / Wallet", value: 109250, sharePct: 9.5, formatted: "$109.3K" },
+                { label: "Wire Transfer", value: 51750, sharePct: 4.5, formatted: "$51.8K" },
+              ],
+            }
+          : isLine
+            ? {
+                type: "line",
+                data: [
+                  { x: "Jan", y: 240000, formatted: "$240K" },
+                  { x: "Feb", y: 275000, formatted: "$275K" },
+                  { x: "Mar", y: 310000, formatted: "$310K" },
+                  { x: "Apr", y: 345000, formatted: "$345K" },
+                ],
+              }
+            : {
+                type: "bar",
+                data: [
+                  { category: "Enterprise", value: 680000, formatted: "$680K" },
+                  { category: "Mid-Market", value: 320000, formatted: "$320K" },
+                  { category: "SMB Self-Serve", value: 150000, formatted: "$150K" },
+                ],
+              },
+        provenance: {
+          sourceTables: ["fact_daily_revenue", "dim_customer_360"],
+          executedSql: "SELECT segment, SUM(net_volume) AS value FROM fact_daily_revenue GROUP BY 1 ORDER BY 2 DESC;",
+          rowCount: isPie ? 4 : isLine ? 4 : 3,
+          executedAt: new Date().toISOString(),
+        },
+        headlineMetrics: [
+          { label: "Total Analyzed", value: "$1.15M", delta: "0.00% variance", trend: "up" },
+        ],
+        actionableInsights: [
+          "Expand SQL Provenance on the card to inspect the underlying aggregation query.",
+        ],
+      },
+    };
+
+    return {
+      replyMarkdown: `### Dynamic Visualization Proposed\n\nI have generated an \`insight.add\` UIOP operation with a **${op.params.chart.type.toUpperCase()}** chart and SQL provenance.`,
+      envelope: createUiopEnvelope([op], "insights-analytics-agent"),
+    };
+  }
+
   // 1. Clarifying Questions & Plan Proposal Intent
   if (
     lower.includes("question") ||

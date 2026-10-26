@@ -1,7 +1,8 @@
 import { create } from "zustand";
-import type {
-  UiopEnvelope,
-  UiopExecutionReport,
+import {
+  uiopEnvelopeSchema,
+  type UiopEnvelope,
+  type UiopExecutionReport,
 } from "../../../contracts/uiop";
 import { synthesizeUiopFromPrompt } from "../../uiop/adapter/promptToUiopAdapter";
 import { executeUiop } from "../../uiop/runtime/uiopRuntime";
@@ -15,6 +16,7 @@ interface ChatState {
   messages: ChatMessage[];
   isGenerating: boolean;
   appendMessage: (message: ChatMessage) => void;
+  hydrateChatHistory: (pipelineId: string) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
   applyUiop: (envelope: UiopEnvelope) => UiopExecutionReport;
   submitProcessingCode: (
@@ -31,15 +33,51 @@ function now(): string {
   });
 }
 
+function formatIsoTime(iso?: string): string {
+  if (!iso) return now();
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return now();
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return now();
+  }
+}
+
+function extractUiopFromMessage(
+  metadata?: Record<string, unknown>,
+  contentMd?: string,
+): UiopEnvelope | null {
+  if (metadata && metadata.uiop) {
+    const parsed = uiopEnvelopeSchema.safeParse(metadata.uiop);
+    if (parsed.success) return parsed.data;
+  }
+  if (contentMd) {
+    const match = contentMd.match(/```(?:uiop|json)\s*([\s\S]*?)```/i);
+    if (match) {
+      try {
+        const jsonObj = JSON.parse(match[1]);
+        const parsed = uiopEnvelopeSchema.safeParse(jsonObj);
+        if (parsed.success) return parsed.data;
+      } catch {
+        // Not a UIOP JSON block
+      }
+    }
+  }
+  return null;
+}
+
 function assistant(
   text: string,
   uiop: UiopEnvelope | null = null,
   tasks: AgentTask[] = [],
+  id?: string,
+  timestamp?: string,
 ): ChatMessage {
   return {
-    id: genId("ai"),
+    id: id || genId("ai"),
     sender: "assistant",
-    timestamp: now(),
+    timestamp: timestamp || now(),
     text,
     uiop,
     tasks,
@@ -59,7 +97,34 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isGenerating: false,
 
   appendMessage: (message) =>
-    set((s) => ({ messages: [...s.messages, message] })),
+    set((s) => ({
+      messages: s.messages.some((m) => m.id === message.id)
+        ? s.messages.map((m) => (m.id === message.id ? message : m))
+        : [...s.messages, message],
+    })),
+
+  hydrateChatHistory: async (pipelineId: string) => {
+    try {
+      const history = await chatApi.getChatHistory(pipelineId);
+      const mapped: ChatMessage[] = history.map((m) => {
+        const isUser = m.sender === "USER";
+        const uiop = extractUiopFromMessage(
+          m.metadata as Record<string, unknown>,
+          m.content_md,
+        );
+        return {
+          id: m.id,
+          sender: isUser ? "user" : "assistant",
+          timestamp: formatIsoTime(m.created_at),
+          text: m.content_md,
+          uiop,
+        };
+      });
+      set({ messages: mapped.length > 0 ? mapped : [WELCOME] });
+    } catch {
+      set({ messages: [WELCOME] });
+    }
+  },
 
   sendMessage: async (text) => {
     const trimmed = text.trim();
@@ -73,15 +138,46 @@ export const useChatStore = create<ChatState>((set, get) => ({
     };
     set((s) => ({ messages: [...s.messages, userMsg], isGenerating: true }));
 
-    const activePipelineId = useBackendStore.getState().activePipelineId;
-    const isOnline = useBackendStore.getState().isOnline;
+    const backendStore = useBackendStore.getState();
+    const isOnline = backendStore.isOnline;
+    let activePipelineId = backendStore.activePipelineId;
 
-    if (activePipelineId && isOnline) {
+    if (isOnline) {
       try {
-        const backendRes = await chatApi.sendChatMessage(activePipelineId, trimmed);
-        const agentMsgObj = (backendRes.agent_message || {}) as Record<string, any>;
-        const metadata = (agentMsgObj.metadata || {}) as Record<string, any>;
-        const uiopEnvelope = (metadata.uiop || null) as UiopEnvelope | null;
+        if (!activePipelineId) {
+          const created = await backendStore.createPipeline(
+            trimmed.slice(0, 48) || "New Pipeline",
+          );
+          activePipelineId = created?.id ?? null;
+        }
+
+        if (!activePipelineId) {
+          throw new Error("Could not initialize a backend pipeline session.");
+        }
+
+        const backendRes = await chatApi.sendChatMessage(
+          activePipelineId,
+          trimmed,
+        );
+        const agentMsgObj = (backendRes.agent_message || {}) as Record<
+          string,
+          unknown
+        >;
+        const metadata = (agentMsgObj.metadata || {}) as Record<
+          string,
+          unknown
+        >;
+        const textContent =
+          typeof agentMsgObj.content_md === "string"
+            ? agentMsgObj.content_md
+            : typeof agentMsgObj.text === "string"
+              ? agentMsgObj.text
+              : "I have processed your request.";
+
+        const uiopEnvelope = extractUiopFromMessage(metadata, textContent);
+        if (uiopEnvelope) {
+          executeUiop(uiopEnvelope, { allowRebase: true });
+        }
 
         const tasks: AgentTask[] = (backendRes.agent_tasks || []).map((t) => ({
           id: t.id,
@@ -92,22 +188,36 @@ export const useChatStore = create<ChatState>((set, get) => ({
           output_data: t.output_payload,
         }));
 
-        const textContent =
-          typeof agentMsgObj.content_md === 'string'
-            ? agentMsgObj.content_md
-            : typeof agentMsgObj.text === 'string'
-              ? agentMsgObj.text
-              : 'I have processed your request.';
+        get().appendMessage(
+          assistant(
+            textContent,
+            uiopEnvelope,
+            tasks,
+            typeof agentMsgObj.id === "string" ? agentMsgObj.id : undefined,
+            typeof agentMsgObj.created_at === "string"
+              ? formatIsoTime(agentMsgObj.created_at)
+              : undefined,
+          ),
+        );
 
-        get().appendMessage(assistant(textContent, uiopEnvelope, tasks));
+        // Refresh delegated tasks & pipeline state from backend
+        void backendStore.refreshTasks();
+        void backendStore.refreshQuestions();
+        void backendStore.refreshApprovals();
         set({ isGenerating: false });
         return;
       } catch (err) {
-        // Network or API failure -> fall through to local synthesis
+        const errMsg =
+          err instanceof Error ? err.message : "Backend chat request failed.";
+        get().appendMessage(
+          assistant(`### Backend Error\n\n${errMsg}`),
+        );
+        set({ isGenerating: false });
+        return;
       }
     }
 
-    // Local UIOP synthesis fallback
+    // Offline Mode only: Local UIOP synthesis fallback
     const synthesized = synthesizeUiopFromPrompt(trimmed);
     get().appendMessage(
       assistant(synthesized.replyMarkdown, synthesized.envelope),

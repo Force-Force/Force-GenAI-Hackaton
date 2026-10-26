@@ -470,11 +470,61 @@ Before pipeline promotion, an author-isolated verification agent audits output t
 
 export function generatePlanMarkdown(state?: {
   planTitle?: string;
+  planSummary?: string;
+  stages?: PlanStage[];
   selectedAnswers?: Record<string, string>;
   kpis?: KpiDefinition[];
   selectedKpiIds?: string[];
+  isMockSeedData?: boolean;
 }): string {
   if (!state) return INITIAL_PLAN_MARKDOWN;
+
+  const isCustomPlan =
+    state.isMockSeedData === false ||
+    (state.planTitle && state.planTitle !== "Retail Lakehouse Master Pipeline") ||
+    (state.stages &&
+      state.stages.length > 0 &&
+      state.stages.some((s) => !INITIAL_PLAN_STAGES.some((init) => init.id === s.id)));
+
+  if (isCustomPlan) {
+    const title = state.planTitle || "Pipeline Implementation Architecture Plan";
+    const summary =
+      state.planSummary ||
+      "Architecture blueprint synthesized by the AuraBI Master Agent.";
+    const stagesList = state.stages || [];
+    const activeKpis = (state.kpis || []).filter((k) =>
+      (state.selectedKpiIds || []).includes(k.id),
+    );
+
+    const stageSections =
+      stagesList.length > 0
+        ? stagesList
+            .map(
+              (s) =>
+                `## Stage ${s.number}: ${s.title} (${s.category})\n${s.description}\n\n` +
+                (s.tables.length > 0
+                  ? `- **Target Entities**: ${s.tables.map((t) => `\`${t}\``).join(", ")}\n`
+                  : "") +
+                (s.technologies.length > 0
+                  ? `- **Stack**: ${s.technologies.join(", ")}\n`
+                  : ""),
+            )
+            .join("\n---\n\n")
+        : "## Architecture Stages\nAwaiting stage synthesis from backend agent.";
+
+    const kpiSection =
+      activeKpis.length > 0
+        ? `\n---\n\n## Verified KPI Contracts\n` +
+          activeKpis
+            .map(
+              (k) =>
+                `- **${k.name}** (\`${k.targetMart}\`): \`${k.formula}\` — Tolerance: ${k.tolerance}`,
+            )
+            .join("\n")
+        : "";
+
+    return `# ${title}\n\n## Executive Overview\n${summary}\n\n---\n\n${stageSections}${kpiSection}\n`;
+  }
 
   const scd =
     state.selectedAnswers?.["scd-strategy"] === "scd-1"
@@ -606,6 +656,7 @@ export interface PlanAndProtocolState {
   // Dynamic UIOP panels & reports
   panels: ActiveUiopPanel[];
   reports: Record<string, ReportUpdateParams>;
+  isMockSeedData: boolean;
 
   // Direct store actions
   setPlanMarkdown: (markdown: string) => void;
@@ -619,11 +670,12 @@ export interface PlanAndProtocolState {
   removePanel: (panelId: string) => void;
   commitUiopState: (patch: Partial<PlanAndProtocolState>) => void;
   resetProtocolState: () => void;
+  clearMockPlanForLiveBackend: (pipelineName?: string, prompt?: string) => void;
 }
 
 export const usePlanStore = create<PlanAndProtocolState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       workspaceId: "workspace_01",
       revision: 1,
       processedMessageIds: [],
@@ -656,8 +708,9 @@ export const usePlanStore = create<PlanAndProtocolState>()(
 
       panels: [],
       reports: {},
+      isMockSeedData: true,
 
-      setPlanMarkdown: (markdown) => set({ planMarkdown: markdown }),
+      setPlanMarkdown: (markdown) => set({ planMarkdown: markdown, isMockSeedData: false }),
 
       setAnswer: (questionId, optionId) =>
         set((s) => {
@@ -666,9 +719,12 @@ export const usePlanStore = create<PlanAndProtocolState>()(
             selectedAnswers: nextAnswers,
             planMarkdown: generatePlanMarkdown({
               planTitle: s.planTitle,
+              planSummary: s.planSummary,
+              stages: s.stages,
               selectedAnswers: nextAnswers,
               kpis: s.kpis,
               selectedKpiIds: s.selectedKpiIds,
+              isMockSeedData: s.isMockSeedData,
             }),
           };
         }),
@@ -681,11 +737,12 @@ export const usePlanStore = create<PlanAndProtocolState>()(
             question.options.find((o) => o.isRecommended)?.id ??
             question.options[0]?.id;
           return {
+            isMockSeedData: false,
             questions: exists
               ? s.questions.map((q) => (q.id === question.id ? question : q))
-              : [...s.questions, question],
+              : [...(s.isMockSeedData ? [] : s.questions), question],
             selectedAnswers: defaultAnswer
-              ? { ...s.selectedAnswers, [question.id]: defaultAnswer }
+              ? { ...(s.isMockSeedData ? {} : s.selectedAnswers), [question.id]: defaultAnswer }
               : s.selectedAnswers,
           };
         }),
@@ -707,28 +764,37 @@ export const usePlanStore = create<PlanAndProtocolState>()(
             selectedKpiIds: nextSelectedKpiIds,
             planMarkdown: generatePlanMarkdown({
               planTitle: s.planTitle,
+              planSummary: s.planSummary,
+              stages: s.stages,
               selectedAnswers: s.selectedAnswers,
               kpis: s.kpis,
               selectedKpiIds: nextSelectedKpiIds,
+              isMockSeedData: s.isMockSeedData,
             }),
           };
         }),
 
       addKpi: (kpi, select = true) =>
         set((s) => {
-          const nextKpis = [...s.kpis.filter((k) => k.id !== kpi.id), kpi];
+          const baseKpis = s.isMockSeedData ? [] : s.kpis;
+          const baseSelected = s.isMockSeedData ? [] : s.selectedKpiIds;
+          const nextKpis = [...baseKpis.filter((k) => k.id !== kpi.id), kpi];
           const nextSelectedKpiIds =
-            select && !s.selectedKpiIds.includes(kpi.id)
-              ? [...s.selectedKpiIds, kpi.id]
-              : s.selectedKpiIds;
+            select && !baseSelected.includes(kpi.id)
+              ? [...baseSelected, kpi.id]
+              : baseSelected;
           return {
+            isMockSeedData: false,
             kpis: nextKpis,
             selectedKpiIds: nextSelectedKpiIds,
             planMarkdown: generatePlanMarkdown({
               planTitle: s.planTitle,
+              planSummary: s.planSummary,
+              stages: s.stages,
               selectedAnswers: s.selectedAnswers,
               kpis: nextKpis,
               selectedKpiIds: nextSelectedKpiIds,
+              isMockSeedData: false,
             }),
           };
         }),
@@ -747,7 +813,22 @@ export const usePlanStore = create<PlanAndProtocolState>()(
           panels: s.panels.filter((p) => p.id !== panelId),
         })),
 
-      commitUiopState: (patch) => set((s) => ({ ...s, ...patch })),
+      commitUiopState: (patch) =>
+        set((s) => {
+          const next = { ...s, ...patch, isMockSeedData: false };
+          if (patch.planTitle || patch.planSummary || patch.stages || patch.kpis || patch.selectedKpiIds || patch.selectedAnswers) {
+            next.planMarkdown = generatePlanMarkdown({
+              planTitle: next.planTitle,
+              planSummary: next.planSummary,
+              stages: next.stages,
+              selectedAnswers: next.selectedAnswers,
+              kpis: next.kpis,
+              selectedKpiIds: next.selectedKpiIds,
+              isMockSeedData: false,
+            });
+          }
+          return next;
+        }),
 
       resetProtocolState: () =>
         set({
@@ -777,7 +858,31 @@ export const usePlanStore = create<PlanAndProtocolState>()(
           },
           panels: [],
           reports: {},
+          isMockSeedData: true,
         }),
+
+      clearMockPlanForLiveBackend: (pipelineName, prompt) => {
+        if (get().isMockSeedData) {
+          const title = pipelineName || "Live Pipeline Architecture";
+          set({
+            isMockSeedData: false,
+            planId: `plan_${Date.now().toString(36)}`,
+            planTitle: title,
+            planPrompt: prompt ?? null,
+            planSummary: "Connected to live backend. Awaiting architecture synthesis and agent tasks.",
+            stages: [],
+            reasoningPhases: [],
+            kpis: [],
+            selectedKpiIds: [],
+            compiledSql: "-- Connected to live backend. DDL will be populated by the backend agent.",
+            planMarkdown: `# ${title}\n\n## Status\nConnected to live FastAPI backend. Submit a prompt or execute agent tasks to populate pipeline stages and questions.`,
+            questions: [],
+            selectedAnswers: {},
+            panels: [],
+            reports: {},
+          });
+        }
+      },
     }),
     {
       name: "aura-bi.uiop-plan.v1",
@@ -798,6 +903,7 @@ export const usePlanStore = create<PlanAndProtocolState>()(
         selectedAnswers: s.selectedAnswers,
         panels: s.panels,
         reports: s.reports,
+        isMockSeedData: s.isMockSeedData,
       }),
     },
   ),

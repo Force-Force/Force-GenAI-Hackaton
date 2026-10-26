@@ -488,4 +488,34 @@ describe("UIOP Runtime (UI Operations Protocol v1.0)", () => {
       useInsightStore.getState().insights.some((i) => i.id === "chart-mrr-growth"),
     ).toBe(false);
   });
+
+  it("purges all mock seed data when transitioning to a live backend (isOnline)", () => {
+    // Seed stores with default offline mock state
+    usePipelineStore.setState({ isMockSeedData: true });
+    usePlanStore.getState().resetProtocolState();
+    useInsightStore.getState().resetInsights();
+
+    expect(usePlanStore.getState().isMockSeedData).toBe(true);
+    expect(useInsightStore.getState().isMockSeedData).toBe(true);
+    expect(useInsightStore.getState().insights.length).toBeGreaterThan(0);
+
+    // Transition to live backend
+    usePipelineStore.getState().clearMockGraphForLiveBackend();
+    usePlanStore.getState().clearMockPlanForLiveBackend("Live Customer Pipeline");
+    useInsightStore.getState().clearMockDataForLiveBackend();
+
+    expect(usePipelineStore.getState().isMockSeedData).toBe(false);
+    expect(usePipelineStore.getState().nodes).toHaveLength(0);
+    expect(usePipelineStore.getState().edges).toHaveLength(0);
+
+    expect(usePlanStore.getState().isMockSeedData).toBe(false);
+    expect(usePlanStore.getState().planTitle).toBe("Live Customer Pipeline");
+    expect(usePlanStore.getState().stages).toHaveLength(0);
+    expect(usePlanStore.getState().kpis).toHaveLength(0);
+    expect(usePlanStore.getState().questions).toHaveLength(0);
+
+    expect(useInsightStore.getState().isMockSeedData).toBe(false);
+    expect(useInsightStore.getState().insights).toHaveLength(0);
+    expect(useInsightStore.getState().summaryCards).toHaveLength(0);
+  });
 });

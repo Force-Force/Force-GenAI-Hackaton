@@ -89,10 +89,14 @@ export function PlanProposalPage() {
 
   const setProjectName = useWorkspaceStore((s) => s.setProjectName);
   const chatMessages = useChatStore((s) => s.messages);
+  const isOnline = useBackendStore((s) => s.isOnline);
+  const planTitle = usePlanStore((s) => s.planTitle);
   const userPrompt =
     customPromptOverride ||
     [...chatMessages].reverse().find((m) => m.sender === "user")?.text ||
-    "Build an end-to-end data lakehouse pipeline connecting PostgreSQL transactions, Stripe payment events, and customer dimension analytics into a Star Schema with Zetaris virtualization.";
+    (isOnline
+      ? planTitle || "Awaiting architectural prompt..."
+      : "Build an end-to-end data lakehouse pipeline connecting PostgreSQL transactions, Stripe payment events, and customer dimension analytics into a Star Schema with Zetaris virtualization.");
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chatBodyRef = useRef<HTMLDivElement>(null);
@@ -190,6 +194,9 @@ export function PlanProposalPage() {
         "user-decision-agent",
       ),
     );
+    if (useBackendStore.getState().isOnline) {
+      void useBackendStore.getState().answerQuestion(questionId, optionId);
+    }
   };
 
   const selectedKpis = kpis.filter((k) => selectedKpiIds.includes(k.id));
@@ -216,14 +223,18 @@ export function PlanProposalPage() {
 
   const handleApprovePlan = async () => {
     setIsApproving(true);
-    setProjectName("Retail Lakehouse Master Pipeline");
-
     const backendStore = useBackendStore.getState();
+    const targetName =
+      backendStore.activePipeline?.name ||
+      usePlanStore.getState().planTitle ||
+      "Data Lakehouse Pipeline";
+    setProjectName(targetName);
+
     if (backendStore.isOnline) {
       try {
         let pipelineId = backendStore.activePipelineId;
         if (!pipelineId) {
-          const newPipe = await backendStore.createPipeline("Retail Lakehouse Master Pipeline");
+          const newPipe = await backendStore.createPipeline(targetName);
           pipelineId = newPipe?.id || null;
         }
 
@@ -242,8 +253,9 @@ export function PlanProposalPage() {
             },
           });
 
-          // Sync initial pipeline nodes to backend if available
-          const localNodes = usePipelineStore.getState().nodes;
+          // Sync initial pipeline nodes to backend if available and not mock seed data
+          const pipeState = usePipelineStore.getState();
+          const localNodes = pipeState.isMockSeedData ? [] : pipeState.nodes;
           for (const node of localNodes) {
             try {
               const bNode = toBackendNode(node);

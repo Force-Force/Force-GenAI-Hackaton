@@ -1,7 +1,8 @@
-import { Sparkles, Palette, FileText, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Sparkles, Palette, FileText, Wifi, WifiOff, Play } from 'lucide-react';
 import { Badge } from '../components/ui';
 import { useWorkspaceStore } from '../features/workspace/store/workspaceStore';
 import { useBackendStore } from '../services/session/backendSession';
+import { pipelineApi } from '../services/api/pipelineApi';
 import { navigateTo } from '../utils/navigation';
 import logoUrl from '../assets/logo.png';
 
@@ -12,8 +13,11 @@ export function TopNav() {
   const runValidation = useWorkspaceStore((s) => s.runValidation);
 
   const isOnline = useBackendStore((s) => s.isOnline);
+  const activePipelineId = useBackendStore((s) => s.activePipelineId);
+  const activeRun = useBackendStore((s) => s.activeRun);
   const wsStatus = useBackendStore((s) => s.wsStatus);
   const checkHealth = useBackendStore((s) => s.checkHealth);
+  const startPipelineRun = useBackendStore((s) => s.startPipelineRun);
 
   return (
     <header
@@ -48,6 +52,12 @@ export function TopNav() {
         <input
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
+          onBlur={(e) => {
+            const nextName = e.target.value.trim();
+            if (isOnline && activePipelineId && nextName) {
+              void pipelineApi.updatePipeline(activePipelineId, { name: nextName }).catch(() => {});
+            }
+          }}
           aria-label="Project name"
           className="text-sm font-semibold text-[#334139] bg-transparent outline-none focus:bg-[#334139]/5 rounded-lg px-2.5 py-1 min-w-0 truncate hover:bg-[#334139]/5 transition-colors border border-transparent focus:border-[#334139]/20"
         />
@@ -94,6 +104,17 @@ export function TopNav() {
       </div>
 
       <div className="flex items-center gap-2">
+        {isOnline && activePipelineId && (
+          <button
+            type="button"
+            onClick={() => void startPipelineRun()}
+            aria-label="Run Pipeline on Backend"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#064C1C] text-[#FDFFFC] hover:bg-[#1E2D24] transition-colors cursor-pointer"
+          >
+            <Play size={12} />
+            <span>{activeRun?.status === 'RUNNING' ? 'Running…' : 'Run Pipeline'}</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={() => navigateTo('/plan')}

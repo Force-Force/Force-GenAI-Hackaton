@@ -13,7 +13,9 @@ import {
 } from "lucide-react";
 import { useChatStore } from "../../chat/store/chatStore";
 import { usePipelineStore } from "../store/pipelineStore";
+import { useBackendStore } from "../../../services/session/backendSession";
 import { Markdown } from "../../chat/components/Markdown";
+import { AgentTaskList } from "../../chat/components/AgentTaskList";
 import { UiopBatchCard } from "../../uiop/components/UiopBatchCard";
 import { cn } from "../../../utils/cn";
 import type { PipelineNode } from "../../../types/pipeline";
@@ -73,6 +75,11 @@ export function AiThoughtPanel() {
   const nodes = usePipelineStore((s) => s.nodes);
   const edges = usePipelineStore((s) => s.edges);
   const selectedNodeId = usePipelineStore((s) => s.selectedNodeId);
+
+  const isOnline = useBackendStore((s) => s.isOnline);
+  const pendingApprovals = useBackendStore((s) => s.pendingApprovals);
+  const decideApproval = useBackendStore((s) => s.decideApproval);
+  const agentTasks = useBackendStore((s) => s.agentTasks);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevTurnCountRef = useRef<number>(0);
@@ -553,6 +560,45 @@ export function AiThoughtPanel() {
             )}
           </div>
 
+          {/* Guardian Pending Approvals & Live Agent Tasks when connected to backend */}
+          {isOnline && pendingApprovals.length > 0 && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-3 space-y-2">
+              <div className="text-xs font-bold text-amber-900 flex items-center justify-between">
+                <span>Guardian Approval Required ({pendingApprovals.length})</span>
+              </div>
+              {pendingApprovals.map((app) => (
+                <div
+                  key={app.id}
+                  className="bg-white rounded-lg border border-amber-200 p-2.5 space-y-2 text-xs"
+                >
+                  <div className="font-semibold text-[#1E2D24]">
+                    {app.operation_type || "Governance Gate"} — {app.risk_level || "HIGH RISK"}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void decideApproval(app.id, true, "Approved via Workspace")}
+                      className="px-2.5 py-1 rounded bg-[#064C1C] text-white font-semibold text-[11px] hover:bg-[#1E2D24] cursor-pointer"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void decideApproval(app.id, false, "Rejected via Workspace")}
+                      className="px-2.5 py-1 rounded bg-rose-600 text-white font-semibold text-[11px] hover:bg-rose-700 cursor-pointer"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {isOnline && agentTasks.length > 0 && (
+            <AgentTaskList tasks={agentTasks} />
+          )}
+
           {/* 2. Unified Conversation Feed */}
           <div className="pt-3 border-t border-[#334139]/10 space-y-3.5">
             <div className="flex items-center justify-between">
@@ -752,19 +798,7 @@ export function AiThoughtPanel() {
                           ))}
                         </ul>
                         {msg.tasks && msg.tasks.length > 0 && (
-                          <div className="space-y-1">
-                            {msg.tasks.map((t, i) => (
-                              <div
-                                key={i}
-                                className="text-xs text-[#334139]/80 font-sans bg-white px-2.5 py-1.5 rounded-lg border border-[#334139]/10"
-                              >
-                                <span className="font-semibold text-[#064C1C]">
-                                  {t.agent_role}:
-                                </span>{" "}
-                                {t.instruction || t.status}
-                              </div>
-                            ))}
-                          </div>
+                          <AgentTaskList tasks={msg.tasks} />
                         )}
                         {/* UIOP Operations placed inside the thought process so it's transparent to the user unless expanded */}
                         {msg.uiop && <UiopBatchCard envelope={msg.uiop} />}

@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { AiInsightModel, DynamicGraphType } from '../types';
-import type {
-  InsightAddParams,
-  InsightSummaryCard,
-  UiopChartPayload,
+import {
+  uiopChartPayloadSchema,
+  uiopEnvelopeSchema,
+  type InsightAddParams,
+  type InsightSummaryCard,
+  type UiopChartPayload,
 } from '../../../contracts/uiop';
 import { AI_PROPOSED_INSIGHTS } from '../data/mockInsightData';
 import { persistStateStorage } from '../../../store/persistStorage';
@@ -103,9 +105,164 @@ export function chartPayloadToModel(params: InsightAddParams): AiInsightModel {
   };
 }
 
+/**
+ * Converts real calculation/evidence rows from a live backend AgentQueryResponse
+ * into a validated UiopChartPayload without fabricating mock numbers.
+ */
+function buildChartFromBackendResponse(
+  question: string,
+  res: AgentQueryResponse,
+): UiopChartPayload {
+  // 1. If the backend explicitly returned a valid UIOP chart object, use it directly
+  if (res.chart) {
+    const parsedChart = uiopChartPayloadSchema.safeParse(res.chart);
+    if (parsedChart.success) {
+      return parsedChart.data;
+    }
+  }
+
+  // 2. Collect structured row records from calculations and evidence
+  const rawItems = [
+    ...(Array.isArray(res.calculations) ? res.calculations : []),
+    ...(Array.isArray(res.evidence) ? res.evidence : []),
+  ].filter(
+    (item): item is Record<string, unknown> =>
+      typeof item === 'object' && item !== null && !Array.isArray(item),
+  );
+
+  const lowerQ = question.toLowerCase();
+  const wantsPie =
+    lowerQ.includes('pie') ||
+    lowerQ.includes('share') ||
+    lowerQ.includes('distribution') ||
+    lowerQ.includes('breakdown');
+  const wantsLine =
+    lowerQ.includes('line') ||
+    lowerQ.includes('trend') ||
+    lowerQ.includes('over time') ||
+    lowerQ.includes('monthly') ||
+    lowerQ.includes('daily');
+
+  if (rawItems.length > 0) {
+    // Extract label/category and numeric value from each backend record
+    const numericPairs = rawItems
+      .map((row, idx) => {
+        const entries = Object.entries(row);
+        const labelEntry = entries.find(([, v]) => typeof v === 'string');
+        const numEntry = entries.find(
+          ([k, v]) =>
+            typeof v === 'number' &&
+            !k.toLowerCase().includes('pct') &&
+            !k.toLowerCase().includes('share'),
+        ) ?? entries.find(([, v]) => typeof v === 'number');
+        const shareEntry = entries.find(
+          ([k, v]) =>
+            typeof v === 'number' &&
+            (k.toLowerCase().includes('pct') || k.toLowerCase().includes('share')),
+        );
+        const formattedEntry = entries.find(
+          ([k, v]) => typeof v === 'string' && k.toLowerCase().includes('format'),
+        );
+
+        if (!numEntry) return null;
+        const val = Number(numEntry[1]);
+        const lbl = labelEntry ? String(labelEntry[1]) : `${numEntry[0]} #${idx + 1}`;
+        return {
+          label: lbl,
+          value: val,
+          sharePct: shareEntry ? Number(shareEntry[1]) : undefined,
+          formatted: formattedEntry ? String(formattedEntry[1]) : String(val),
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+
+    if (numericPairs.length > 0) {
+      if (wantsPie && numericPairs.length <= 7) {
+        const total = numericPairs.reduce((acc, p) => acc + Math.abs(p.value), 0) || 1;
+        return {
+          type: 'pie',
+          data: numericPairs.map((p) => ({
+            label: p.label,
+            value: p.value,
+            sharePct:
+              p.sharePct !== undefined
+                ? p.sharePct
+                : Number(((Math.abs(p.value) / total) * 100).toFixed(1)),
+            formatted: p.formatted,
+          })),
+        };
+      }
+
+      if (wantsLine) {
+        return {
+          type: 'line',
+          data: numericPairs.map((p) => ({
+            x: p.label,
+            y: p.value,
+            formatted: p.formatted,
+          })),
+        };
+      }
+
+      return {
+        type: 'bar',
+        data: numericPairs.map((p) => ({
+          category: p.label,
+          value: p.value,
+          formatted: p.formatted,
+        })),
+      };
+    }
+
+    // Multi-column non-standard objects -> render as a kpi-table with real columns & values
+    const columns = Array.from(
+      new Set(rawItems.flatMap((r) => Object.keys(r))),
+    ).slice(0, 8);
+    if (columns.length > 0) {
+      return {
+        type: 'kpi-table',
+        data: {
+          columns,
+          rows: rawItems.map((r) => {
+            const cleanRow: Record<string, string | number> = {};
+            for (const col of columns) {
+              const v = r[col];
+              cleanRow[col] =
+                typeof v === 'number' || typeof v === 'string'
+                  ? v
+                  : v === null || v === undefined
+                    ? '—'
+                    : JSON.stringify(v);
+            }
+            return cleanRow;
+          }),
+        },
+      };
+    }
+  }
+
+  // 3. No tabular/calculation arrays returned -> emit a real telemetry KPI table from the response metadata
+  return {
+    type: 'kpi-table',
+    data: {
+      columns: ['Field', 'Value'],
+      rows: [
+        { Field: 'Request ID', Value: res.request_id },
+        { Field: 'Status', Value: res.status },
+        { Field: 'Intent', Value: res.intent || 'informational' },
+        { Field: 'Risk Level', Value: res.risk_level || 'low' },
+        { Field: 'Guardian Approval', Value: res.approval_required ? 'Required' : 'Not Required' },
+        { Field: 'Sources Queried', Value: res.sources.length > 0 ? res.sources.join(', ') : 'None' },
+        { Field: 'Views Used', Value: res.views_used.length > 0 ? res.views_used.join(', ') : 'None' },
+      ],
+    },
+  };
+}
+
 interface InsightState {
   summaryCards: InsightSummaryCard[];
   insights: AiInsightModel[];
+  isMockSeedData: boolean;
   isLoading: boolean;
   activeTrace: unknown | null;
   lastQueryResponse: AgentQueryResponse | null;
@@ -116,6 +273,8 @@ interface InsightState {
   removeInsight: (id: string) => void;
   clearInsights: (domain?: string) => void;
   resetInsights: () => void;
+  clearMockDataForLiveBackend: () => void;
+  fetchLiveInsights: (pipelineId?: string | null) => Promise<void>;
 
   queryNightshiftAgent: (question: string) => Promise<AgentQueryResponse | null>;
 }
@@ -125,15 +284,17 @@ export const useInsightStore = create<InsightState>()(
     (set, get) => ({
       summaryCards: INITIAL_SUMMARY_CARDS,
       insights: AI_PROPOSED_INSIGHTS,
+      isMockSeedData: true,
       isLoading: false,
       activeTrace: null,
       lastQueryResponse: null,
 
-      setSummaryCards: (cards) => set({ summaryCards: cards }),
+      setSummaryCards: (cards) => set({ summaryCards: cards, isMockSeedData: false }),
 
       addInsight: (insight) =>
         set((s) => ({
-          insights: [insight, ...s.insights.filter((i) => i.id !== insight.id)],
+          isMockSeedData: false,
+          insights: [insight, ...(s.isMockSeedData ? [] : s.insights).filter((i) => i.id !== insight.id)],
         })),
 
       updateInsight: (id, patch) =>
@@ -148,6 +309,7 @@ export const useInsightStore = create<InsightState>()(
 
       clearInsights: (domain) =>
         set((s) => ({
+          isMockSeedData: false,
           insights: domain ? s.insights.filter((i) => i.domain !== domain) : [],
         })),
 
@@ -155,10 +317,132 @@ export const useInsightStore = create<InsightState>()(
         set({
           summaryCards: INITIAL_SUMMARY_CARDS,
           insights: AI_PROPOSED_INSIGHTS,
+          isMockSeedData: true,
           isLoading: false,
           activeTrace: null,
           lastQueryResponse: null,
         }),
+
+      clearMockDataForLiveBackend: () => {
+        if (get().isMockSeedData) {
+          set({
+            summaryCards: [],
+            insights: [],
+            isMockSeedData: false,
+          });
+        }
+      },
+
+      fetchLiveInsights: async (pipelineId) => {
+        get().clearMockDataForLiveBackend();
+        if (!pipelineId) return;
+
+        set({ isLoading: true });
+        try {
+          // 1. Try pipeline-scoped insights endpoint (INSIGHTS_UIOP_SPECIFICATION.md)
+          try {
+            const snap = await etlAndAgentApi.getPipelineInsights(pipelineId);
+            if (snap.uiop) {
+              const parsed = uiopEnvelopeSchema.safeParse(snap.uiop);
+              if (parsed.success) {
+                executeUiop(parsed.data, { allowRebase: true });
+                set({ isMockSeedData: false, isLoading: false });
+                return;
+              }
+            }
+            if (Array.isArray(snap.insights) && snap.insights.length > 0) {
+              set({
+                insights: snap.insights as AiInsightModel[],
+                summaryCards: Array.isArray(snap.summaryCards)
+                  ? (snap.summaryCards as InsightSummaryCard[])
+                  : get().summaryCards,
+                isMockSeedData: false,
+                isLoading: false,
+              });
+              return;
+            }
+          } catch {
+            // Endpoint optional in MVP; fall back to ETL results
+          }
+
+          // 2. Check last stored ETL result on pipeline (FRONTEND_INTEGRATION.md Section 8)
+          try {
+            const etlRes = await etlAndAgentApi.getEtlResults(pipelineId);
+            if (etlRes && Array.isArray(etlRes.rows) && etlRes.rows.length > 0) {
+              const cols = Object.keys(etlRes.rows[0]);
+              const cleanRows = etlRes.rows.map((r) => {
+                const rowObj: Record<string, string | number> = {};
+                for (const c of cols) {
+                  const v = r[c];
+                  rowObj[c] =
+                    typeof v === 'number' || typeof v === 'string'
+                      ? v
+                      : v === null || v === undefined
+                        ? '—'
+                        : JSON.stringify(v);
+                }
+                return rowObj;
+              });
+
+              executeUiop(
+                {
+                  protocol: 'uiop',
+                  version: '1.0',
+                  messageId: genId('msg_etl_res'),
+                  workspaceId: pipelineId,
+                  baseRevision: 1,
+                  source: { agentId: 'etl-engine', executionId: genId('exec_etl') },
+                  operations: [
+                    {
+                      op: 'insight.add',
+                      params: {
+                        id: `ins_etl_${pipelineId}`,
+                        domain: 'operations',
+                        categoryLabel: 'Live ETL Output',
+                        title: etlRes.instruction || 'Pipeline ETL Execution Result',
+                        summary:
+                          etlRes.summary_md ||
+                          `Returned ${etlRes.row_count ?? etlRes.rows.length} rows from live pipeline execution.`,
+                        aiReasoning:
+                          'Rendered directly from the authoritative pipeline ETL execution results.',
+                        aiConfidenceScore: 100,
+                        chart: {
+                          type: 'kpi-table',
+                          data: {
+                            columns: cols,
+                            rows: cleanRows,
+                          },
+                        },
+                        provenance: {
+                          sourceTables: ['pipeline_etl_output'],
+                          executedSql: etlRes.sql || '',
+                          rowCount: etlRes.row_count ?? etlRes.rows.length,
+                          executedAt: etlRes.executed_at,
+                        },
+                        headlineMetrics: [
+                          {
+                            label: 'Row Count',
+                            value: String(etlRes.row_count ?? etlRes.rows.length),
+                            delta: 'Live Result',
+                            trend: 'neutral',
+                          },
+                        ],
+                        actionableInsights: [],
+                      },
+                    },
+                  ],
+                },
+                { allowRebase: true },
+              );
+              set({ isMockSeedData: false });
+            }
+          } catch {
+            // 404 when pipeline has no ETL result yet
+          }
+        } finally {
+          set({ isLoading: false });
+        }
+      },
 
       queryNightshiftAgent: async (question: string) => {
         set({ isLoading: true });
@@ -166,56 +450,32 @@ export const useInsightStore = create<InsightState>()(
 
         try {
           const res = await etlAndAgentApi.queryAnalysisAgent(question, requestId);
+          // Live backend responded -> purge any initial mock seed data first
+          get().clearMockDataForLiveBackend();
           set({ lastQueryResponse: res, activeTrace: res.trace ?? null });
 
-          // Determine optimal chart type based on query output
-          const hasCalculations = res.calculations && res.calculations.length > 0;
-          const isPartToWhole =
-            question.toLowerCase().includes('share') ||
-            question.toLowerCase().includes('breakdown') ||
-            question.toLowerCase().includes('pie') ||
-            question.toLowerCase().includes('distribution');
-
-          let chart: UiopChartPayload;
-
-          if (isPartToWhole) {
-            chart = {
-              type: 'pie',
-              data: [
-                { label: 'Primary Segment', value: 68, sharePct: 68, formatted: '68%' },
-                { label: 'Secondary Segment', value: 22, sharePct: 22, formatted: '22%' },
-                { label: 'Other', value: 10, sharePct: 10, formatted: '10%' },
-              ],
-            };
-          } else if (question.toLowerCase().includes('trend') || question.toLowerCase().includes('line')) {
-            chart = {
-              type: 'line',
-              data: [
-                { x: 'Week 1', y: 120, formatted: '120' },
-                { x: 'Week 2', y: 145, formatted: '145' },
-                { x: 'Week 3', y: 180, formatted: '180' },
-                { x: 'Week 4', y: 210, formatted: '210' },
-              ],
-            };
-          } else {
-            chart = {
-              type: 'bar',
-              data: hasCalculations
-                ? res.calculations.map((c: any, i: number) => ({
-                    category: c.label || c.category || `Metric ${i + 1}`,
-                    value: typeof c.value === 'number' ? c.value : 100,
-                    formatted: String(c.value ?? ''),
-                  }))
-                : [
-                    { category: 'Enterprise Tier', value: 740000, formatted: '$740K' },
-                    { category: 'Mid-Market', value: 310000, formatted: '$310K' },
-                    { category: 'Self-Serve', value: 100000, formatted: '$100K' },
-                  ],
-            };
+          // If backend returned a direct UIOP envelope, execute it atomically
+          if (res.uiop) {
+            const parsedEnvelope = uiopEnvelopeSchema.safeParse(res.uiop);
+            if (parsedEnvelope.success) {
+              executeUiop(parsedEnvelope.data, { allowRebase: true });
+              set({ isLoading: false, isMockSeedData: false });
+              return res;
+            }
           }
 
-          // Execute UIOP batch to append the insight card
-          const newInsightId = genId('ins_ns');
+          const chart = buildChartFromBackendResponse(question, res);
+          const lowerQ = question.toLowerCase();
+          const domain: 'sales' | 'customers' | 'operations' | 'anomalies' =
+            lowerQ.includes('customer') || lowerQ.includes('cohort') || lowerQ.includes('retention')
+              ? 'customers'
+              : lowerQ.includes('anomal') || lowerQ.includes('outlier') || lowerQ.includes('fraud')
+                ? 'anomalies'
+                : lowerQ.includes('operat') || lowerQ.includes('funnel') || lowerQ.includes('etl')
+                  ? 'operations'
+                  : 'sales';
+
+          const newInsightId = `ins_${res.request_id || genId('ns')}`;
           executeUiop(
             {
               protocol: 'uiop',
@@ -223,31 +483,43 @@ export const useInsightStore = create<InsightState>()(
               messageId: genId('msg_ns'),
               workspaceId: 'workspace_01',
               baseRevision: 1,
-              source: { agentId: 'nightshift-agent', executionId: requestId },
+              source: { agentId: 'nightshift-agent', executionId: res.request_id || requestId },
               operations: [
                 {
                   op: 'insight.add',
                   params: {
                     id: newInsightId,
-                    domain: 'sales',
+                    domain,
                     categoryLabel: res.provider ? `${res.provider.toUpperCase()} Analysis` : 'AI Analysis',
-                    title: question.length > 48 ? `${question.slice(0, 48)}…` : question,
+                    title: question.length > 56 ? `${question.slice(0, 56)}…` : question,
                     summary: res.response || 'Agent analysis query completed.',
-                    aiReasoning: `Agent evaluated intent="${res.intent}", risk="${res.risk_level ?? 'low'}" and selected ${chart.type.toUpperCase()} visualization.`,
+                    aiReasoning: `Agent evaluated intent="${res.intent}", risk="${res.risk_level ?? 'low'}" and selected ${chart.type.toUpperCase()} visualization from live query output.`,
                     aiConfidenceScore: 98.9,
                     chart,
                     provenance: {
-                      sourceTables: res.sources || ['fact_daily_revenue'],
-                      executedSql: res.sql || 'SELECT * FROM fact_daily_revenue;',
+                      sourceTables: res.sources && res.sources.length > 0 ? res.sources : res.views_used || [],
+                      executedSql: res.sql || '',
+                      rowCount: Array.isArray(res.calculations) ? res.calculations.length : undefined,
                       executedAt: new Date().toISOString(),
                     },
                     headlineMetrics: [
-                      { label: 'Model', value: res.model || 'Nightshift', delta: `${res.latency_ms ?? 340}ms`, trend: 'neutral' },
-                      { label: 'Risk Level', value: res.risk_level || 'LOW', delta: res.approval_required ? 'Approval Required' : 'Pre-approved', trend: res.approval_required ? 'down' : 'up' },
+                      {
+                        label: 'Model',
+                        value: res.model || res.provider || 'Nightshift',
+                        delta: res.latency_ms !== undefined ? `${res.latency_ms}ms` : 'Live',
+                        trend: 'neutral',
+                      },
+                      {
+                        label: 'Risk Level',
+                        value: (res.risk_level || 'LOW').toUpperCase(),
+                        delta: res.approval_required ? 'Approval Required' : 'Verified',
+                        trend: res.approval_required ? 'down' : 'up',
+                      },
                     ],
-                    actionableInsights: res.warnings && res.warnings.length > 0
-                      ? res.warnings
-                      : ['Analysis completed. Review the SQL provenance and chart metrics above.'],
+                    actionableInsights:
+                      res.warnings && res.warnings.length > 0
+                        ? res.warnings
+                        : [],
                   },
                 },
               ],
@@ -255,9 +527,9 @@ export const useInsightStore = create<InsightState>()(
             { allowRebase: true },
           );
 
-          set({ isLoading: false });
+          set({ isLoading: false, isMockSeedData: false });
           return res;
-        } catch (err) {
+        } catch {
           set({ isLoading: false });
           return null;
         }
@@ -269,6 +541,7 @@ export const useInsightStore = create<InsightState>()(
       partialize: (s) => ({
         summaryCards: s.summaryCards,
         insights: s.insights,
+        isMockSeedData: s.isMockSeedData,
       }),
     },
   ),
