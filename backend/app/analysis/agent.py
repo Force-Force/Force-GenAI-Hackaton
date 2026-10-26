@@ -2,16 +2,10 @@ import json
 import uuid
 from typing import Any
 
-<<<<<<< HEAD:app/analysis/agent.py
 from app.analysis.data import ZetarisClient
 from app.analysis.intent import ScoutIntentEngine
 from app.analysis.model import NemotronClient
 from app.meterless.memory import HMemMemoryStore
-=======
-from app.hackathon.data import ZetarisClient
-from app.hackathon.power import NemotronClient
-from app.hackathon.supervisor import SupervisorAgent
->>>>>>> 332d523 (strucutre agent fdigures):app/hackathon/agent.py
 
 TOOL_SCHEMA = [
     {
@@ -43,7 +37,6 @@ Règles prioritaires :
 """
 
 
-<<<<<<< HEAD:app/analysis/agent.py
 class AnalysisAgent:
     def __init__(
         self,
@@ -164,18 +157,22 @@ class AnalysisAgent:
             if memory:
                 trace["memory"]["written"].append(memory.as_dict())
 
-            messages.append({
-                "role": "assistant",
-                "content": None,
-                "tool_calls": [{
-                    "id": tool_call.id,
-                    "type": "function",
-                    "function": {
-                        "name": "run_sql",
-                        "arguments": json.dumps({"sql": sql, "limit": limit, "confirmed": confirmed}),
-                    },
-                }],
-            })
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": [
+                        {
+                            "id": tool_call.id,
+                            "type": "function",
+                            "function": {
+                                "name": "run_sql",
+                                "arguments": json.dumps({"sql": sql, "limit": limit, "confirmed": confirmed}),
+                            },
+                        }
+                    ],
+                }
+            )
             messages.append({
                 "role": "tool",
                 "tool_call_id": tool_call.id,
@@ -185,15 +182,3 @@ class AnalysisAgent:
         final_response = "Le modèle n'a pas produit de réponse finale exploitable après plusieurs itérations."
         trace["final_answer"] = final_response
         return {"response": final_response, "trace": trace}
-=======
-class HackathonAgent(SupervisorAgent):
-    def __init__(self, zetaris_client: ZetarisClient, llm_client: NemotronClient, max_iterations: int = 8) -> None:
-        super().__init__(zetaris_client=zetaris_client, llm_client=llm_client, max_iterations=max_iterations)
-
-    def run(self, question: str) -> dict[str, Any]:
-        result = super().run(question)
-        return {
-            "response": result["response"],
-            "trace": result["trace"],
-        }
->>>>>>> 332d523 (strucutre agent fdigures):app/hackathon/agent.py
