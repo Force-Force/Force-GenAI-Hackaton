@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     zetaris_sql_endpoint: str = "/sql-editor/sqls/run"
     zetaris_org_id: int = 1
     zetaris_api_key: str = ""
+    zetaris_auth_url: str = ""
+    zetaris_username: str = ""
+    zetaris_password: str = ""
+    zetaris_bank_database: str = "AURABI_BANK"
 
     model_base_url: str = ""
     model_api_key: str = ""
@@ -40,6 +44,13 @@ class Settings(BaseSettings):
         if self.zetaris_api_url:
             return self.zetaris_api_url
         return self.zetaris_rest_url
+
+    @property
+    def zetaris_configured(self) -> bool:
+        return bool(
+            self.resolved_zetaris_url
+            and (self.zetaris_api_key or (self.zetaris_auth_url and self.zetaris_username and self.zetaris_password))
+        )
 
     @property
     def cors_origin_list(self) -> list[str]:

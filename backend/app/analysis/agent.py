@@ -2,7 +2,8 @@ import json
 import uuid
 from typing import Any
 
-from app.analysis.data import ZetarisClient
+from app.analysis.catalog import describe_database
+from app.analysis.data import ZetarisClient, ZetarisError
 from app.analysis.intent import ScoutIntentEngine
 from app.analysis.model import NemotronClient
 from app.meterless.memory import HMemMemoryStore
@@ -36,6 +37,20 @@ Règles prioritaires :
 5. Donne une réponse concise mais expliquée, avec une trace de ce qui a été vérifié.
 """
 
+CATALOG_PROMPT = """
+Catalogue Zetaris (base Lightning `{database}`, dialecte Spark SQL) :
+{catalog}
+
+Règles SQL :
+- préfixe toujours les tables par `{database}.` ;
+- une seule instruction par appel ; agrège côté SQL (GROUP BY, ORDER BY, LIMIT) plutôt que de rapatrier des lignes brutes ;
+- `SHOW DATABASES` est désactivé : utilise `SHOW TABLES IN {database}` ou `DESCRIBE {database}.<table>` ;
+- si Zetaris renvoie une erreur, corrige la requête et réessaie.
+"""
+
+# Failures the model cannot fix by rewriting its SQL: surface them instead of retrying.
+_FATAL_ZETARIS_ERRORS = {"authentication", "authorization", "transport", "timeout", "rate_limit"}
+
 
 class AnalysisAgent:
     def __init__(
@@ -44,12 +59,20 @@ class AnalysisAgent:
         llm_client: NemotronClient,
         max_iterations: int = 8,
         memory_store: HMemMemoryStore | None = None,
+        bank_database: str | None = None,
     ) -> None:
         self.zetaris = zetaris_client
         self.llm = llm_client
         self.max_iterations = max_iterations
         self.intent_engine = ScoutIntentEngine()
         self.memory = memory_store or HMemMemoryStore()
+        self.bank_database = bank_database
+
+    def _system_prompt(self) -> str:
+        if not self.bank_database:
+            return SYSTEM_PROMPT
+        catalog = describe_database(self.zetaris, self.bank_database)
+        return SYSTEM_PROMPT + CATALOG_PROMPT.format(database=self.bank_database, catalog=catalog)
 
     def run(self, question: str, request_id: str | None = None) -> dict[str, Any]:
         run_id = request_id or str(uuid.uuid4())
@@ -74,7 +97,7 @@ class AnalysisAgent:
             }
         memory_context = "\n".join(f"- {memory.content}" for memory in memories)
         messages: list[dict[str, Any]] = [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": self._system_prompt()},
             {
                 "role": "user",
                 "content": (
@@ -137,25 +160,30 @@ class AnalysisAgent:
             sql = arguments.get("sql", "")
             limit = int(arguments.get("limit", 100))
             confirmed = bool(arguments.get("confirmed", False))
-            rows = self.zetaris.run_sql(sql=sql, limit=limit, confirmed=confirmed, request_id=request_id)
-            trace["sql_executions"].append(
-                {
-                    "iteration": iteration,
-                    "sql": sql,
-                    "limit": limit,
-                    "confirmed": confirmed,
-                    "row_count": len(rows),
-                    "preview": rows[:10],
-                }
-            )
-            memory = self.memory.remember(
-                f"Zetaris returned {len(rows)} rows for SQL: {sql}",
-                source="zetaris.tool_result",
-                agent_id=self.llm.provider,
-                run_id=run_id,
-            )
-            if memory:
-                trace["memory"]["written"].append(memory.as_dict())
+            execution: dict[str, Any] = {"iteration": iteration, "sql": sql, "limit": limit, "confirmed": confirmed}
+            try:
+                rows = self.zetaris.run_sql(sql=sql, limit=limit, confirmed=confirmed, request_id=request_id)
+            except (ZetarisError, ValueError) as exc:
+                if isinstance(exc, ZetarisError) and exc.category in _FATAL_ZETARIS_ERRORS:
+                    raise
+                # SQL the engine rejected (syntax, unknown column, write attempt): hand the
+                # message back to the model so it can correct the query.
+                error_text = getattr(exc, "detail", "") or str(exc)
+                execution.update(row_count=0, error=error_text)
+                trace["sql_executions"].append(execution)
+                tool_content = json.dumps({"error": error_text}, ensure_ascii=False)
+            else:
+                execution.update(row_count=len(rows), preview=rows[:50])
+                trace["sql_executions"].append(execution)
+                tool_content = json.dumps(rows, ensure_ascii=False, default=str)
+                memory = self.memory.remember(
+                    f"Zetaris returned {len(rows)} rows for SQL: {sql}",
+                    source="zetaris.tool_result",
+                    agent_id=self.llm.provider,
+                    run_id=run_id,
+                )
+                if memory:
+                    trace["memory"]["written"].append(memory.as_dict())
 
             messages.append(
                 {
@@ -176,7 +204,7 @@ class AnalysisAgent:
             messages.append({
                 "role": "tool",
                 "tool_call_id": tool_call.id,
-                "content": json.dumps(rows, ensure_ascii=False),
+                "content": tool_content,
             })
 
         final_response = "Le modèle n'a pas produit de réponse finale exploitable après plusieurs itérations."

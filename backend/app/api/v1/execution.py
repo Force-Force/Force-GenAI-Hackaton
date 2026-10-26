@@ -1,9 +1,10 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.models.enums import PipelineRunStatus
 from app.schemas.execution import (
     GuardianQuestionAnswer,
     PipelineRunRead,
@@ -21,6 +22,17 @@ async def start_run(pipeline_id: UUID, db: AsyncSession = Depends(get_db)) -> Pi
         run=run,
         message="Exécution démarrée. Approuvez les demandes Guardian puis appelez POST .../resume.",
     )
+
+
+@router.get("", response_model=list[PipelineRunRead])
+async def list_runs(
+    pipeline_id: UUID,
+    status: PipelineRunStatus | None = None,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db),
+) -> list[PipelineRunRead]:
+    return await execution_service.list_runs(db, pipeline_id, status, limit, offset)
 
 
 @router.get("/{run_id}", response_model=PipelineRunRead)

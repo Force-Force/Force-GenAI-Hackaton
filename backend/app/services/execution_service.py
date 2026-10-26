@@ -129,6 +129,34 @@ async def get_run(db: AsyncSession, pipeline_id: UUID, run_id: UUID) -> Pipeline
     return run_to_read(run, list(events_result.scalars().all()), pending, pending_q)
 
 
+async def list_runs(
+    db: AsyncSession,
+    pipeline_id: UUID,
+    status: PipelineRunStatus | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[PipelineRunRead]:
+    """Runs of a pipeline, newest first, each with its event log."""
+    await get_pipeline_or_404(db, pipeline_id)
+    query = select(PipelineRun).where(PipelineRun.pipeline_id == pipeline_id)
+    if status is not None:
+        query = query.where(PipelineRun.status == status)
+    runs = list(
+        (await db.execute(query.order_by(PipelineRun.created_at.desc()).limit(limit).offset(offset))).scalars().all()
+    )
+    if not runs:
+        return []
+    events_result = await db.execute(
+        select(PipelineRunEvent)
+        .where(PipelineRunEvent.run_id.in_([run.id for run in runs]))
+        .order_by(PipelineRunEvent.created_at.asc())
+    )
+    events_by_run: dict[UUID, list[PipelineRunEvent]] = {}
+    for event in events_result.scalars().all():
+        events_by_run.setdefault(event.run_id, []).append(event)
+    return [run_to_read(run, events_by_run.get(run.id, [])) for run in runs]
+
+
 async def start_pipeline_run(db: AsyncSession, pipeline_id: UUID) -> PipelineRunRead:
     pipeline = await get_pipeline_or_404(db, pipeline_id)
     if not pipeline.nodes:
@@ -154,7 +182,14 @@ async def start_pipeline_run(db: AsyncSession, pipeline_id: UUID) -> PipelineRun
         pipeline_id=pipeline_id,
         status=PipelineRunStatus.RUNNING,
         started_at=datetime.now(timezone.utc),
-        context={"node_order": [], "completed_nodes": [], "open_questions": []},
+        context={
+            "node_order": [],
+            "completed_nodes": [],
+            "open_questions": [],
+            "trigger_type": "MANUAL",
+            "total_nodes": len(pipeline.nodes),
+            "nodes_executed": 0,
+        },
     )
     db.add(run)
     await db.flush()
@@ -218,6 +253,9 @@ async def _advance_run(db: AsyncSession, run: PipelineRun, pipeline: Pipeline) -
     completed = set(UUID(x) for x in ctx.get("completed_nodes", []) if x)
     order = _topological_order(pipeline)
     ctx["node_order"] = [str(n.id) for n in order]
+    ctx["total_nodes"] = len(order)
+    ctx["nodes_executed"] = len(completed)
+    run.context = ctx
     base_context = build_execution_context(pipeline, phase=WorkflowPhase.NODE_EXECUTION.value)
     if ctx.get("user_answers"):
         base_context["user_answers"] = ctx["user_answers"]
@@ -329,6 +367,7 @@ async def _advance_run(db: AsyncSession, run: PipelineRun, pipeline: Pipeline) -
         node.status = NodeStatus.VALID
         completed.add(node.id)
         ctx["completed_nodes"] = [str(x) for x in completed]
+        ctx["nodes_executed"] = len(completed)
         run.context = ctx
         await add_run_event(
             db,

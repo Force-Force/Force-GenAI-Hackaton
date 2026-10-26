@@ -13,6 +13,12 @@ class AnalysisSettings(BaseSettings):
     zetaris_sql_endpoint: str = "/sql-editor/sqls/run"
     zetaris_org_id: int = 1
     zetaris_api_key: str = ""
+    # Account used to obtain short-lived tokens when no static API key is configured.
+    zetaris_auth_url: str = ""
+    zetaris_username: str = ""
+    zetaris_password: str = ""
+    # Lightning database under which the AuraBI bank datasource is registered.
+    zetaris_bank_database: str = "AURABI_BANK"
 
     model_base_url: str = ""
     model_api_key: str = ""
@@ -39,8 +45,10 @@ class AnalysisSettings(BaseSettings):
     @property
     def missing_required_fields(self) -> list[str]:
         missing: list[str] = []
-        if not self.zetaris_api_key:
-            missing.append("ZETARIS_API_KEY")
+        if not self.zetaris_api_key and not (
+            self.zetaris_auth_url and self.zetaris_username and self.zetaris_password
+        ):
+            missing.append("ZETARIS_API_KEY or ZETARIS_AUTH_URL + ZETARIS_USERNAME + ZETARIS_PASSWORD")
         if self.model_provider == "nightshift":
             fields = (
                 ("NIGHTSHIFT_BASE_URL", self.nightshift_base_url or self.model_base_url),

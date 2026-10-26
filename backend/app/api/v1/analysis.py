@@ -1,3 +1,4 @@
+import re
 import uuid
 from time import perf_counter
 
@@ -27,12 +28,7 @@ async def query_agent(
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    zetaris = ZetarisClient(
-        base_url=settings.resolved_zetaris_url,
-        api_key=settings.zetaris_api_key,
-        org_id=settings.zetaris_org_id,
-        sql_endpoint=settings.zetaris_sql_endpoint,
-    )
+    zetaris = ZetarisClient.from_settings(settings)
     model_base_url, model_api_key, model_name = settings.active_model_config
     llm = NemotronClient(
         base_url=model_base_url,
@@ -45,11 +41,12 @@ async def query_agent(
         llm,
         max_iterations=settings.max_agent_iterations,
         memory_store=HMemMemoryStore(settings.meterless_memory_log),
+        bank_database=settings.zetaris_bank_database,
     )
     try:
         result = agent.run(payload.question, request_id=request_id)
     except (RuntimeError, ValueError) as exc:
-        raise HTTPException(status_code=502, detail="Analyse externe indisponible.") from exc
+        raise HTTPException(status_code=502, detail=f"Analyse externe indisponible : {exc}") from exc
     trace = result["trace"]
     trace["request_id"] = request_id
     trace["model"] = model_name
@@ -58,13 +55,21 @@ async def query_agent(
     model_calls = trace.get("model_calls", [])
     trace["tokens_in"] = sum(call.get("tokens_in") or 0 for call in model_calls)
     trace["tokens_out"] = sum(call.get("tokens_out") or 0 for call in model_calls)
-    executed = trace.get("sql_executions", [])
+    executed = [run for run in trace.get("sql_executions", []) if not run.get("error")]
+    tables = sorted({
+        name
+        for run in executed
+        for name in re.findall(r"\b(?:FROM|JOIN)\s+([A-Za-z_][\w.]*)", run.get("sql", ""), flags=re.IGNORECASE)
+    })
     explain = AgentQueryResponse(
         response=result["response"],
         trace=trace,
         request_id=request_id,
         sql=executed[-1].get("sql") if executed else None,
         sources=["Zetaris"] if executed else [],
+        views_used=tables,
+        # Rows of the last successful Zetaris query: the evidence the answer rests on.
+        calculations=executed[-1].get("preview", []) if executed else [],
         model=model_name,
         model_route="configured",
         latency_ms=trace["latency_ms"],

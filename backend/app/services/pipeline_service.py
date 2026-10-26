@@ -13,6 +13,7 @@ from app.models.pipeline import Pipeline
 from app.schemas.edge import EdgeCreate, EdgeRead
 from app.schemas.node import NodeCreate, NodeRead, NodeUpdate, Position
 from app.schemas.pipeline import PipelineCreate, PipelineListItem, PipelineRead, PipelineUpdate
+from app.services.revision_service import record_revision
 from app.websocket.events import WsEvent, WsEventType
 from app.websocket.manager import ws_manager
 
@@ -68,6 +69,7 @@ async def create_pipeline(db: AsyncSession, data: PipelineCreate) -> PipelineRea
     pipeline = Pipeline(name=data.name, status=PipelineStatus.DRAFT)
     db.add(pipeline)
     await db.flush()
+    await record_revision(db, pipeline.id, "Création du pipeline", "pipeline.create")
     await db.refresh(pipeline, ["nodes", "edges"])
     read = pipeline_to_read(pipeline)
     await ws_manager.broadcast(
@@ -91,6 +93,8 @@ async def update_pipeline(db: AsyncSession, pipeline_id: UUID, data: PipelineUpd
     if data.architecture_design is not None:
         pipeline.architecture_design = data.architecture_design
     await db.flush()
+    if data.name is not None or data.architecture_design is not None:
+        await record_revision(db, pipeline_id, "Mise à jour du pipeline", "pipeline.update")
     pipeline = await get_pipeline_or_404(db, pipeline_id)
     read = pipeline_to_read(pipeline)
     await ws_manager.broadcast(
@@ -128,6 +132,7 @@ async def create_node(db: AsyncSession, pipeline_id: UUID, data: NodeCreate) -> 
     db.add(node)
     pipeline.updated_at = datetime.now(timezone.utc)
     await db.flush()
+    await record_revision(db, pipeline_id, f"Ajout du nœud « {node.label} »", "node.add")
     read = node_to_read(node)
     await ws_manager.broadcast(
         pipeline_id,
@@ -171,6 +176,9 @@ async def update_node(db: AsyncSession, pipeline_id: UUID, node_id: UUID, data: 
     pipeline = await get_pipeline_or_404(db, pipeline_id)
     pipeline.updated_at = datetime.now(timezone.utc)
     await db.flush()
+    # Moving a node on the canvas is layout, not a change worth a revision.
+    if any(value is not None for value in (data.type, data.subtype, data.label, data.data)):
+        await record_revision(db, pipeline_id, f"Modification du nœud « {node.label} »", "node.update")
     read = node_to_read(node)
     await ws_manager.broadcast(
         pipeline_id,
@@ -181,9 +189,11 @@ async def update_node(db: AsyncSession, pipeline_id: UUID, node_id: UUID, data: 
 
 async def delete_node(db: AsyncSession, pipeline_id: UUID, node_id: UUID) -> None:
     node = await _get_node_in_pipeline(db, pipeline_id, node_id)
+    label = node.label
     await db.delete(node)
     pipeline = await get_pipeline_or_404(db, pipeline_id)
     pipeline.updated_at = datetime.now(timezone.utc)
+    await record_revision(db, pipeline_id, f"Suppression du nœud « {label} »", "node.remove")
     await ws_manager.broadcast(
         pipeline_id,
         WsEvent(type=WsEventType.NODE_DELETED, pipeline_id=str(pipeline_id), payload={"id": str(node_id)}),
@@ -204,6 +214,7 @@ async def create_edge(db: AsyncSession, pipeline_id: UUID, data: EdgeCreate) -> 
     db.add(edge)
     pipeline.updated_at = datetime.now(timezone.utc)
     await db.flush()
+    await record_revision(db, pipeline_id, f"Liaison « {source.label} » → « {target.label} »", "edge.add")
     read = edge_to_read(edge)
     await ws_manager.broadcast(
         pipeline_id,
@@ -221,6 +232,7 @@ async def delete_edge(db: AsyncSession, pipeline_id: UUID, edge_id: UUID) -> Non
     await db.delete(edge)
     pipeline = await get_pipeline_or_404(db, pipeline_id)
     pipeline.updated_at = datetime.now(timezone.utc)
+    await record_revision(db, pipeline_id, "Suppression d’une liaison", "edge.remove")
     await ws_manager.broadcast(
         pipeline_id,
         WsEvent(type=WsEventType.EDGE_DELETED, pipeline_id=str(pipeline_id), payload={"id": edge_id_str}),

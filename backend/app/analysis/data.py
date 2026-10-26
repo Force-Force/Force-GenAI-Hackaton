@@ -1,5 +1,9 @@
+import base64
+import json
 import logging
 import re
+import threading
+import time
 import uuid
 from time import perf_counter
 from typing import Any
@@ -8,6 +12,31 @@ import requests
 
 logger = logging.getLogger(__name__)
 
+# Zetaris login tokens are short-lived JWTs (15 minutes on the platform), shared by every
+# client instance of the process: (auth_url, username) -> (token, org_id, expires_at).
+_TOKEN_LOCK = threading.Lock()
+_TOKEN_CACHE: dict[tuple[str, str], tuple[str, int, float]] = {}
+_TOKEN_REFRESH_MARGIN_S = 60
+
+# Zetaris returns every value as a string. Plain decimal numbers are typed back so the
+# model and the charts see numbers; long digit strings (identifiers) stay strings.
+_NUMBER = re.compile(r"^-?(0|[1-9]\d{0,11})(\.\d+)?$")
+
+
+def _coerce(value: Any) -> Any:
+    if isinstance(value, str) and _NUMBER.match(value):
+        return float(value) if "." in value else int(value)
+    return value
+
+
+def _jwt_expiry(token: str) -> float | None:
+    try:
+        payload = token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        return float(json.loads(base64.urlsafe_b64decode(payload))["exp"])
+    except (IndexError, KeyError, TypeError, ValueError):
+        return None
+
 
 class ZetarisError(RuntimeError):
     def __init__(self, message: str, *, category: str, request_id: str, status_code: int | None = None) -> None:
@@ -15,6 +44,8 @@ class ZetarisError(RuntimeError):
         self.category = category
         self.request_id = request_id
         self.status_code = status_code
+        # Engine message safe to show the model (SQL error text), empty when unknown.
+        self.detail = ""
 
 
 class ZetarisClient:
@@ -30,11 +61,110 @@ class ZetarisClient:
         api_key: str,
         org_id: int = 1,
         sql_endpoint: str = "/sql-editor/sqls/run",
+        *,
+        auth_url: str = "",
+        username: str = "",
+        password: str = "",
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.org_id = org_id
         self.sql_endpoint = "/" + sql_endpoint.strip("/")
+        self.auth_url = auth_url
+        self.username = username
+        self.password = password
+
+    @classmethod
+    def from_settings(cls, settings: Any) -> "ZetarisClient":
+        return cls(
+            settings.resolved_zetaris_url,
+            settings.zetaris_api_key,
+            settings.zetaris_org_id,
+            settings.zetaris_sql_endpoint,
+            auth_url=settings.zetaris_auth_url,
+            username=settings.zetaris_username,
+            password=settings.zetaris_password,
+        )
+
+    @property
+    def uses_login(self) -> bool:
+        """A static API key wins; otherwise the client signs in with the configured account."""
+        return not self.api_key and bool(self.auth_url and self.username and self.password)
+
+    def _login(self) -> tuple[str, int, float]:
+        try:
+            response = requests.post(
+                self.auth_url,
+                json={"username": self.username, "password": self.password},
+                timeout=30,
+            )
+            response.raise_for_status()
+            body = response.json()
+        except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            raise ZetarisError(
+                "Connexion Zetaris refusée : vérifiez ZETARIS_USERNAME / ZETARIS_PASSWORD.",
+                category="authentication",
+                request_id="login",
+                status_code=status,
+            ) from exc
+        except (requests.RequestException, ValueError) as exc:
+            raise ZetarisError(
+                "Service de connexion Zetaris injoignable.", category="transport", request_id="login"
+            ) from exc
+        token = body.get("idToken") or body.get("accessToken") or body.get("token")
+        if not token:
+            raise ZetarisError("La connexion Zetaris n’a renvoyé aucun jeton.", category="authentication", request_id="login")
+        org_id = int(body.get("orgId") or self.org_id)
+        expires_at = _jwt_expiry(token) or time.time() + 600
+        return token, org_id, expires_at
+
+    def _credentials(self, force_refresh: bool = False) -> tuple[str, int]:
+        if not self.uses_login:
+            return self.api_key, self.org_id
+        key = (self.auth_url, self.username)
+        with _TOKEN_LOCK:
+            cached = _TOKEN_CACHE.get(key)
+            if cached and not force_refresh and cached[2] - _TOKEN_REFRESH_MARGIN_S > time.time():
+                return cached[0], cached[1]
+            token, org_id, expires_at = self._login()
+            _TOKEN_CACHE[key] = (token, org_id, expires_at)
+            return token, org_id
+
+    def _post(self, payload: dict[str, Any], token: str, org_id: int, request_id: str) -> requests.Response:
+        return requests.post(
+            f"{self.base_url}{self.sql_endpoint}",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "X-Org-ID": str(org_id),
+                "X-Request-ID": request_id,
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=90,
+        )
+
+    @staticmethod
+    def _error_detail(response: requests.Response | None) -> str:
+        """First line of the engine's message (e.g. a SQL parse error), without the Java stack."""
+        if response is None:
+            return ""
+        try:
+            message = str(response.json().get("msg") or "")
+        except ValueError:
+            message = response.text or ""
+        message = re.sub(r"^.*?(LightningDdlParseException|AnalysisException|ParseException):\s*", "", message, flags=re.S)
+        message = message.split("\tat ")[0].split("== SQL ==")[0]
+        return " ".join(message.split())[:400]
+
+    @staticmethod
+    def _records(body: dict[str, Any]) -> list[dict[str, Any]]:
+        """Zetaris answers {"headers": [...], "data": [[...], ...]}: return one dict per row."""
+        rows = body.get("data", [])
+        headers = body.get("headers")
+        if isinstance(headers, list) and all(isinstance(row, list) for row in rows):
+            return [{str(name): _coerce(value) for name, value in zip(headers, row)} for row in rows]
+        return rows
 
     @staticmethod
     def _normalize_sql(sql: str) -> str:
@@ -155,20 +285,14 @@ class ZetarisClient:
             "source": "SqlEditor",
             "limit": max(1, int(limit)),
         }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "X-Org-ID": str(self.org_id),
-            "X-Request-ID": request_id,
-            "Content-Type": "application/json",
-        }
         started = perf_counter()
         try:
-            response = requests.post(
-                f"{self.base_url}{self.sql_endpoint}",
-                headers=headers,
-                json=payload,
-                timeout=90,
-            )
+            token, org_id = self._credentials()
+            response = self._post(payload, token, org_id, request_id)
+            if response.status_code == 401 and self.uses_login:
+                # Token revoked or expired early: sign in again once.
+                token, org_id = self._credentials(force_refresh=True)
+                response = self._post(payload, token, org_id, request_id)
             response.raise_for_status()
             body = response.json()
         except requests.Timeout as exc:
@@ -176,12 +300,14 @@ class ZetarisClient:
         except requests.HTTPError as exc:
             status = exc.response.status_code if exc.response is not None else None
             category = {401: "authentication", 403: "authorization", 429: "rate_limit"}.get(status, "provider")
-            raise ZetarisError(
+            error = ZetarisError(
                 f"Zetaris a refusé la requête ({category}).",
                 category=category,
                 request_id=request_id,
                 status_code=status,
-            ) from exc
+            )
+            error.detail = self._error_detail(exc.response)
+            raise error from exc
         except requests.RequestException as exc:
             logger.warning("Zetaris SQL execution failed: request_id=%s", request_id)
             raise ZetarisError("Zetaris est momentanément indisponible.", category="transport", request_id=request_id) from exc
@@ -198,7 +324,7 @@ class ZetarisClient:
                 category="malformed_response",
                 request_id=request_id,
             )
-        rows = body["data"]
+        rows = self._records(body)
         logger.info(
             "Executed Zetaris SQL: request_id=%s rows=%s duration_ms=%s",
             request_id,
