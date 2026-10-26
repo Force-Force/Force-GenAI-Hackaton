@@ -3,6 +3,7 @@ import { executeUiop } from "./uiopRuntime";
 import { usePipelineStore } from "../../workspace/store/pipelineStore";
 import { usePlanStore } from "../store/planStore";
 import { useWorkspaceStore } from "../../workspace/store/workspaceStore";
+import { useInsightStore } from "../../insights/store/insightStore";
 import type { DatamartNode } from "../../../types/pipeline";
 
 describe("UIOP Runtime (UI Operations Protocol v1.0)", () => {
@@ -390,5 +391,101 @@ describe("UIOP Runtime (UI Operations Protocol v1.0)", () => {
     expect(planState.selectedAnswers["anomaly-window-policy"]).toBe(
       "window-1m",
     );
+  });
+
+  it("handles insight operations (set_summary, add, update, remove) atomically", () => {
+    useInsightStore.getState().resetInsights();
+
+    const res = executeUiop({
+      protocol: "uiop",
+      version: "1.0",
+      messageId: "msg-insight-1",
+      workspaceId: "workspace_01",
+      baseRevision: 1,
+      source: { agentId: "nightshift-analysis-agent", executionId: "exec-ins-1" },
+      operations: [
+        {
+          op: "insight.set_summary",
+          params: {
+            cards: [
+              {
+                id: "kpi-rev",
+                label: "Q4 Net ARR",
+                value: "$4.2M",
+                delta: "+14.2%",
+                trend: "up",
+                sourceTable: "fact_daily_revenue",
+              },
+            ],
+          },
+        },
+        {
+          op: "insight.add",
+          params: {
+            id: "chart-mrr-growth",
+            title: "Monthly Recurring Revenue Trend",
+            domain: "sales",
+            categoryLabel: "Financial Modeling",
+            summary: "Accelerating MRR growth in mid-market tier.",
+            aiReasoning: "Line graph selected for continuous temporal trajectory.",
+            aiConfidenceScore: 98,
+            chart: {
+              type: "line",
+              data: [
+                { x: "Jan", y: 100 },
+                { x: "Feb", y: 140 },
+                { x: "Mar", y: 210 },
+              ],
+            },
+            provenance: {
+              executedSql: "SELECT month, SUM(mrr) FROM fact_subscriptions GROUP BY 1",
+              sourceTables: ["fact_subscriptions"],
+            },
+          },
+        },
+        {
+          op: "insight.update",
+          params: {
+            id: "chart-mrr-growth",
+            summary: "Updated MRR trajectory showing sustained expansion.",
+          },
+        },
+      ],
+    });
+
+    expect(res.ok).toBe(true);
+    const insightState = useInsightStore.getState();
+    expect(insightState.summaryCards[0].label).toBe("Q4 Net ARR");
+    expect(insightState.summaryCards[0].value).toBe("$4.2M");
+
+    const added = insightState.insights.find((i) => i.id === "chart-mrr-growth");
+    expect(added).toBeDefined();
+    expect(added?.title).toBe("Monthly Recurring Revenue Trend");
+    expect(added?.selectedGraphType).toBe("line");
+    expect(added?.summary).toBe("Updated MRR trajectory showing sustained expansion.");
+    expect(added?.provenance?.executedSql).toContain("SELECT month, SUM(mrr)");
+
+    // Test insight.remove
+    const removeRes = executeUiop({
+      protocol: "uiop",
+      version: "1.0",
+      messageId: "msg-insight-2",
+      workspaceId: "workspace_01",
+      baseRevision: 2,
+      source: { agentId: "nightshift-analysis-agent", executionId: "exec-ins-2" },
+      operations: [
+        {
+          op: "insight.remove",
+          params: {
+            id: "chart-mrr-growth",
+          },
+        },
+      ],
+    });
+
+    expect(removeRes.ok).toBe(true);
+    expect(
+      useInsightStore.getState().insights.some((i) => i.id === "chart-mrr-growth"),
+    ).toBe(false);
   });
 });

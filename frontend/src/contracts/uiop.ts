@@ -277,6 +277,188 @@ export const questionRemoveParamsSchema = z.object({
 });
 
 // ============================================================================
+// 3.5 AI-Driven Insights & Chart Operations (insight.*)
+// Reference: docs/integration/INSIGHTS_UIOP_SPECIFICATION.md
+// ============================================================================
+
+export const insightSummaryCardSchema = z.object({
+  id: z.string().optional(),
+  label: z.string().min(1),
+  value: z.string().min(1),
+  delta: z.string().default(''),
+  trend: z.enum(['up', 'down', 'neutral']).default('neutral'),
+  sourceTable: z.string().optional(),
+});
+export type InsightSummaryCard = z.infer<typeof insightSummaryCardSchema>;
+
+export const insightSetSummaryParamsSchema = z.object({
+  cards: z.array(insightSummaryCardSchema).min(1),
+});
+export type InsightSetSummaryParams = z.infer<typeof insightSetSummaryParamsSchema>;
+
+export const insightProvenanceSchema = z.object({
+  sourceTables: z.array(z.string()).default([]),
+  executedSql: z.string().default(''),
+  rowCount: z.number().optional(),
+  executedAt: z.string().optional(),
+});
+export type InsightProvenance = z.infer<typeof insightProvenanceSchema>;
+
+export const uiopChartPayloadSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('bar'),
+    data: z.array(
+      z.object({
+        category: z.string(),
+        value: z.number(),
+        formatted: z.string().optional(),
+        secondaryValue: z.number().optional(),
+        target: z.number().optional(),
+      }),
+    ),
+  }),
+  z.object({
+    type: z.literal('line'),
+    data: z.array(
+      z.object({
+        x: z.string(),
+        y: z.number(),
+        series: z.string().optional(),
+        formatted: z.string().optional(),
+      }),
+    ),
+  }),
+  z.object({
+    type: z.literal('pie'),
+    data: z.array(
+      z.object({
+        label: z.string(),
+        value: z.number(),
+        sharePct: z.number(),
+        formatted: z.string().optional(),
+      }),
+    ),
+  }),
+  z.object({
+    type: z.literal('kpi-table'),
+    data: z.object({
+      columns: z.array(z.string()),
+      rows: z.array(z.record(z.string(), z.union([z.string(), z.number()]))),
+    }),
+  }),
+  z.object({
+    type: z.literal('waterfall-decomposition'),
+    data: z.array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+        amount: z.number(),
+        formatted: z.string(),
+        type: z.enum(['base', 'deduction', 'addition', 'subtotal', 'total']),
+        note: z.string().optional(),
+        driftPct: z.string().optional(),
+      }),
+    ),
+  }),
+  z.object({
+    type: z.literal('cohort-decay-curve'),
+    data: z.array(
+      z.object({
+        period: z.string(),
+        cohortA: z.number(),
+        cohortB: z.number(),
+        cohortC: z.number().optional(),
+      }),
+    ),
+  }),
+  z.object({
+    type: z.literal('state-flow-funnel'),
+    data: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        count: z.number(),
+        ratePct: z.number(),
+        avgDwellMinutes: z.number(),
+        anomalyCount: z.number(),
+        status: z.enum(['normal', 'bottleneck', 'optimal']),
+        notes: z.string(),
+      }),
+    ),
+  }),
+  z.object({
+    type: z.literal('anomaly-ribbon'),
+    data: z.array(
+      z.object({
+        date: z.string(),
+        actual: z.number(),
+        expectedUpper: z.number(),
+        expectedLower: z.number(),
+        isAnomaly: z.boolean(),
+        anomalyDelta: z.string().optional(),
+        anomalyCause: z.string().optional(),
+      }),
+    ),
+  }),
+]);
+export type UiopChartPayload = z.infer<typeof uiopChartPayloadSchema>;
+
+export const insightAddParamsSchema = z.object({
+  id: z.string().min(1),
+  domain: z.enum(['sales', 'customers', 'operations', 'anomalies']).default('sales'),
+  categoryLabel: z.string().default('Insight'),
+  title: z.string().min(1),
+  summary: z.string().min(1),
+  aiReasoning: z.string().default(''),
+  aiConfidenceScore: z.number().min(0).max(100).default(98.5),
+  chart: uiopChartPayloadSchema,
+  provenance: insightProvenanceSchema.optional(),
+  headlineMetrics: z
+    .array(
+      z.object({
+        label: z.string(),
+        value: z.string(),
+        delta: z.string().default(''),
+        trend: z.enum(['up', 'down', 'neutral']).default('neutral'),
+      }),
+    )
+    .default([]),
+  actionableInsights: z.array(z.string()).default([]),
+});
+export type InsightAddParams = z.infer<typeof insightAddParamsSchema>;
+
+export const insightUpdateParamsSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().optional(),
+  summary: z.string().optional(),
+  aiReasoning: z.string().optional(),
+  chart: uiopChartPayloadSchema.optional(),
+  provenance: insightProvenanceSchema.optional(),
+  headlineMetrics: z
+    .array(
+      z.object({
+        label: z.string(),
+        value: z.string(),
+        delta: z.string().default(''),
+        trend: z.enum(['up', 'down', 'neutral']).default('neutral'),
+      }),
+    )
+    .optional(),
+  actionableInsights: z.array(z.string()).optional(),
+});
+export type InsightUpdateParams = z.infer<typeof insightUpdateParamsSchema>;
+
+export const insightRemoveParamsSchema = z.object({
+  id: z.string().min(1),
+});
+export type InsightRemoveParams = z.infer<typeof insightRemoveParamsSchema>;
+
+export const insightClearParamsSchema = z.object({
+  domain: z.enum(['sales', 'customers', 'operations', 'anomalies']).optional(),
+});
+export type InsightClearParams = z.infer<typeof insightClearParamsSchema>;
+
+// ============================================================================
 // 4. Discriminated Union of All Supported UIOP Operations
 // ============================================================================
 
@@ -314,6 +496,27 @@ export const uiopOperationSchema = z.discriminatedUnion("op", [
   z.object({
     op: z.literal("question.remove"),
     params: questionRemoveParamsSchema,
+  }),
+  // AI-Driven Insights Operations
+  z.object({
+    op: z.literal("insight.set_summary"),
+    params: insightSetSummaryParamsSchema,
+  }),
+  z.object({
+    op: z.literal("insight.add"),
+    params: insightAddParamsSchema,
+  }),
+  z.object({
+    op: z.literal("insight.update"),
+    params: insightUpdateParamsSchema,
+  }),
+  z.object({
+    op: z.literal("insight.remove"),
+    params: insightRemoveParamsSchema,
+  }),
+  z.object({
+    op: z.literal("insight.clear"),
+    params: insightClearParamsSchema,
   }),
 ]);
 

@@ -1,7 +1,8 @@
-import { Workflow, ShieldCheck } from "lucide-react";
+import { Workflow, ShieldCheck, Play } from "lucide-react";
 import { cn } from "../../../utils/cn";
 import type { AgentTask } from "../types";
 import { navigateTo } from "../../../utils/navigation";
+import { useBackendStore } from "../../../services/session/backendSession";
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING: "bg-amber-50 text-amber-700 border-amber-200",
@@ -16,6 +17,8 @@ const STATUS_STYLES: Record<string, string> = {
  * and isolated to the Independent Audit Center so builders never grade their own work.
  */
 export function AgentTaskList({ tasks }: { tasks: AgentTask[] }) {
+  const executeTask = useBackendStore((s) => s.executeTask);
+
   // Strictly filter out any AUDITOR role tasks from the builder task list
   const builderTasks = tasks.filter(
     (t) => !t.agent_role?.toUpperCase().includes("AUDIT"),
@@ -55,15 +58,28 @@ export function AgentTaskList({ tasks }: { tasks: AgentTask[] }) {
                   </div>
                 )}
               </div>
-              <span
-                className={cn(
-                  "shrink-0 text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border",
-                  STATUS_STYLES[task.status] ??
-                    "bg-slate-100 text-slate-600 border-slate-200",
+              <div className="flex items-center gap-1.5 shrink-0">
+                {task.status === "PENDING" && (
+                  <button
+                    type="button"
+                    onClick={() => void executeTask(task.id)}
+                    className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#064C1C] text-[#FDFFFC] hover:bg-[#1E2D24] transition-colors cursor-pointer"
+                    title="Execute delegated task on backend"
+                  >
+                    <Play size={10} />
+                    <span>Run</span>
+                  </button>
                 )}
-              >
-                {task.status}
-              </span>
+                <span
+                  className={cn(
+                    "text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border",
+                    STATUS_STYLES[task.status] ??
+                      "bg-slate-100 text-slate-600 border-slate-200",
+                  )}
+                >
+                  {task.status}
+                </span>
+              </div>
             </div>
           ))}
         </div>

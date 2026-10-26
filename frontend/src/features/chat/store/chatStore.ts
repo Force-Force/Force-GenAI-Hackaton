@@ -8,6 +8,8 @@ import { executeUiop } from "../../uiop/runtime/uiopRuntime";
 import { usePipelineStore } from "../../workspace/store/pipelineStore";
 import { genId } from "../../../utils/graph";
 import type { AgentTask, ChatMessage } from "../types";
+import { chatApi } from "../../../services/api/chatApi";
+import { useBackendStore } from "../../../services/session/backendSession";
 
 interface ChatState {
   messages: ChatMessage[];
@@ -71,6 +73,41 @@ export const useChatStore = create<ChatState>((set, get) => ({
     };
     set((s) => ({ messages: [...s.messages, userMsg], isGenerating: true }));
 
+    const activePipelineId = useBackendStore.getState().activePipelineId;
+    const isOnline = useBackendStore.getState().isOnline;
+
+    if (activePipelineId && isOnline) {
+      try {
+        const backendRes = await chatApi.sendChatMessage(activePipelineId, trimmed);
+        const agentMsgObj = (backendRes.agent_message || {}) as Record<string, any>;
+        const metadata = (agentMsgObj.metadata || {}) as Record<string, any>;
+        const uiopEnvelope = (metadata.uiop || null) as UiopEnvelope | null;
+
+        const tasks: AgentTask[] = (backendRes.agent_tasks || []).map((t) => ({
+          id: t.id,
+          agent_role: t.agent_role,
+          instruction: t.instruction,
+          status: t.status,
+          input_data: t.input_payload,
+          output_data: t.output_payload,
+        }));
+
+        const textContent =
+          typeof agentMsgObj.content_md === 'string'
+            ? agentMsgObj.content_md
+            : typeof agentMsgObj.text === 'string'
+              ? agentMsgObj.text
+              : 'I have processed your request.';
+
+        get().appendMessage(assistant(textContent, uiopEnvelope, tasks));
+        set({ isGenerating: false });
+        return;
+      } catch (err) {
+        // Network or API failure -> fall through to local synthesis
+      }
+    }
+
+    // Local UIOP synthesis fallback
     const synthesized = synthesizeUiopFromPrompt(trimmed);
     get().appendMessage(
       assistant(synthesized.replyMarkdown, synthesized.envelope),

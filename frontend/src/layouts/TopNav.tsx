@@ -1,6 +1,7 @@
-import { Sparkles, Palette, FileText } from 'lucide-react';
+import { Sparkles, Palette, FileText, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { Badge } from '../components/ui';
 import { useWorkspaceStore } from '../features/workspace/store/workspaceStore';
+import { useBackendStore } from '../services/session/backendSession';
 import { navigateTo } from '../utils/navigation';
 import logoUrl from '../assets/logo.png';
 
@@ -9,6 +10,10 @@ export function TopNav() {
   const setProjectName = useWorkspaceStore((s) => s.setProjectName);
   const isValid = useWorkspaceStore((s) => s.isValid);
   const runValidation = useWorkspaceStore((s) => s.runValidation);
+
+  const isOnline = useBackendStore((s) => s.isOnline);
+  const wsStatus = useBackendStore((s) => s.wsStatus);
+  const checkHealth = useBackendStore((s) => s.checkHealth);
 
   return (
     <header
@@ -48,6 +53,44 @@ export function TopNav() {
         />
         {isValid === true && <Badge tone="success">Valid</Badge>}
         {isValid === false && <Badge tone="danger">Errors</Badge>}
+
+        {/* Backend Connectivity Status */}
+        <button
+          type="button"
+          onClick={() => void checkHealth()}
+          title={isOnline ? `Backend connected (${wsStatus}) — click to re-check` : 'Backend offline — click to retry connection'}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors cursor-pointer select-none bg-white/70"
+          style={{
+            borderColor: isOnline ? 'rgba(6, 76, 28, 0.25)' : 'rgba(51, 65, 57, 0.2)',
+            color: isOnline ? '#064C1C' : '#6B7280',
+          }}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={{
+              backgroundColor: !isOnline
+                ? '#9CA3AF'
+                : wsStatus === 'connected'
+                ? '#10B981'
+                : wsStatus === 'reconnecting'
+                ? '#F59E0B'
+                : '#064C1C',
+            }}
+          />
+          {isOnline ? (
+            <span className="flex items-center gap-1">
+              <Wifi size={11} className="text-[#064C1C]" />
+              <span className="font-mono text-[10px]">
+                {wsStatus === 'connected' ? 'LIVE' : 'ONLINE'}
+              </span>
+            </span>
+          ) : (
+            <span className="flex items-center gap-1">
+              <WifiOff size={11} className="text-gray-400" />
+              <span className="font-mono text-[10px]">LOCAL</span>
+            </span>
+          )}
+        </button>
       </div>
 
       <div className="flex items-center gap-2">

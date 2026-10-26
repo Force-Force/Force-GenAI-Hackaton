@@ -44,6 +44,19 @@ import {
   type ClarifyingQuestion,
   type PlanAndProtocolState,
 } from "../store/planStore";
+import {
+  useInsightStore,
+  chartPayloadToModel,
+} from "../../insights/store/insightStore";
+import type {
+  InsightAddParams,
+  InsightClearParams,
+  InsightRemoveParams,
+  InsightSetSummaryParams,
+  InsightSummaryCard,
+  InsightUpdateParams,
+} from "../../../contracts/uiop";
+import type { AiInsightModel } from "../../insights/types";
 
 export interface ExecuteUiopOptions {
   /**
@@ -71,6 +84,8 @@ interface SimulatedBatchState {
   selectedAnswers: Record<string, string>;
   panels: ActiveUiopPanel[];
   reports: Record<string, ReportUpdateParams>;
+  summaryCards: InsightSummaryCard[];
+  insights: AiInsightModel[];
 }
 
 /**
@@ -278,6 +293,7 @@ export function executeUiop(
   }
 
   // --- Step 4 & 6: Semantic Validation & Atomic Batch Simulation ---
+  const insightStore = useInsightStore.getState();
   const sim: SimulatedBatchState = {
     nodes: structuredClone(pipeStore.nodes),
     edges: structuredClone(pipeStore.edges),
@@ -293,6 +309,8 @@ export function executeUiop(
     selectedAnswers: { ...planStore.selectedAnswers },
     panels: structuredClone(planStore.panels),
     reports: structuredClone(planStore.reports),
+    summaryCards: structuredClone(insightStore.summaryCards),
+    insights: structuredClone(insightStore.insights),
   };
 
   const summary: string[] = [];
@@ -326,6 +344,11 @@ export function executeUiop(
     nodes: sim.nodes,
     edges: sim.edges,
     selectedNodeId: sim.focusNodeId ?? pipeStore.selectedNodeId,
+  });
+
+  useInsightStore.setState({
+    summaryCards: sim.summaryCards,
+    insights: sim.insights,
   });
 
   if (sim.focusNodeId) {
@@ -440,6 +463,16 @@ function applySingleOperationToSim(
       return simQuestionAnswer(sim, operation.params, operationIndex, summary);
     case "question.remove":
       return simQuestionRemove(sim, operation.params, operationIndex, summary);
+    case "insight.set_summary":
+      return simInsightSetSummary(sim, operation.params, summary);
+    case "insight.add":
+      return simInsightAdd(sim, operation.params, operationIndex, summary);
+    case "insight.update":
+      return simInsightUpdate(sim, operation.params, operationIndex, summary);
+    case "insight.remove":
+      return simInsightRemove(sim, operation.params, operationIndex, summary);
+    case "insight.clear":
+      return simInsightClear(sim, operation.params, summary);
   }
 }
 
@@ -990,5 +1023,117 @@ function simQuestionRemove(
   }
   sim.questions = sim.questions.filter((q) => q.id !== params.id);
   summary.push(`Removed clarifying question "${params.id}".`);
+  return null;
+}
+
+// ============================================================================
+// AI-Driven Insights Operation Handlers
+// ============================================================================
+
+function simInsightSetSummary(
+  sim: SimulatedBatchState,
+  params: InsightSetSummaryParams,
+  summary: string[],
+): UiopValidationError | null {
+  sim.summaryCards = params.cards;
+  summary.push(`Updated ${params.cards.length} executive summary metrics.`);
+  return null;
+}
+
+function simInsightAdd(
+  sim: SimulatedBatchState,
+  params: InsightAddParams,
+  operationIndex: number,
+  summary: string[],
+): UiopValidationError | null {
+  const model = chartPayloadToModel(params);
+  // Upsert
+  sim.insights = [model, ...sim.insights.filter((i) => i.id !== params.id)];
+  summary.push(`Added insight "${params.title}" (${params.chart.type}).`);
+  return null;
+}
+
+function simInsightUpdate(
+  sim: SimulatedBatchState,
+  params: InsightUpdateParams,
+  operationIndex: number,
+  summary: string[],
+): UiopValidationError | null {
+  const existing = sim.insights.find((i) => i.id === params.id);
+  if (!existing) {
+    return {
+      code: "ENTITY_NOT_FOUND",
+      message: `Cannot update insight "${params.id}": insight does not exist.`,
+      operationIndex,
+      op: "insight.update",
+    };
+  }
+
+  if (params.chart) {
+    const updatedModel = chartPayloadToModel({
+      ...existing,
+      ...params,
+      id: existing.id,
+      title: params.title || existing.title,
+      summary: params.summary || existing.summary,
+      chart: params.chart,
+      domain: existing.domain,
+      categoryLabel: existing.categoryLabel,
+      aiConfidenceScore: existing.aiConfidenceScore,
+      headlineMetrics: params.headlineMetrics || existing.headlineMetrics,
+      actionableInsights: params.actionableInsights || existing.actionableInsights,
+    });
+    sim.insights = sim.insights.map((i) => (i.id === params.id ? updatedModel : i));
+  } else {
+    sim.insights = sim.insights.map((i) =>
+      i.id === params.id
+        ? {
+            ...i,
+            title: params.title || i.title,
+            summary: params.summary || i.summary,
+            aiReasoning: params.aiReasoning || i.aiReasoning,
+            provenance: params.provenance || i.provenance,
+            headlineMetrics: params.headlineMetrics || i.headlineMetrics,
+            actionableInsights: params.actionableInsights || i.actionableInsights,
+          }
+        : i,
+    );
+  }
+
+  summary.push(`Updated insight "${params.id}".`);
+  return null;
+}
+
+function simInsightRemove(
+  sim: SimulatedBatchState,
+  params: InsightRemoveParams,
+  operationIndex: number,
+  summary: string[],
+): UiopValidationError | null {
+  if (!sim.insights.some((i) => i.id === params.id)) {
+    return {
+      code: "ENTITY_NOT_FOUND",
+      message: `Cannot remove insight "${params.id}": insight does not exist.`,
+      operationIndex,
+      op: "insight.remove",
+    };
+  }
+  sim.insights = sim.insights.filter((i) => i.id !== params.id);
+  summary.push(`Removed insight "${params.id}".`);
+  return null;
+}
+
+function simInsightClear(
+  sim: SimulatedBatchState,
+  params: InsightClearParams,
+  summary: string[],
+): UiopValidationError | null {
+  if (params.domain) {
+    sim.insights = sim.insights.filter((i) => i.domain !== params.domain);
+    summary.push(`Cleared insights for domain "${params.domain}".`);
+  } else {
+    sim.insights = [];
+    summary.push("Cleared all insight cards.");
+  }
   return null;
 }

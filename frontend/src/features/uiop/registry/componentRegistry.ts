@@ -45,6 +45,10 @@ export const APPROVED_PANEL_COMPONENTS = {
         'cohort-decay-curve',
         'state-flow-funnel',
         'anomaly-ribbon',
+        'pie',
+        'bar',
+        'line',
+        'kpi-table',
       ])
       .optional(),
   }),

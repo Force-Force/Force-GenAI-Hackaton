@@ -3,11 +3,28 @@ import { motion } from "motion/react";
 import { navigateTo } from "../utils/navigation";
 import { ValidationCenter } from "../features/validation/components/ValidationCenter";
 import { useWorkspaceStore } from "../features/workspace/store/workspaceStore";
+import { useInsightStore } from "../features/insights/store/insightStore";
+import { WorkspacePromptBar } from "../features/workspace/components/WorkspacePromptBar";
 import logoUrl from "../assets/logo.png";
 
 export function AuditCenterPage() {
   const runValidation = useWorkspaceStore((s) => s.runValidation);
   const isValidating = useWorkspaceStore((s) => s.isValidating);
+  const queryNightshiftAgent = useInsightStore((s) => s.queryNightshiftAgent);
+  const isLoadingInsights = useInsightStore((s) => s.isLoading);
+
+  const handleRefresh = async () => {
+    await Promise.allSettled([
+      runValidation(),
+      queryNightshiftAgent(
+        "Analyze latest settled transactions and customer cohorts for variance or drift.",
+      ),
+    ]);
+  };
+
+  const handlePromptSubmit = async (text: string) => {
+    await queryNightshiftAgent(text);
+  };
 
   return (
     <motion.div
@@ -18,7 +35,7 @@ export function AuditCenterPage() {
       style={{ backgroundColor: "#FDFFFC" }}
       className="h-screen w-screen flex flex-col font-sans text-[#334139] selection:bg-[#064C1C]/15 antialiased overflow-hidden"
     >
-      {/* Pinned Top Header with Porcelain Gradient (No Border, matching PlanProposalPage) */}
+      {/* Pinned Top Header with Porcelain Gradient */}
       <header
         style={{
           background:
@@ -50,16 +67,24 @@ export function AuditCenterPage() {
         <nav className="flex items-center gap-1.5">
           <button
             type="button"
-            onClick={() => void runValidation()}
-            disabled={isValidating}
+            onClick={handleRefresh}
+            disabled={isValidating || isLoadingInsights}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer disabled:opacity-50"
             title="Re-analyze data and generate fresh insights"
           >
             <RotateCcw
               size={13}
-              className={isValidating ? "animate-spin text-[#D66F14]" : ""}
+              className={
+                isValidating || isLoadingInsights
+                  ? "animate-spin text-[#D66F14]"
+                  : ""
+              }
             />
-            <span>{isValidating ? "Analyzing…" : "Refresh Insights"}</span>
+            <span>
+              {isValidating || isLoadingInsights
+                ? "Analyzing…"
+                : "Refresh Insights"}
+            </span>
           </button>
 
           <button
@@ -91,10 +116,32 @@ export function AuditCenterPage() {
         </nav>
       </header>
 
-      {/* Scrollable Body (Fades smoothly under top Porcelain gradient) */}
-      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 md:px-6 -mt-6 pt-8 pb-16">
+      {/* Scrollable Body */}
+      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 md:px-6 -mt-6 pt-8 pb-28">
         <ValidationCenter />
       </div>
+
+      {/* Pinned Bottom Prompt Bar for Interactive Agent Analysis */}
+      <footer
+        style={{
+          background:
+            "linear-gradient(to top, rgba(253, 255, 252, 1) 0%, rgba(253, 255, 252, 0.95) 55%, rgba(253, 255, 252, 0) 100%)",
+        }}
+        className="shrink-0 w-full pt-10 pb-4 px-4 z-20 flex flex-col items-center pointer-events-none"
+      >
+        <div className="w-full max-w-2xl pointer-events-auto">
+          <WorkspacePromptBar
+            className="relative bottom-auto left-auto translate-x-0 w-full px-0"
+            disabled={isValidating || isLoadingInsights}
+            placeholder={
+              isLoadingInsights
+                ? "Nightshift Analysis Agent querying warehouse... Please wait"
+                : "Ask AuraBI to analyze a metric, generate a pie/bar/trend chart, or verify anomalies..."
+            }
+            onSend={handlePromptSubmit}
+          />
+        </div>
+      </footer>
     </motion.div>
   );
 }

@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, type ChangeEvent } from 'react';
-import { ArrowUp, Workflow, Palette, X, FileText, Mic, Square, Database, Globe, Boxes, Layers } from 'lucide-react';
+import { ArrowUp, Workflow, Palette, X, FileText, Mic, Square, Database, Globe, Boxes, Layers, Wifi, WifiOff } from 'lucide-react';
 import { useChatStore } from '../features/chat/store/chatStore';
 import { usePipelineStore } from '../features/workspace/store/pipelineStore';
+import { useBackendStore } from '../services/session/backendSession';
+import { pipelineApi } from '../services/api/pipelineApi';
 import { parseCsv } from '../utils/parsers/csvParser';
 import { parseSqlDdl } from '../utils/parsers/sqlDdlParser';
 import type { Column, PipelineNode, SourceFormat } from '../types/pipeline';
@@ -63,6 +65,11 @@ export function AgentEntryPage() {
   const [promptIndex, setPromptIndex] = useState(0);
   const [animatedPrompt, setAnimatedPrompt] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Probe backend server health on mount
+  useEffect(() => {
+    void useBackendStore.getState().checkHealth();
+  }, []);
 
   // Animated typewriter cycling through typical prompts directly in the prompt text zone
   useEffect(() => {
@@ -267,7 +274,22 @@ export function AgentEntryPage() {
     const trimmed = prompt.trim();
     if ((!trimmed && attachedResources.length === 0) || isGenerating) return;
 
-    // 1. If resources were attached, instantiate them as canvas nodes in pipelineStore
+    // 1. If backend is online, ensure an active backend pipeline session exists
+    const backendStore = useBackendStore.getState();
+    let currentPipelineId = backendStore.activePipelineId;
+    if (backendStore.isOnline && !currentPipelineId) {
+      try {
+        const pipelineName = trimmed.slice(0, 48) || 'Data Lakehouse Pipeline';
+        const newPipe = await backendStore.createPipeline(pipelineName);
+        if (newPipe) {
+          currentPipelineId = newPipe.id;
+        }
+      } catch (err) {
+        console.warn('Backend pipeline creation failed, falling back to local session:', err);
+      }
+    }
+
+    // 2. If resources were attached, instantiate them as canvas nodes in pipelineStore
     attachedResources.forEach((res, index) => {
       const node: PipelineNode = {
         id: `node_${Date.now()}_${index}`,
@@ -284,9 +306,27 @@ export function AgentEntryPage() {
         },
       };
       addNode(node);
+
+      // Persist source node to backend if online
+      if (backendStore.isOnline && currentPipelineId) {
+        pipelineApi
+          .createNode(currentPipelineId, {
+            type: 'SOURCE',
+            subtype: res.format === 'csv' ? 'csv' : 'generic',
+            label: res.name,
+            position: node.position,
+            status: 'IDLE',
+            data: {
+              format: res.format,
+              fileName: res.fileName,
+              columns: res.columns,
+            },
+          })
+          .catch((err) => console.warn('Could not sync source node to backend:', err));
+      }
     });
 
-    // 2. Prepare message for AI Agent
+    // 3. Prepare message for AI Agent
     let messageContent = trimmed;
     if (attachedResources.length > 0) {
       const resourceSummary = attachedResources
@@ -298,7 +338,7 @@ export function AgentEntryPage() {
         : `I have uploaded the following resource(s): ${resourceSummary}. Please analyze and propose a pipeline integration.`;
     }
 
-    // 3. Send message to AI architect and transition to the AI Planning & Proposal stage
+    // 4. Send message to AI architect and transition to the AI Planning & Proposal stage
     void sendMessage(messageContent);
     setPrompt('');
     setAttachedResources([]);
@@ -348,6 +388,30 @@ export function AgentEntryPage() {
 
         {/* Minimal Actions blended into background */}
         <nav className="flex items-center gap-2">
+          {/* Live Backend Connection Indicator */}
+          <div
+            title={useBackendStore((s) => s.isOnline) ? "Connected to FastAPI Backend (8000)" : "FastAPI Backend Offline (Running in Local Mode)"}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border border-[#334139]/15 bg-white/70"
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{
+                backgroundColor: useBackendStore((s) => s.isOnline) ? '#10B981' : '#9CA3AF',
+              }}
+            />
+            {useBackendStore((s) => s.isOnline) ? (
+              <span className="flex items-center gap-1 text-[#064C1C] font-mono text-[10px]">
+                <Wifi size={10} />
+                <span>API ONLINE</span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-gray-500 font-mono text-[10px]">
+                <WifiOff size={10} />
+                <span>LOCAL</span>
+              </span>
+            )}
+          </div>
+
           <button
             onClick={() => navigateTo('/workspace')}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"

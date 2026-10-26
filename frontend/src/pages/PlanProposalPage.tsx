@@ -28,6 +28,8 @@ import {
   Database,
   TrendingUp,
   Lightbulb,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { navigateTo } from "../utils/navigation";
@@ -35,6 +37,10 @@ import { cn } from "../utils/cn";
 import { Dropdown } from "../components/ui";
 import { useWorkspaceStore } from "../features/workspace/store/workspaceStore";
 import { useChatStore } from "../features/chat/store/chatStore";
+import { usePipelineStore } from "../features/workspace/store/pipelineStore";
+import { useBackendStore } from "../services/session/backendSession";
+import { pipelineApi } from "../services/api/pipelineApi";
+import { toBackendNode } from "../services/mapping/backendGraphMapper";
 import { WorkspacePromptBar } from "../features/workspace/components/WorkspacePromptBar";
 import { usePlanStore, INITIAL_PLAN_MARKDOWN } from "../features/uiop/store/planStore";
 import { Markdown } from "../features/chat/components/Markdown";
@@ -208,9 +214,50 @@ export function PlanProposalPage() {
     setQuestionsFinished(true);
   };
 
-  const handleApprovePlan = () => {
+  const handleApprovePlan = async () => {
     setIsApproving(true);
     setProjectName("Retail Lakehouse Master Pipeline");
+
+    const backendStore = useBackendStore.getState();
+    if (backendStore.isOnline) {
+      try {
+        let pipelineId = backendStore.activePipelineId;
+        if (!pipelineId) {
+          const newPipe = await backendStore.createPipeline("Retail Lakehouse Master Pipeline");
+          pipelineId = newPipe?.id || null;
+        }
+
+        if (pipelineId) {
+          await pipelineApi.updatePipeline(pipelineId, {
+            status: "ACTIVE",
+            architecture_design: {
+              stages: stages.map((s) => ({
+                id: s.id,
+                title: s.title,
+                category: s.category,
+                tables: s.tables,
+              })),
+              decisions: selectedAnswers,
+              kpiCount: selectedKpiIds.length,
+            },
+          });
+
+          // Sync initial pipeline nodes to backend if available
+          const localNodes = usePipelineStore.getState().nodes;
+          for (const node of localNodes) {
+            try {
+              const bNode = toBackendNode(node);
+              await pipelineApi.createNode(pipelineId, bNode);
+            } catch {
+              // Ignore if already created
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Backend sync during plan approval failed, proceeding with local canvas:", err);
+      }
+    }
+
     setTimeout(() => {
       navigateTo("/workspace");
     }, 400);
@@ -383,6 +430,30 @@ export function PlanProposalPage() {
               <span>Replay Live</span>
             </button>
           )}
+
+          {/* Connection Status Pill */}
+          <div
+            title={useBackendStore((s) => s.isOnline) ? "Connected to FastAPI Backend (8000)" : "FastAPI Backend Offline (Running in Local Mode)"}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border border-[#334139]/15 bg-white/70"
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{
+                backgroundColor: useBackendStore((s) => s.isOnline) ? '#10B981' : '#9CA3AF',
+              }}
+            />
+            {useBackendStore((s) => s.isOnline) ? (
+              <span className="flex items-center gap-1 text-[#064C1C] font-mono text-[10px]">
+                <Wifi size={10} />
+                <span>ONLINE</span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-gray-500 font-mono text-[10px]">
+                <WifiOff size={10} />
+                <span>LOCAL</span>
+              </span>
+            )}
+          </div>
 
           <button
             type="button"
