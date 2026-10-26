@@ -1,0 +1,5 @@
+{
+  "name": "AuraBI",
+  "description": "A modern AI-powered Data Engineering Workspace to visually design ETL pipelines, converse with an AI Data Architect backend, and inspect warehouse structures.",
+  "requestFramePermissions": []
+}

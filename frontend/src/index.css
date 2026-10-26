@@ -1,0 +1,321 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Google Sans", "Google Sans Text", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --app-bg: #f8fafc;
+    --app-fg: #0f172a;
+    --scrollbar-thumb: rgba(51, 65, 57, 0.45);
+    --scrollbar-thumb-hover: rgba(51, 65, 57, 0.8);
+    --scrollbar-track: transparent;
+  }
+
+  body {
+    background-color: var(--app-bg);
+    color: var(--app-fg);
+    font-family: var(--font-sans);
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 200ms;
+    transition-timing-function: ease;
+  }
+
+  /* Universal custom charcoal scrollbar across the whole app / process */
+  html,
+  body,
+  * {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: thin;
+  }
+}
+
+/* Dedicated charcoal scrollbar utility */
+.custom-scrollbar {
+  --scrollbar-thumb: rgba(51, 65, 57, 0.45);
+  --scrollbar-thumb-hover: rgba(51, 65, 57, 0.8);
+  --scrollbar-track: transparent;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: thin;
+}
+
+/* Utility to completely hide scrollbar while keeping scroll capability */
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Custom Charcoal scrollbar for WebKit/Blink (Chrome, Edge, Safari, Arc) */
+*::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Fade-in for chat bubbles / popovers. */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* Sound wave animation for voice support */
+@keyframes soundWave {
+  0%, 100% { height: 4px; }
+  50% { height: 18px; }
+}
+.animate-soundwave-1 { animation: soundWave 0.8s ease-in-out infinite; }
+.animate-soundwave-2 { animation: soundWave 0.65s ease-in-out infinite 0.15s; }
+.animate-soundwave-3 { animation: soundWave 1.05s ease-in-out infinite 0.3s; }
+.animate-soundwave-4 { animation: soundWave 0.75s ease-in-out infinite 0.1s; }
+.animate-soundwave-5 { animation: soundWave 0.95s ease-in-out infinite 0.25s; }
+
+/* ---------------------------------------------------------------------------
+ * Pipeline data-flow edge animations (Section 2).
+ * `.aura-edge-flow` draws a dashed overlay that streams from source -> target;
+ * `.aura-edge-particle` is a glowing dot that travels the same path.
+ * ------------------------------------------------------------------------- */
+@keyframes auraDashFlow {
+  to { stroke-dashoffset: -24; }
+}
+
+.aura-edge-flow {
+  stroke-dasharray: 6 8;
+  animation: auraDashFlow 0.6s linear infinite;
+}
+
+.aura-edge-particle {
+  offset-rotate: 0deg;
+  animation: auraParticleMove 1.8s linear infinite;
+}
+
+@keyframes auraParticleMove {
+  from { offset-distance: 0%; }
+  to { offset-distance: 100%; }
+}
+
+/* Respect reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  .aura-edge-flow,
+  .aura-edge-particle {
+    animation: none;
+  }
+}
+
+/* React Flow surface styling */
+.react-flow__controls button {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+}
+.react-flow__attribution {
+  background: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+ * AuraBI Custom Loaders — Modern Web Guidance (`spinner` & `progress-ring`)
+ * Uses semantic `<progress>`, `@property` conic-gradient trails,
+ * `background-clip: border-area` with `mask-image` fallback, and
+ * `prefers-reduced-motion: reduce`.
+ * ------------------------------------------------------------------------- */
+@property --arc-start {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@property --arc-end {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@property --progress-dash-animation {
+  syntax: "*";
+  inherits: false;
+  initial-value: , aura-progress-dash 2.8s ease-in-out infinite;
+}
+
+@property --value {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+progress.aura-spinner:indeterminate::-webkit-progress-bar,
+progress.aura-spinner:indeterminate::-webkit-progress-value,
+progress.aura-progress-ring::-webkit-progress-bar,
+progress.aura-progress-ring::-webkit-progress-value {
+  display: none;
+  background: none;
+}
+
+progress.aura-spinner:indeterminate::-moz-progress-bar,
+progress.aura-progress-ring::-moz-progress-bar {
+  display: none;
+  background: none;
+}
+
+progress.aura-spinner:indeterminate::slider-fill,
+progress.aura-progress-ring::slider-fill {
+  display: none;
+  background: none;
+}
+
+progress.aura-spinner:indeterminate {
+  --_from: calc(90deg + var(--arc-start, 0deg));
+  --_to: calc(90deg + var(--arc-end, 158deg));
+  --size: 56px;
+  --thickness: 4px;
+  --spinner-color: #064C1C;
+  --track-color: rgba(51, 65, 57, 0.14);
+  --spinner-duration: 1.45s;
+  --_used-spinner-duration: var(--spinner-duration);
+
+  position: relative;
+  display: block;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  appearance: none;
+
+  background: conic-gradient(
+      from var(--_from),
+      var(--spinner-color) calc(var(--_to) - var(--_from)),
+      transparent 0
+    )
+    var(--track-color);
+
+  @supports (background-clip: border-area) {
+    background-clip: border-area;
+    border: var(--thickness) solid transparent;
+    background-origin: border-box;
+  }
+
+  @supports not (background-clip: border-area) {
+    --clip-boundary: calc(100% - var(--thickness));
+    mask-image: radial-gradient(
+      farthest-side,
+      transparent var(--clip-boundary),
+      black var(--clip-boundary)
+    );
+    border: 0;
+  }
+
+  animation:
+    aura-progress-spin var(--_used-spinner-duration) linear infinite
+    var(--progress-dash-animation, );
+}
+
+progress.aura-progress-ring {
+  --size: 56px;
+  --thickness: 4px;
+  --track-color: rgba(51, 65, 57, 0.14);
+  --fill-color: #064C1C;
+  --value: attr(value type(<number>));
+
+  display: block;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  appearance: none;
+  transition: --value 0s ease-in-out;
+
+  background: conic-gradient(
+    var(--fill-color) calc(var(--value) * 1%),
+    var(--track-color) 0
+  );
+
+  @supports (background-clip: border-area) {
+    background-clip: border-area;
+    border: var(--thickness) solid transparent;
+    background-origin: border-box;
+  }
+
+  @supports not (background-clip: border-area) {
+    mask-image: radial-gradient(
+      transparent calc(50% - var(--thickness)),
+      black calc(50% - var(--thickness) + 0.5px)
+    );
+    border: 0;
+  }
+}
+
+progress.aura-progress-ring[value="100"] {
+  --fill-color: #064C1C;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  progress.aura-progress-ring {
+    transition-duration: 0.4s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  progress.aura-spinner:indeterminate {
+    --_used-spinner-duration: 6s;
+  }
+}
+
+@keyframes aura-progress-spin {
+  to {
+    rotate: 1turn;
+  }
+}
+
+@keyframes aura-progress-dash {
+  from {
+    --arc-start: 0deg;
+    --arc-end: 3deg;
+  }
+  50% {
+    --arc-start: 100deg;
+    --arc-end: 358deg;
+  }
+  to {
+    --arc-start: 360deg;
+    --arc-end: 363deg;
+  }
+}
+
+
+/* Insight charts: use the app font, not the SVG default */
+.recharts-wrapper, .recharts-wrapper text, .recharts-tooltip-wrapper {
+  font-family: var(--font-sans);
+}
+.recharts-wrapper text {
+  font-variant-numeric: tabular-nums;
+}
