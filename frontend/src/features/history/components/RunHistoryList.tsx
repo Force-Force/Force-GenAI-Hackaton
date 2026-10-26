@@ -103,7 +103,7 @@ export function RunHistoryList({ runs, onSelectRun }: RunHistoryListProps) {
   }
 
   return (
-    <div className="space-y-4 font-sans">
+    <div className="space-y-2 font-sans">
       <div className="flex items-center justify-between pb-2 border-b border-[#334139]/10 text-xs text-[#334139]/70">
         <div className="flex items-center gap-2">
           <Play size={14} className="text-[#064C1C]" />
@@ -116,31 +116,28 @@ export function RunHistoryList({ runs, onSelectRun }: RunHistoryListProps) {
           type="button"
           onClick={() => void handleStartRun()}
           disabled={isStartingRun}
-          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#064C1C] text-white hover:bg-[#1E2D24] transition-colors cursor-pointer shadow-2xs"
+          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#064C1C] text-white hover:bg-[#1E2D24] transition-colors cursor-pointer"
         >
           {isStartingRun ? <Loader2 size={11} className="animate-spin" /> : <Play size={11} />}
           <span>Run Pipeline</span>
         </button>
       </div>
 
-      <div className="space-y-3">
+      <div className="divide-y divide-[#334139]/10">
         {runs.map((run) => {
           const isExpanded = expandedRunId === run.id;
 
           return (
-            <div
-              key={run.id}
-              className="rounded-2xl border border-[#334139]/12 bg-white p-4 space-y-3 transition-all hover:border-[#334139]/25 hover:shadow-2xs font-sans"
-            >
+            <div key={run.id} className="py-3.5 space-y-2">
               {/* Header row */}
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-[#334139]/10 text-[#1E2D24]">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-[#334139]/10 text-[#1E2D24]">
                       Run #{run.run_number}
                     </span>
                     {getStatusBadge(run.status)}
-                    <span className="text-[11px] font-mono font-medium text-[#334139]/60 px-2 py-0.5 rounded bg-[#334139]/5">
+                    <span className="text-[11px] font-mono text-[#334139]/60">
                       {run.trigger_type.toLowerCase().replace('_', ' ')}
                     </span>
                   </div>
@@ -151,7 +148,7 @@ export function RunHistoryList({ runs, onSelectRun }: RunHistoryListProps) {
                       <span>{new Date(run.started_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
                     </span>
                     <span>·</span>
-                    <span>{run.duration_seconds.toFixed(1)}s elapsed</span>
+                    <span>{run.duration_seconds.toFixed(1)}s</span>
                     <span>·</span>
                     <span className="font-semibold text-[#1E2D24]">
                       {run.records_processed.toLocaleString()} rows
@@ -165,7 +162,7 @@ export function RunHistoryList({ runs, onSelectRun }: RunHistoryListProps) {
                     setExpandedRunId(isExpanded ? null : run.id);
                     onSelectRun?.(run);
                   }}
-                  className="p-1 rounded-lg text-[#334139]/50 hover:text-[#1E2D24] hover:bg-[#334139]/5 transition-colors cursor-pointer"
+                  className="p-1 text-[#334139]/50 hover:text-[#1E2D24] transition-colors cursor-pointer"
                   aria-label={isExpanded ? 'Collapse run details' : 'Expand run details'}
                 >
                   {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -174,7 +171,7 @@ export function RunHistoryList({ runs, onSelectRun }: RunHistoryListProps) {
 
               {/* Error banner if any */}
               {run.error_message && (
-                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2">
+                <div className="p-2 rounded bg-rose-50 text-xs text-rose-800 flex items-start gap-2">
                   <AlertTriangle size={14} className="shrink-0 mt-0.5 text-rose-600" />
                   <span className="leading-snug">{run.error_message}</span>
                 </div>
@@ -182,11 +179,11 @@ export function RunHistoryList({ runs, onSelectRun }: RunHistoryListProps) {
 
               {/* Expanded Events Timeline */}
               {isExpanded && run.events && run.events.length > 0 && (
-                <div className="pt-2 border-t border-[#334139]/8 space-y-2 text-xs">
-                  <div className="text-[11px] font-semibold text-[#1E2D24] uppercase tracking-wider">
+                <div className="pt-2 pl-3 border-l-2 border-[#064C1C]/30 space-y-1.5 text-xs">
+                  <div className="text-[10px] font-semibold text-[#1E2D24] uppercase tracking-wider">
                     Execution Steps ({run.events.length})
                   </div>
-                  <div className="space-y-1.5 rounded-xl bg-[#FDFFFC] border border-[#334139]/10 p-2.5">
+                  <div className="space-y-1">
                     {run.events.map((ev) => (
                       <div
                         key={ev.id}
@@ -194,13 +191,13 @@ export function RunHistoryList({ runs, onSelectRun }: RunHistoryListProps) {
                       >
                         <div className="flex items-start gap-2 min-w-0">
                           {ev.status === 'SUCCESS' ? (
-                            <Check size={12} className="text-[#064C1C] shrink-0 mt-0.5" />
+                            <Check size={11} className="text-[#064C1C] shrink-0 mt-0.5" />
                           ) : ev.status === 'WARNING' ? (
-                            <AlertTriangle size={12} className="text-amber-600 shrink-0 mt-0.5" />
+                            <AlertTriangle size={11} className="text-amber-600 shrink-0 mt-0.5" />
                           ) : ev.status === 'ERROR' ? (
-                            <XCircle size={12} className="text-rose-600 shrink-0 mt-0.5" />
+                            <XCircle size={11} className="text-rose-600 shrink-0 mt-0.5" />
                           ) : (
-                            <Clock size={12} className="text-sky-600 shrink-0 mt-0.5" />
+                            <Clock size={11} className="text-sky-600 shrink-0 mt-0.5" />
                           )}
                           <div className="min-w-0">
                             <span className="font-semibold text-[#1E2D24] mr-1.5">{ev.phase}:</span>

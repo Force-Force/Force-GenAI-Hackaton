@@ -66,25 +66,14 @@ export function ProjectHistoryModal() {
           role="dialog"
           aria-modal="true"
           aria-label="Project History & Versions"
-          className="relative w-full max-w-2xl max-h-[88vh] flex flex-col rounded-3xl bg-[#FDFFFC] border border-[#334139]/15 shadow-2xl shadow-[#1E2D24]/15 overflow-hidden z-10"
+          className="relative w-full max-w-2xl max-h-[88vh] flex flex-col rounded-2xl bg-[#FDFFFC] border border-[#334139]/15 shadow-xl overflow-hidden z-10"
         >
-          {/* Porcelain Header */}
-          <header className="px-6 pt-5 pb-4 border-b border-[#334139]/10 bg-white/80 backdrop-blur-sm shrink-0 space-y-3">
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#064C1C]/10 text-[#064C1C] border border-[#064C1C]/20">
-                    Project Ledger
-                  </span>
-                  <span className="text-xs text-[#334139]/40">·</span>
-                  <span className="text-xs font-mono font-semibold text-[#1E2D24]">
-                    Active Revision v{currentVersion}
-                  </span>
-                </div>
-                <h2 className="text-lg font-bold text-[#1E2D24] tracking-tight truncate leading-tight">
-                  {displayName}
-                </h2>
-              </div>
+          {/* Flat Porcelain Header */}
+          <header className="px-6 pt-5 pb-0 border-b border-[#334139]/10 bg-[#FDFFFC] shrink-0 space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-lg font-bold text-[#1E2D24] tracking-tight truncate leading-tight">
+                {displayName}
+              </h2>
 
               <button
                 type="button"
@@ -96,16 +85,16 @@ export function ProjectHistoryModal() {
               </button>
             </div>
 
-            {/* Editorial Tab Switcher */}
-            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#334139]/[0.05] border border-[#334139]/8">
+            {/* Flat Editorial Tab Switcher */}
+            <div className="flex items-center gap-6 border-b border-transparent -mb-px">
               <button
                 type="button"
                 onClick={() => setActiveTab('revisions')}
                 className={cn(
-                  'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer',
+                  'flex items-center gap-2 pb-3 text-xs font-semibold border-b-2 transition-all cursor-pointer -mb-px',
                   activeTab === 'revisions'
-                    ? 'bg-white text-[#1E2D24] shadow-xs'
-                    : 'text-[#334139]/70 hover:text-[#1E2D24] hover:bg-white/50',
+                    ? 'border-[#064C1C] text-[#064C1C]'
+                    : 'border-transparent text-[#334139]/60 hover:text-[#1E2D24]',
                 )}
               >
                 <GitCommit size={14} className={activeTab === 'revisions' ? 'text-[#064C1C]' : ''} />
@@ -119,10 +108,10 @@ export function ProjectHistoryModal() {
                 type="button"
                 onClick={() => setActiveTab('runs')}
                 className={cn(
-                  'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer',
+                  'flex items-center gap-2 pb-3 text-xs font-semibold border-b-2 transition-all cursor-pointer -mb-px',
                   activeTab === 'runs'
-                    ? 'bg-white text-[#1E2D24] shadow-xs'
-                    : 'text-[#334139]/70 hover:text-[#1E2D24] hover:bg-white/50',
+                    ? 'border-[#064C1C] text-[#064C1C]'
+                    : 'border-transparent text-[#334139]/60 hover:text-[#1E2D24]',
                 )}
               >
                 <PlayCircle size={14} className={activeTab === 'runs' ? 'text-[#064C1C]' : ''} />
@@ -136,10 +125,10 @@ export function ProjectHistoryModal() {
                 type="button"
                 onClick={() => setActiveTab('projects')}
                 className={cn(
-                  'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer',
+                  'flex items-center gap-2 pb-3 text-xs font-semibold border-b-2 transition-all cursor-pointer -mb-px',
                   activeTab === 'projects'
-                    ? 'bg-white text-[#1E2D24] shadow-xs'
-                    : 'text-[#334139]/70 hover:text-[#1E2D24] hover:bg-white/50',
+                    ? 'border-[#064C1C] text-[#064C1C]'
+                    : 'border-transparent text-[#334139]/60 hover:text-[#1E2D24]',
                 )}
               >
                 <FolderGit2 size={14} className={activeTab === 'projects' ? 'text-[#064C1C]' : ''} />
@@ -148,8 +137,8 @@ export function ProjectHistoryModal() {
             </div>
           </header>
 
-          {/* Scrollable Content Zone */}
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6">
+          {/* Scrollable Flat Content Zone */}
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-6 py-4">
             {activeTab === 'revisions' && <RevisionTimeline revisions={revisions} />}
             {activeTab === 'runs' && <RunHistoryList runs={runs} />}
             {activeTab === 'projects' && (
@@ -157,8 +146,8 @@ export function ProjectHistoryModal() {
             )}
           </div>
 
-          {/* Porcelain Footer */}
-          <footer className="px-6 py-3 border-t border-[#334139]/10 bg-white/70 backdrop-blur-xs flex items-center justify-between text-xs text-[#334139]/60 shrink-0 font-sans">
+          {/* Flat Porcelain Footer */}
+          <footer className="px-6 py-3 border-t border-[#334139]/10 bg-[#FDFFFC] flex items-center justify-between text-xs text-[#334139]/60 shrink-0 font-sans">
             <div className="flex items-center gap-2">
               <span
                 className="w-1.5 h-1.5 rounded-full"

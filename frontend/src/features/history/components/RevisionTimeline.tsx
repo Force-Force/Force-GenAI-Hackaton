@@ -97,7 +97,7 @@ export function RevisionTimeline({ revisions, onSelectRevision }: RevisionTimeli
   }
 
   return (
-    <div className="space-y-4 font-sans">
+    <div className="space-y-2 font-sans">
       <div className="flex items-center justify-between pb-2 border-b border-[#334139]/10 text-xs text-[#334139]/70">
         <div className="flex items-center gap-2">
           <GitCommit size={14} className="text-[#064C1C]" />
@@ -108,10 +108,7 @@ export function RevisionTimeline({ revisions, onSelectRevision }: RevisionTimeli
         <span className="text-[11px] font-mono text-[#334139]/50">LATEST AT TOP</span>
       </div>
 
-      <div className="relative pl-6 space-y-6">
-        {/* Soft Timeline Rail */}
-        <span className="absolute left-[11px] top-3 bottom-4 w-px bg-[#334139]/15" />
-
+      <div className="divide-y divide-[#334139]/10">
         {revisions.map((rev, idx) => {
           const isLatest = idx === 0;
           const isExpanded = expandedId === rev.id;
@@ -119,137 +116,115 @@ export function RevisionTimeline({ revisions, onSelectRevision }: RevisionTimeli
           const isSuccess = restoredSuccessId === rev.id;
 
           return (
-            <div key={rev.id} className="relative group">
-              {/* Timeline Node Icon */}
-              <span
-                className={cn(
-                  'absolute -left-6 top-1.5 w-6 h-6 rounded-full flex items-center justify-center transition-all shadow-2xs',
-                  isLatest
-                    ? 'bg-[#064C1C] text-white ring-4 ring-[#064C1C]/15'
-                    : 'bg-white border-2 border-[#334139]/25 text-[#334139]/60 group-hover:border-[#064C1C] group-hover:text-[#064C1C]',
-                )}
-              >
-                {isLatest ? <Check size={12} strokeWidth={3} /> : <GitCommit size={12} />}
-              </span>
-
-              {/* Revision Card */}
-              <div
-                className={cn(
-                  'rounded-2xl border transition-all duration-200 bg-white p-4 space-y-3',
-                  isLatest
-                    ? 'border-[#064C1C]/30 shadow-xs ring-1 ring-[#064C1C]/10'
-                    : 'border-[#334139]/12 hover:border-[#334139]/25 hover:shadow-2xs',
-                )}
-              >
-                {/* Header Row */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-[#1E2D24] text-[#FDFFFC]">
-                        v{rev.revision}
+            <div key={rev.id} className="py-3.5 space-y-2">
+              {/* Header Row */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-[#1E2D24] text-[#FDFFFC]">
+                      v{rev.revision}
+                    </span>
+                    {isLatest && (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide uppercase bg-[#064C1C]/10 text-[#064C1C]">
+                        Active
                       </span>
-                      {isLatest && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase bg-[#064C1C]/10 text-[#064C1C] border border-[#064C1C]/25">
-                          Active State
-                        </span>
-                      )}
-                      {rev.tags.includes('rollback') && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                          Rollback
-                        </span>
-                      )}
-                      {getAuthorBadge(rev.author_type, rev.author_name)}
-                    </div>
-
-                    <h3 className="text-sm font-bold text-[#1E2D24] leading-snug">
-                      {rev.title}
-                    </h3>
+                    )}
+                    {rev.tags.includes('rollback') && (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700">
+                        Rollback
+                      </span>
+                    )}
+                    {getAuthorBadge(rev.author_type, rev.author_name)}
                   </div>
 
-                  {/* Actions: Expand & Rollback */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {!isLatest && (
-                      <button
-                        type="button"
-                        onClick={() => void handleRollback(rev)}
-                        disabled={isRestoring}
-                        className={cn(
-                          'inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border transition-all cursor-pointer',
-                          isSuccess
-                            ? 'bg-[#064C1C] text-white border-[#064C1C]'
-                            : 'bg-white text-[#334139] border-[#334139]/20 hover:border-[#064C1C] hover:text-[#064C1C] hover:bg-[#064C1C]/5',
-                        )}
-                        title="Restore this architectural revision to canvas"
-                      >
-                        {isRestoring ? (
-                          <RotateCcw size={11} className="animate-spin" />
-                        ) : isSuccess ? (
-                          <Check size={11} />
-                        ) : (
-                          <RotateCcw size={11} />
-                        )}
-                        <span>{isSuccess ? 'Restored' : isRestoring ? 'Restoring…' : 'Restore'}</span>
-                      </button>
-                    )}
+                  <h3 className="text-sm font-bold text-[#1E2D24] leading-snug">
+                    {rev.title}
+                  </h3>
+                </div>
 
+                {/* Actions: Expand & Rollback */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {!isLatest && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setExpandedId(isExpanded ? null : rev.id);
-                        onSelectRevision?.(rev);
-                      }}
-                      className="p-1 rounded-lg text-[#334139]/50 hover:text-[#1E2D24] hover:bg-[#334139]/5 transition-colors cursor-pointer"
-                      aria-label={isExpanded ? 'Collapse revision details' : 'Expand revision details'}
+                      onClick={() => void handleRollback(rev)}
+                      disabled={isRestoring}
+                      className={cn(
+                        'inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors cursor-pointer',
+                        isSuccess
+                          ? 'bg-[#064C1C] text-white'
+                          : 'text-[#064C1C] hover:bg-[#064C1C]/10',
+                      )}
+                      title="Restore this architectural revision to canvas"
                     >
-                      {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      {isRestoring ? (
+                        <RotateCcw size={11} className="animate-spin" />
+                      ) : isSuccess ? (
+                        <Check size={11} />
+                      ) : (
+                        <RotateCcw size={11} />
+                      )}
+                      <span>{isSuccess ? 'Restored' : isRestoring ? 'Restoring…' : 'Restore'}</span>
                     </button>
-                  </div>
-                </div>
-
-                {/* Editorial Description */}
-                {rev.description && (
-                  <p className="text-xs text-[#334139]/80 leading-relaxed font-sans">
-                    {rev.description}
-                  </p>
-                )}
-
-                {/* Summary Metadata Metrics */}
-                <div className="flex items-center gap-4 text-xs text-[#334139]/60 font-sans pt-1 border-t border-[#334139]/8">
-                  <div className="flex items-center gap-1.5">
-                    <Clock size={12} className="text-[#334139]/40" />
-                    <span>{new Date(rev.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Layers size={12} className="text-[#334139]/40" />
-                    <span>
-                      {rev.node_count} node{rev.node_count === 1 ? '' : 's'} · {rev.edge_count} connection{rev.edge_count === 1 ? '' : 's'}
-                    </span>
-                  </div>
-                  {rev.stage_count > 0 && (
-                    <div className="hidden sm:flex items-center gap-1.5">
-                      <Workflow size={12} className="text-[#334139]/40" />
-                      <span>{rev.stage_count} stages</span>
-                    </div>
                   )}
-                </div>
 
-                {/* Expanded Details: Changes list & operations */}
-                {isExpanded && rev.operations_summary && rev.operations_summary.length > 0 && (
-                  <div className="pt-2 border-t border-[#334139]/8 space-y-2 text-xs">
-                    <div className="text-[11px] font-semibold text-[#1E2D24] uppercase tracking-wider">
-                      Operations Applied ({rev.operations_summary.length})
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setExpandedId(isExpanded ? null : rev.id);
+                      onSelectRevision?.(rev);
+                    }}
+                    className="p-1 text-[#334139]/50 hover:text-[#1E2D24] transition-colors cursor-pointer"
+                    aria-label={isExpanded ? 'Collapse revision details' : 'Expand revision details'}
+                  >
+                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Editorial Description */}
+              {rev.description && (
+                <p className="text-xs text-[#334139]/80 leading-relaxed font-sans">
+                  {rev.description}
+                </p>
+              )}
+
+              {/* Flat Metadata Metrics */}
+              <div className="flex items-center gap-4 text-[11px] text-[#334139]/60 font-sans">
+                <div className="flex items-center gap-1.5">
+                  <Clock size={11} className="text-[#334139]/40" />
+                  <span>{new Date(rev.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+                </div>
+                <span>·</span>
+                <div>
+                  {rev.node_count} node{rev.node_count === 1 ? '' : 's'} · {rev.edge_count} connection{rev.edge_count === 1 ? '' : 's'}
+                </div>
+                {rev.stage_count > 0 && (
+                  <>
+                    <span>·</span>
+                    <div className="hidden sm:inline">
+                      {rev.stage_count} stages
                     </div>
-                    <ul className="space-y-1.5 rounded-xl bg-[#FDFFFC] border border-[#334139]/10 p-2.5">
-                      {rev.operations_summary.map((op, i) => (
-                        <li key={i} className="flex items-start gap-2 text-[#334139]/85">
-                          <Check size={12} className="text-[#064C1C] shrink-0 mt-0.5" />
-                          <span className="leading-tight">{op}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  </>
                 )}
               </div>
+
+              {/* Expanded Details: Flat operations list */}
+              {isExpanded && rev.operations_summary && rev.operations_summary.length > 0 && (
+                <div className="pt-2 pl-3 border-l-2 border-[#064C1C]/30 space-y-1.5 text-xs">
+                  <div className="text-[10px] font-semibold text-[#1E2D24] uppercase tracking-wider">
+                    Operations Applied ({rev.operations_summary.length})
+                  </div>
+                  <ul className="space-y-1">
+                    {rev.operations_summary.map((op, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[#334139]/85">
+                        <Check size={11} className="text-[#064C1C] shrink-0 mt-0.5" />
+                        <span className="leading-tight">{op}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           );
         })}
