@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { ApiError } from '../http/client';
 import { pipelineApi } from '../api/pipelineApi';
 import { chatApi } from '../api/chatApi';
 import { runAndGovernanceApi } from '../api/runAndGovernanceApi';
@@ -164,6 +165,15 @@ export const useBackendStore = create<BackendSessionState>()(
           return pipeline;
         } catch (err) {
           set({ isLoading: false });
+          // The remembered pipeline no longer exists (e.g. the database was recreated):
+          // forget it and open the most recent pipeline instead.
+          if (err instanceof ApiError && err.status === 404 && get().activePipelineId === pipelineId) {
+            set({ activePipelineId: null, activePipeline: null });
+            pipelineSocket.disconnect();
+            const list = await get().refreshPipelines();
+            if (list.length > 0) return get().loadPipeline(list[0].id);
+            useWorkspaceStore.getState().setProjectName('New Pipeline');
+          }
           return null;
         }
       },

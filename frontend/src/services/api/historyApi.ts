@@ -50,32 +50,49 @@ export const historyApi = {
   ): Promise<PipelineRunHistoryItem[]> {
     try {
       const runs = await runAndGovernanceApi.listRuns(pipelineId, params, signal);
-      // Map BackendRun to PipelineRunHistoryItem if necessary
-      return runs.map((r, idx) => ({
-        id: r.id,
-        pipeline_id: pipelineId,
-        run_number: runs.length - idx,
-        status: r.status,
-        trigger_type: ((r.context?.trigger_type as any) || 'MANUAL'),
-        started_at: r.created_at || new Date().toISOString(),
-        completed_at: r.updated_at,
-        duration_seconds: typeof r.context?.duration_seconds === 'number' ? r.context.duration_seconds : 14,
-        records_processed: typeof r.context?.records_processed === 'number' ? r.context.records_processed : 1248500,
-        nodes_executed: typeof r.context?.nodes_executed === 'number' ? r.context.nodes_executed : 5,
-        total_nodes: typeof r.context?.total_nodes === 'number' ? r.context.total_nodes : 5,
-        error_message: r.error_message,
-        events: Array.isArray(r.events)
-          ? r.events.map((e, eIdx) => ({
+      // Backend runs (newest first) -> history items, using only what the backend recorded.
+      return runs.map((r, idx) => {
+        const run = r as typeof r & { started_at?: string | null; completed_at?: string | null };
+        const ctx = r.context ?? {};
+        const count = (v: unknown) => (typeof v === 'number' ? v : 0);
+        const startedAt = run.started_at || r.created_at || '';
+        const completedAt = run.completed_at || undefined;
+        return {
+          id: r.id,
+          pipeline_id: pipelineId,
+          run_number: runs.length - idx,
+          status: r.status,
+          trigger_type: ((ctx.trigger_type as PipelineRunHistoryItem['trigger_type']) || 'MANUAL'),
+          started_at: startedAt,
+          completed_at: completedAt,
+          duration_seconds:
+            startedAt && completedAt
+              ? Math.max(0, (Date.parse(completedAt) - Date.parse(startedAt)) / 1000)
+              : 0,
+          records_processed: count(ctx.records_processed),
+          nodes_executed: count(ctx.nodes_executed),
+          total_nodes: count(ctx.total_nodes),
+          error_message: r.error_message,
+          events: (r.events ?? []).map((e, eIdx) => {
+            const type = String(e.event_type ?? '');
+            const payload = (e.payload ?? {}) as Record<string, unknown>;
+            return {
               id: (e.id as string) || `event_${eIdx}`,
-              timestamp: (e.timestamp as string) || (r.created_at || new Date().toISOString()),
-              phase: (e.phase as string) || (e.stage as string) || 'Execution',
-              status: (e.status as any) || 'SUCCESS',
-              message: (e.message as string) || 'Step completed',
-              node_id: e.node_id as string | undefined,
-              duration_ms: (e.duration_ms as number) || undefined,
-            }))
-          : [],
-      }));
+              timestamp: (e.created_at as string) || startedAt,
+              phase: type || 'RUN',
+              status: /FAIL|ERROR/.test(type)
+                ? ('ERROR' as const)
+                : /APPROVAL|PAUSE|QUESTION|PII/.test(type)
+                  ? ('WARNING' as const)
+                  : /STARTED/.test(type)
+                    ? ('RUNNING' as const)
+                    : ('SUCCESS' as const),
+              message: (e.message_md as string) || type,
+              node_id: payload.node_id as string | undefined,
+            };
+          }),
+        };
+      });
     } catch {
       return [];
     }
