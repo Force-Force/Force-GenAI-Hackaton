@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import ProgrammingError
 
-from app.api.v1 import agent_tasks, analysis, chat, edges, etl, execution, guardian, nodes, pipelines, questions, ws
+from app.api.v1 import agent_tasks, analysis, chat, edges, etl, execution, guardian, nodes, pipelines, plan, questions, ws
 from app.config import get_settings
 
 settings = get_settings()
