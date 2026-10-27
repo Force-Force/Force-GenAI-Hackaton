@@ -57,38 +57,50 @@ export const historyApi = {
         const count = (v: unknown) => (typeof v === 'number' ? v : 0);
         const startedAt = run.started_at || r.created_at || '';
         const completedAt = run.completed_at || undefined;
+        const computedDuration =
+          startedAt && completedAt
+            ? Math.max(0, (Date.parse(completedAt) - Date.parse(startedAt)) / 1000)
+            : 0;
         return {
           id: r.id,
-          pipeline_id: pipelineId,
-          run_number: runs.length - idx,
+          pipeline_id: r.pipeline_id || pipelineId,
+          run_number: typeof r.run_number === 'number' ? r.run_number : runs.length - idx,
           status: r.status,
           trigger_type: ((ctx.trigger_type as PipelineRunHistoryItem['trigger_type']) || 'MANUAL'),
           started_at: startedAt,
           completed_at: completedAt,
           duration_seconds:
-            startedAt && completedAt
-              ? Math.max(0, (Date.parse(completedAt) - Date.parse(startedAt)) / 1000)
-              : 0,
-          records_processed: count(ctx.records_processed),
-          nodes_executed: count(ctx.nodes_executed),
-          total_nodes: count(ctx.total_nodes),
+            typeof r.duration_seconds === 'number' ? r.duration_seconds : computedDuration,
+          records_processed:
+            typeof r.records_processed === 'number'
+              ? r.records_processed
+              : count(ctx.records_processed),
+          nodes_executed:
+            typeof r.nodes_executed === 'number' ? r.nodes_executed : count(ctx.nodes_executed),
+          total_nodes:
+            typeof r.total_nodes === 'number' ? r.total_nodes : count(ctx.total_nodes),
           error_message: r.error_message,
           events: (r.events ?? []).map((e, eIdx) => {
             const type = String(e.event_type ?? '');
             const payload = (e.payload ?? {}) as Record<string, unknown>;
+            const rawStatus = String(e.status ?? '');
             return {
               id: (e.id as string) || `event_${eIdx}`,
               timestamp: (e.created_at as string) || startedAt,
-              phase: type || 'RUN',
-              status: /FAIL|ERROR/.test(type)
-                ? ('ERROR' as const)
-                : /APPROVAL|PAUSE|QUESTION|PII/.test(type)
-                  ? ('WARNING' as const)
-                  : /STARTED/.test(type)
-                    ? ('RUNNING' as const)
-                    : ('SUCCESS' as const),
+              phase: (e.phase as string) || type || 'RUN',
+              status:
+                rawStatus === 'SUCCESS' || rawStatus === 'WARNING' || rawStatus === 'ERROR' || rawStatus === 'RUNNING'
+                  ? rawStatus
+                  : /FAIL|ERROR/.test(type)
+                    ? ('ERROR' as const)
+                    : /APPROVAL|PAUSE|QUESTION|PII/.test(type)
+                      ? ('WARNING' as const)
+                      : /STARTED/.test(type)
+                        ? ('RUNNING' as const)
+                        : ('SUCCESS' as const),
               message: (e.message_md as string) || type,
               node_id: payload.node_id as string | undefined,
+              duration_ms: typeof e.duration_ms === 'number' ? e.duration_ms : undefined,
             };
           }),
         };

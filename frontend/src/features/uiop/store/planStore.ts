@@ -27,37 +27,38 @@ export const INITIAL_KPIS: KpiDefinition[] = [
     id: "net-recognized-revenue",
     name: "Net Recognized Revenue",
     category: "Finance",
-    formula: "SUM(gross_amount - tax_amount - refund_amount)",
+    formula:
+      "SUM(gross_amount - gateway_fee - discount_amount - refund_amount)",
     sourceSystem: "Stripe Webhooks + Postgres Orders",
     targetMart: "fact_daily_revenue",
-    sourceLedgerValue: "Ledger Baseline",
-    martOutputValue: "Mart Aggregate",
-    variance: "Target: 0.00%",
+    sourceLedgerValue: "$1,150,000.00",
+    martOutputValue: "$1,150,000.00",
+    variance: "0.00%",
     tolerance: "±0.00%",
     description:
-      "Calculates realized net revenue after subtracting refunds, disputes, and localized sales tax.",
+      "Calculates realized Q3 net revenue after subtracting promotional discounts (-$92K), Stripe gateway fees (-$50K), and customer refunds (-$48K).",
     dataRationale:
-      "The AI detected raw order transactions in src_postgres_web_orders and payment charge/refund logs in src_stripe_charges. Raw gross sales alone overstate cash flow by ~4.2% due to unrecorded refunds and merchant disputes, requiring unified ledger reconciliation.",
+      "The AI detected 14,850 completed orders in src_postgres_web_orders and payment settlement logs in src_stripe_events. Raw gross sales ($1.34M) overstate bank cash deposits by 14.2% ($190K) due to promo codes, payment fees, and returns, requiring unified ledger reconciliation.",
     businessImpact:
-      "Critical for GAAP/IFRS revenue recognition, cash runway forecasting, and board reporting. Gives finance leadership immediate visibility into true settled net income.",
+      "Gives the business owner and finance lead immediate visibility into true settled net cash flow ($1.15M) vs storefront gross sales ($1.34M).",
   },
   {
     id: "gross-merchandise-volume",
     name: "Gross Merchandise Volume (GMV)",
     category: "Finance",
-    formula: "SUM(gross_volume)",
+    formula: "SUM(gross_amount)",
     sourceSystem: "PostgreSQL Web Orders",
     targetMart: "v_bi_executive_sales",
-    sourceLedgerValue: "Order Total",
-    martOutputValue: "GMV View",
-    variance: "Target: 0.00%",
+    sourceLedgerValue: "$1,340,000.00",
+    martOutputValue: "$1,340,000.00",
+    variance: "0.00%",
     tolerance: "±0.00%",
     description:
-      "Total monetary value of merchandise ordered across digital storefronts prior to deductions.",
+      "Total monetary value of 14,850 customer orders placed across the online storefront and B2B wholesale portal prior to deductions.",
     dataRationale:
-      "Discovered line-item order catalogs in PostgreSQL with order timestamps and item quantities. The AI selected GMV as the fundamental top-of-funnel commercial velocity indicator.",
+      "Discovered line-item order catalogs in PostgreSQL with order timestamps and item quantities ($90.24 average gross basket). The AI selected GMV as the primary top-of-funnel commercial velocity indicator.",
     businessImpact:
-      "Core benchmark for digital storefront expansion, commercial demand momentum, and market share tracking across sales quarters.",
+      "Core benchmark for storefront demand momentum, seasonal bundle performance, and quarterly growth tracking.",
   },
   {
     id: "idempotent-charge-parity",
@@ -65,53 +66,53 @@ export const INITIAL_KPIS: KpiDefinition[] = [
     category: "Integrity",
     formula: "COUNT(DISTINCT charge_id) - COUNT(charge_id)",
     sourceSystem: "Stripe Webhook Event Stream",
-    targetMart: "transform_orders_clean",
-    sourceLedgerValue: "Unique Charges",
-    martOutputValue: "Cleaned Orders",
-    variance: "Target: 0 Dupes",
+    targetMart: "clean_stripe_events",
+    sourceLedgerValue: "15,200 Webhook Events",
+    martOutputValue: "14,850 Unique Charges",
+    variance: "350 Deduplicated (0 Lost)",
     tolerance: "Strict 0",
     description:
-      "Guarantees that network-retried payment webhooks do not generate duplicate transaction records.",
+      "Guarantees that network-retried payment webhooks do not generate double-counted sales records.",
     dataRationale:
-      "Stripe webhooks frequently resend charge payloads under network timeouts or retries. The AI identified potential duplicate events that would artificially distort sales numbers if not guarded with SHA-256 event fingerprinting.",
+      "Stripe webhooks resend charge payloads under timeout retries. The AI identified 350 duplicate retry events that would inflate revenue by ~$31.5K if not guarded with SHA-256 event fingerprinting.",
     businessImpact:
-      "Protects operational integrity and prevents double-billing reports, customer confusion, and false revenue surges.",
+      "Protects accounting integrity and prevents double-counted sales or overstated tax liabilities.",
   },
   {
     id: "active-customer-360",
     name: "Active Customer 360 Cohorts",
     category: "Customer",
     formula: "COUNT(DISTINCT customer_id) WHERE is_current = TRUE",
-    sourceSystem: "PostgreSQL Customer Profiles",
+    sourceSystem: "PostgreSQL CRM Profiles",
     targetMart: "dim_customer_360",
-    sourceLedgerValue: "Raw Profiles",
-    martOutputValue: "Current Dim Record",
-    variance: "Target: 0 Orphans",
+    sourceLedgerValue: "4,250 Profiles",
+    martOutputValue: "4,242 Active + 8 DLQ",
+    variance: "0 Orphans",
     tolerance: "0 Orphans",
     description:
-      "Maintains point-in-time dimensional customer histories across loyalty tiers and address changes.",
+      "Maintains point-in-time customer histories across wholesale B2B accounts, subscription members, and one-time buyers.",
     dataRationale:
-      "Identified mutable customer profiles in raw_customers. The AI synthesized an SCD Type-2 dimension model to preserve historical purchase behavior across tier upgrades and geographic migrations.",
+      "Identified 4,250 customer profiles in the CRM database. The AI synthesized an SCD Type-2 dimension model to track repeat purchase behavior when customers upgrade from one-time buyers to subscribers.",
     businessImpact:
-      "Powers customer lifetime value (LTV) models, retention curves, and executive churn analysis without losing historical attribution.",
+      "Powers 90-day customer LTV ($312), repeat retention tracking, and B2B reorder analysis.",
   },
   {
     id: "net-aov",
     name: "Net Average Order Value (AOV)",
     category: "Finance",
-    formula: "SUM(net_volume) / SUM(transaction_count)",
+    formula: "SUM(net_revenue) / COUNT(revenue_key)",
     sourceSystem: "Normalized Orders Mart",
     targetMart: "fact_daily_revenue",
-    sourceLedgerValue: "Net Sales",
-    martOutputValue: "Txn Count",
-    variance: "Target: Benchmark",
+    sourceLedgerValue: "$77.44 Net ($90.24 Gross)",
+    martOutputValue: "$77.44 Net ($90.24 Gross)",
+    variance: "0.00%",
     tolerance: "±0.01%",
     description:
-      "Measures average net revenue generated per fulfilled transaction across currency domains.",
+      "Measures average realized net revenue per order ($1,150,000 across 14,850 orders) after discounts, fees, and returns.",
     dataRationale:
-      "Identified multi-currency checkouts in Stripe and varying cart sizes in PostgreSQL. The AI recognized that price elasticity and cross-border currency conversion require basket-level tracking.",
+      "While gross cart checkout averages $90.24, promotional codes (-$6.20/order), Stripe fees (-$3.37/order), and refunds (-$3.23/order) bring net realized revenue to $77.44 per order.",
     businessImpact:
-      "Essential unit economics KPI for marketing acquisition spend (CAC payback) and promotional basket optimization.",
+      "Essential unit-economics metric for setting free-shipping thresholds ($85+) and profitable ad acquisition budgets.",
   },
 ];
 
@@ -125,7 +126,7 @@ export const INITIAL_REASONING_PHASES: ReasoningPhase[] = [
       "executing postgres_foreign_keys_profiler.sql...",
     ],
     reasoning:
-      "Identified transactional PostgreSQL cluster and Stripe payment event payloads. Detected candidate primary keys on customer_id and idempotency tokens on stripe_charge_id. Selected zero-copy federation via Zetaris gateway to avoid physical replication.",
+      "Identified storefront PostgreSQL orders (src_postgres_web_orders, 14,850 orders), Stripe payment webhook logs (src_stripe_events, 15,200 events), and CRM customer tables (db_crm, 4,250 profiles). Detected primary keys on order_id, charge_id, and account_id.",
   },
   {
     id: "phase-2",
@@ -133,7 +134,7 @@ export const INITIAL_REASONING_PHASES: ReasoningPhase[] = [
     title: "Phase 2: Dimensional Modeling & Trade-off Analysis",
     scripts: ["executing star_schema_generator.sql..."],
     reasoning:
-      "Evaluated Inmon 3NF against Kimball Star Schema. Selected a central fact table (fact_daily_revenue) joined to conformed dimensions (dim_customer_360, dim_product_sku) with SCD Type-2 history tracking.",
+      "Evaluated Inmon 3NF against Kimball Star Schema. Selected a central fact table (fact_daily_revenue) joined to conformed dimensions (dim_customer_360, dim_product, dim_date, dim_payment_method) with SCD Type-2 history tracking.",
   },
   {
     id: "phase-3",
@@ -144,7 +145,7 @@ export const INITIAL_REASONING_PHASES: ReasoningPhase[] = [
       "executing ddl_syntax_compiler.sql...",
     ],
     reasoning:
-      "Verified foreign key referential integrity between dimension surrogate keys and fact measures. Compiled ANSI SQL-92 DDL with partitioned date keys.",
+      "Verified foreign key referential integrity between dimension surrogate keys and fact measures. Compiled ANSI SQL-92 DDL for high-performance Zetaris virtualization gateway.",
   },
   {
     id: "phase-4",
@@ -155,7 +156,7 @@ export const INITIAL_REASONING_PHASES: ReasoningPhase[] = [
       "executing compile_ledger_assertions.sql...",
     ],
     reasoning:
-      "Configured automated verification checks for your selected KPIs and established a financial reconciliation table comparing source ledgers against target marts.",
+      "Configured automated verification checks reconciling $1,340,000.00 Gross Sales (GMV) to $1,150,000.00 Net Recognized Revenue across 14,850 orders with 0.00% variance tolerance.",
   },
 ];
 
@@ -166,13 +167,9 @@ export const INITIAL_PLAN_STAGES: PlanStage[] = [
     title: "Raw Source Ingestion & Bronze Staging",
     category: "Ingestion",
     description:
-      "Virtualize and extract raw transaction streams from operational databases into an immutable staging zone.",
-    tables: [
-      "stg_raw_transactions",
-      "stg_customer_events",
-      "stg_inventory_levels",
-    ],
-    technologies: ["PostgreSQL", "Stripe API", "Zetaris Connector"],
+      "Virtualize and extract 14,850 storefront orders from PostgreSQL, 15,200 Stripe billing webhook events, and 4,250 CRM customer profiles into immutable staging.",
+    tables: ["src_postgres_web_orders", "src_stripe_events", "db_crm"],
+    technologies: ["PostgreSQL CDC", "Stripe API Webhook", "Zetaris Connector"],
   },
   {
     id: "stage-2",
@@ -180,13 +177,9 @@ export const INITIAL_PLAN_STAGES: PlanStage[] = [
     title: "Data Cleansing, Deduplication & SCD-2",
     category: "Transformation",
     description:
-      "Resolve surrogate foreign keys, deduplicate idempotency tokens, and maintain SCD Type-2 historical timeline records.",
-    tables: [
-      "transform_orders_clean",
-      "transform_scd2_customers",
-      "transform_currency_norm",
-    ],
-    technologies: ["SQL dbt", "PySpark", "DuckDB Engine"],
+      "Deduplicate 350 Stripe webhook retry events using SHA-256 tokens, stage 14,850 clean orders, and maintain SCD Type-2 customer loyalty records.",
+    tables: ["stg_clean_orders", "clean_stripe_events", "enrich_customer_scd"],
+    technologies: ["SQL dbt", "Python / Pandas", "DuckDB Engine"],
   },
   {
     id: "stage-3",
@@ -194,14 +187,15 @@ export const INITIAL_PLAN_STAGES: PlanStage[] = [
     title: "Curated Dimensional Star Schema",
     category: "Data Mart",
     description:
-      "Assemble Kimball dimensional model with high-velocity fact measures surrounded by conformed dimensions.",
+      "Assemble certified Kimball dimensional model: central fact_daily_revenue ($1.15M net, $77.44 Net AOV) surrounded by customer, product, date, and payment dimensions.",
     tables: [
       "fact_daily_revenue",
       "dim_customer_360",
-      "dim_product_sku",
-      "dim_calendar",
+      "dim_product",
+      "dim_date",
+      "dim_payment_method",
     ],
-    technologies: ["Snowflake Lakehouse", "Star Schema DDL"],
+    technologies: ["DuckDB / Snowflake Lakehouse", "Star Schema DDL"],
   },
   {
     id: "stage-4",
@@ -211,7 +205,7 @@ export const INITIAL_PLAN_STAGES: PlanStage[] = [
     description:
       "Publish federated SQL views with zero-copy caching, role-based column masking, and sub-second BI aggregations.",
     tables: ["v_bi_executive_sales", "v_customer_retention_cohorts"],
-    technologies: ["Zetaris Gateway", "ANSI SQL-92"],
+    technologies: ["Zetaris Gateway", "ANSI SQL-92 Views"],
   },
   {
     id: "stage-5",
@@ -219,9 +213,9 @@ export const INITIAL_PLAN_STAGES: PlanStage[] = [
     title: "Independent KPI Verification & Reconciliation",
     category: "Verification",
     description:
-      "Automatically verifies your selected KPIs against raw source data to ensure numbers reconcile before pipeline deployment.",
+      "Author-isolated verification agent audits output tables against raw source ledgers, guaranteeing zero dollar leakage ($1,150,000.00 net revenue) and 100% row conservation across all 14,850 orders.",
     tables: ["audit_kpi_reconciliation_ledger", "audit_variance_assertions"],
-    technologies: ["Automated Verifier", "Zero-Variance Assertions"],
+    technologies: ["Independent Auditor Agent", "Zero-Variance Assertions"],
   },
 ];
 
@@ -337,73 +331,102 @@ export const INITIAL_CLARIFYING_QUESTIONS: ClarifyingQuestion[] = [
 export const INITIAL_COMPILED_SQL = `-- AuraBI Auto-Compiled Warehouse DDL
 -- Dialect: ANSI SQL-92 / Zetaris Virtualization Gateway
 
--- Stage 01: Bronze Staging Table
-CREATE TABLE stg_raw_transactions (
-    transaction_id VARCHAR(64) PRIMARY KEY,
+-- Stage 01 & 02: Staging Clean Orders
+CREATE TABLE stg_clean_orders (
+    order_id BIGINT PRIMARY KEY,
     customer_id VARCHAR(64) NOT NULL,
-    amount DECIMAL(12,2) NOT NULL,
-    currency VARCHAR(3) DEFAULT 'USD',
-    event_timestamp TIMESTAMP NOT NULL,
-    ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    product_sku VARCHAR(100) NOT NULL,
+    quantity INT NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
+    gross_amount DECIMAL(14,2) NOT NULL,
+    order_time TIMESTAMP NOT NULL,
+    status VARCHAR(50) DEFAULT 'completed'
 );
 
--- Stage 02: Cleaned & Normalized Orders
-CREATE TABLE transform_orders_clean (
-    order_id VARCHAR(64) PRIMARY KEY,
+-- Stage 02: Deduplicated & Normalized Stripe Charges
+CREATE TABLE clean_stripe_events (
+    charge_id VARCHAR(64) PRIMARY KEY,
     customer_id VARCHAR(64) NOT NULL,
-    gross_amount DECIMAL(14,2) NOT NULL,
-    tax_amount DECIMAL(14,2) DEFAULT 0.00,
-    net_amount DECIMAL(14,2) NOT NULL,
-    is_valid_transaction BOOLEAN DEFAULT TRUE
+    gross_charge_usd DECIMAL(14,2) NOT NULL,
+    gateway_fee_usd DECIMAL(10,2) NOT NULL,
+    refunded BOOLEAN DEFAULT FALSE,
+    settled_at TIMESTAMP NOT NULL
 );
 
 -- Stage 02 & 03: Conformed SCD Type-2 Customer Dimension
 CREATE TABLE dim_customer_360 (
     customer_key BIGINT PRIMARY KEY,
     customer_id VARCHAR(64) NOT NULL,
-    customer_name VARCHAR(255),
-    tier VARCHAR(50),
+    email VARCHAR(250) NOT NULL,
+    full_name VARCHAR(150),
+    tier VARCHAR(50) DEFAULT 'Standard',
+    country VARCHAR(100),
     valid_from TIMESTAMP NOT NULL,
     valid_to TIMESTAMP,
     is_current BOOLEAN DEFAULT TRUE
 );
 
+-- Stage 03: Catalog Product Dimension
+CREATE TABLE dim_product (
+    product_key BIGINT PRIMARY KEY,
+    sku_code VARCHAR(100) NOT NULL UNIQUE,
+    product_name VARCHAR(150) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    unit_cost DECIMAL(10,2) NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL
+);
+
+-- Stage 03: Calendar Date Dimension
+CREATE TABLE dim_date (
+    date_key INT PRIMARY KEY,
+    calendar_date DATE NOT NULL,
+    year INT NOT NULL,
+    quarter INT NOT NULL,
+    month INT NOT NULL,
+    is_weekend BOOLEAN DEFAULT FALSE
+);
+
 -- Stage 03: Central Fact Table
 CREATE TABLE fact_daily_revenue (
     revenue_key BIGINT PRIMARY KEY,
-    date_key INT NOT NULL,
     customer_key BIGINT REFERENCES dim_customer_360(customer_key),
-    gross_volume DECIMAL(18,2) NOT NULL,
-    net_volume DECIMAL(18,2) NOT NULL,
-    transaction_count INT NOT NULL
+    product_key BIGINT REFERENCES dim_product(product_key),
+    date_key INT NOT NULL,
+    payment_method_sk INT NOT NULL,
+    gross_amount DECIMAL(14,2) NOT NULL,
+    gateway_fee DECIMAL(10,2) DEFAULT 0.00,
+    discount_amount DECIMAL(10,2) DEFAULT 0.00,
+    refund_amount DECIMAL(10,2) DEFAULT 0.00,
+    net_revenue DECIMAL(14,2) NOT NULL
 );
 
 -- Stage 04: Zetaris SQL Virtualization Endpoint
 CREATE OR REPLACE VIEW v_bi_executive_sales AS
 SELECT 
-    d.date_key,
-    c.customer_name,
+    f.date_key,
+    c.full_name AS customer_name,
     c.tier,
-    f.gross_volume,
-    f.net_volume,
-    f.transaction_count
+    SUM(f.gross_amount) AS gross_volume,
+    SUM(f.net_revenue) AS net_volume,
+    COUNT(f.revenue_key) AS transaction_count
 FROM fact_daily_revenue f
 JOIN dim_customer_360 c ON f.customer_key = c.customer_key
-WHERE c.is_current = TRUE;
+WHERE c.is_current = TRUE
+GROUP BY f.date_key, c.full_name, c.tier;
 
 -- Stage 05: Independent Audit Agent Reconciliation Assertions (Author-Isolated)
 CREATE OR REPLACE VIEW audit_kpi_reconciliation_ledger AS
 SELECT
     'Net Recognized Revenue' AS kpi_name,
-    (SELECT SUM(amount) FROM stg_raw_transactions) AS source_ledger_total,
-    (SELECT SUM(net_volume) FROM fact_daily_revenue) AS mart_output_total,
-    (SELECT SUM(amount) FROM stg_raw_transactions) - (SELECT SUM(net_volume) FROM fact_daily_revenue) AS variance_delta;
+    (SELECT SUM(gross_charge_usd - gateway_fee_usd) FROM clean_stripe_events WHERE NOT refunded) AS source_ledger_total,
+    (SELECT SUM(net_revenue) FROM fact_daily_revenue) AS mart_output_total,
+    (SELECT SUM(gross_charge_usd - gateway_fee_usd) FROM clean_stripe_events WHERE NOT refunded) - (SELECT SUM(net_revenue) FROM fact_daily_revenue) AS variance_delta;
 `;
 
 export const INITIAL_PLAN_MARKDOWN = `# Pipeline Implementation Architecture Plan
 
 ## Executive Overview
-AuraBI has formulated an autonomous, production-grade lakehouse pipeline to ingest, cleanse, normalize, and dimensionalize transactional records from operational PostgreSQL and Stripe webhook streams into a certified Kimball Star Schema.
+AuraBI has formulated an autonomous, production-grade lakehouse pipeline to ingest, cleanse, normalize, and dimensionalize transactional records from operational PostgreSQL (\`src_postgres_web_orders\`) and Stripe webhook streams (\`src_stripe_events\`) into a certified Kimball Star Schema.
 
 ---
 
@@ -412,28 +435,35 @@ The ingestion tier establishes automated, idempotent extract streams directly fr
 
 - **PostgreSQL Database Stream (\`src_postgres_web_orders\`)**:
   - **Ingestion Mode**: 15-Minute Micro-batch Change Data Capture (CDC).
-  - **Landing Target**: \`stg_raw_transactions\`.
-  - **Data Invariants**: Strict primary key uniqueness on \`transaction_id\` and UTC timestamp alignment.
-  - **Partitioning**: Dynamic date partitioning on \`event_timestamp\` (\`yyyy/mm/dd\`) for high-throughput parallel staging.
+  - **Landing Target**: \`stg_clean_orders\`.
+  - **Data Invariants**: Strict primary key uniqueness on \`order_id\` and UTC timestamp alignment.
+  - **Partitioning**: Dynamic date partitioning on \`order_time\` (\`yyyy/mm/dd\`) for high-throughput parallel staging.
 
-- **Stripe Webhook Gateway (\`src_stripe_charges\`)**:
+- **Stripe Webhook Gateway (\`src_stripe_events\`)**:
   - **Deduplication Strategy**: Payload SHA-256 fingerprint verification to enforce idempotent event handling.
   - **Multi-Currency Normalization**: Automatic currency conversion to standardized base USD at point of capture.
-  - **Landing Target**: \`raw_stripe_charges\`.
+  - **Landing Target**: \`clean_stripe_events\`.
+
+- **CRM Operational Database (\`db_crm\`)**:
+  - **Containers**: \`crm_accounts\` and \`crm_contacts\` imported via zero-copy PostgreSQL connector.
 
 ---
 
 ## Stage 2: Cleansing, Normalization & Quality Assurance (Silver Layer)
 Raw incoming streams are parsed through schema validation, type enforcement, and automated deduplication rules to build audit-ready silver datasets.
 
-- **Order Cleansing & Quality Control (\`transform_orders_clean\`)**:
+- **Order Cleansing & Quality Control (\`stg_clean_orders\`)**:
   - **Error Boundary**: Dead-Letter Queue (DLQ) Quarantine (Routes invalid rows to isolation table).
-  - Calculate normalized line-item totals (\`gross_amount\`, \`tax_amount\`, \`discount_amount\`, \`net_amount\`).
-  - Standardize lifecycle status enumerations (\`completed\`, \`refunded\`, \`disputed\`).
+  - Calculate normalized line-item totals (\`gross_amount\`, \`unit_price\`, \`quantity\`).
+  - Standardize lifecycle status enumerations (\`completed\`, \`settled\`).
+
+- **Stripe Idempotency & Clean Event Engine (\`clean_stripe_events\`)**:
+  - Deduplicate 350 webhook network retries using SHA-256 idempotency tokens across 15,200 events (yielding 14,850 unique settled charges).
+  - Standardize gross charges, interchange gateway fees, and refund flags.
 
 - **Customer Dimension Historical Tracking (\`dim_customer_360\`)**:
   - **Historical Strategy**: Slowly Changing Dimension (SCD) Type-2.
-  - Generates integer surrogate keys (\`customer_key\`) and tracks profile, address, and tier changes over time.
+  - Generates integer surrogate keys (\`customer_key\`) and tracks profile, address, and tier changes across 4,250 customer profiles.
   - Effective interval tracking via \`valid_from\` and \`valid_to\` timestamps with a single \`is_current = TRUE\` active record per customer.
 
 ---
@@ -442,30 +472,31 @@ Raw incoming streams are parsed through schema validation, type enforcement, and
 The curated business intelligence layer arranges data into a Kimball-compliant star schema optimized for fast analytical aggregations.
 
 - **Central Daily Revenue Fact Table (\`fact_daily_revenue\`)**:
-  - **Grain**: One record per finalized customer order transaction per calendar day.
-  - **Dimensional Keys**: Foreign key references to \`dim_dates\`, \`dim_customer_360\`, and \`dim_products\`.
-  - **Additive Measures**: \`gross_volume\`, \`net_volume\`, \`tax_amount\`, and \`transaction_count\`.
+  - **Grain**: One record per finalized customer order transaction per calendar day (14,850 orders in Q3).
+  - **Dimensional Keys**: Foreign key references to \`dim_date\`, \`dim_customer_360\`, \`dim_product\`, and \`dim_payment_method\`.
+  - **Additive Measures**: \`gross_amount\` ($1,340,000.00), \`discount_amount\` ($92,000.00), \`gateway_fee\` ($50,000.00), \`refund_amount\` ($48,000.00), and \`net_revenue\` ($1,150,000.00 — $77.44 Net AOV).
 
 - **Conformed Supporting Dimensions**:
-  - **\`dim_dates\`**: Pre-computed corporate fiscal calendar supporting 4-4-5 accounting quarters, ISO weeks, and holiday flags.
-  - **\`dim_products\`**: Standardized SKU catalog hierarchy, department rollups, and category taxonomies.
+  - **\`dim_date\`**: Pre-computed corporate fiscal calendar supporting 4-4-5 accounting quarters, ISO weeks, and weekend flags.
+  - **\`dim_product\`**: Standardized SKU catalog hierarchy (Signature Essentials, Starter Bundles, Monthly Refills, Accessories), unit costs, and category taxonomies.
+  - **\`dim_payment_method\`**: Gateway settlement rails (Stripe Card, ACH/SEPA, Apple Pay, Wholesale Invoice) and basis-point interchange rate tiers.
 
 ---
 
 ## Stage 4: Virtualization & Analytical Query Delivery
-- **Zetaris Federated Endpoints (\`v_bi_executive_sales\`)**:
-  - Exposes certified ANSI SQL-92 query views for enterprise BI platforms (Tableau, PowerBI, Superset).
+- **Zetaris Federated Endpoints (\`v_bi_executive_sales\` & \`v_customer_retention_cohorts\`)**:
+  - Exposes certified ANSI SQL-92 query views for BI dashboards and natural-language analytics.
   - Sub-second execution SLAs powered by zero-copy semantic caching.
-  - Dynamic column-level masking applied to sensitive customer PII (email, address, card fingerprint).
+  - Dynamic column-level masking applied to sensitive customer PII (email, card fingerprint).
 
 ---
 
 ## Stage 5: Independent Verification & Audit Contracts
 Before pipeline promotion, an author-isolated verification agent audits output tables directly against source transactions:
-- **Net Recognized Revenue**: Reconciles Stripe settled net transactions with warehouse fact totals (0.00% variance tolerance).
-- **Gross Merchandise Volume (GMV)**: Verifies zero dollar leakage between raw ingestion and executive views.
-- **Idempotent Charge Parity**: Strict zero duplicate assertions on payment webhooks.
-- **Active Customer 360**: Validates SCD-2 timeline continuity with zero orphan records.
+- **Net Recognized Revenue**: Reconciles Stripe settled net transactions ($1,150,000.00) with warehouse fact totals (0.00% variance tolerance).
+- **Gross Merchandise Volume (GMV)**: Verifies zero dollar leakage ($1,340,000.00 across 14,850 orders) between raw ingestion and executive views.
+- **Idempotent Charge Parity**: Strict zero duplicate assertions on payment webhooks (350 retries absorbed, 0 lost rows).
+- **Active Customer 360**: Validates SCD-2 timeline continuity across 4,242 active customers with zero orphan records.
 `;
 
 export function generatePlanMarkdown(state?: {
@@ -481,13 +512,17 @@ export function generatePlanMarkdown(state?: {
 
   const isCustomPlan =
     state.isMockSeedData === false ||
-    (state.planTitle && state.planTitle !== "Retail Lakehouse Master Pipeline") ||
+    (state.planTitle &&
+      state.planTitle !== "Retail Lakehouse Master Pipeline") ||
     (state.stages &&
       state.stages.length > 0 &&
-      state.stages.some((s) => !INITIAL_PLAN_STAGES.some((init) => init.id === s.id)));
+      state.stages.some(
+        (s) => !INITIAL_PLAN_STAGES.some((init) => init.id === s.id),
+      ));
 
   if (isCustomPlan) {
-    const title = state.planTitle || "Pipeline Implementation Architecture Plan";
+    const title =
+      state.planTitle || "Pipeline Implementation Architecture Plan";
     const summary =
       state.planSummary ||
       "Architecture blueprint synthesized by the AuraBI Master Agent.";
@@ -564,7 +599,7 @@ export function generatePlanMarkdown(state?: {
   return `# Pipeline Implementation Architecture Plan
 
 ## Executive Overview
-AuraBI has formulated an autonomous, production-grade lakehouse pipeline to ingest, cleanse, normalize, and dimensionalize transactional records from operational PostgreSQL and Stripe webhook streams into a certified Kimball Star Schema.
+AuraBI has formulated an autonomous, production-grade lakehouse pipeline to ingest, cleanse, normalize, and dimensionalize transactional records from operational PostgreSQL (\`src_postgres_web_orders\`) and Stripe webhook streams (\`src_stripe_events\`) into a certified Kimball Star Schema.
 
 ---
 
@@ -573,28 +608,35 @@ The ingestion tier establishes automated, idempotent extract streams directly fr
 
 - **PostgreSQL Database Stream (\`src_postgres_web_orders\`)**:
   - **Ingestion Mode**: ${freq}.
-  - **Landing Target**: \`stg_raw_transactions\`.
-  - **Data Invariants**: Strict primary key uniqueness on \`transaction_id\` and UTC timestamp alignment.
-  - **Partitioning**: Dynamic date partitioning on \`event_timestamp\` (\`yyyy/mm/dd\`) for high-throughput parallel staging.
+  - **Landing Target**: \`stg_clean_orders\`.
+  - **Data Invariants**: Strict primary key uniqueness on \`order_id\` and UTC timestamp alignment.
+  - **Partitioning**: Dynamic date partitioning on \`order_time\` (\`yyyy/mm/dd\`) for high-throughput parallel staging.
 
-- **Stripe Webhook Gateway (\`src_stripe_charges\`)**:
+- **Stripe Webhook Gateway (\`src_stripe_events\`)**:
   - **Deduplication Strategy**: Payload SHA-256 fingerprint verification to enforce idempotent event handling.
   - **Multi-Currency Normalization**: Automatic currency conversion to standardized base USD at point of capture.
-  - **Landing Target**: \`raw_stripe_charges\`.
+  - **Landing Target**: \`clean_stripe_events\`.
+
+- **CRM Operational Database (\`db_crm\`)**:
+  - **Containers**: \`crm_accounts\` and \`crm_contacts\` imported via zero-copy PostgreSQL connector.
 
 ---
 
 ## Stage 2: Cleansing, Normalization & Quality Assurance (Silver Layer)
 Raw incoming streams are parsed through schema validation, type enforcement, and automated deduplication rules to build audit-ready silver datasets.
 
-- **Order Cleansing & Quality Control (\`transform_orders_clean\`)**:
+- **Order Cleansing & Quality Control (\`stg_clean_orders\`)**:
   - **Error Boundary**: ${quality}.
-  - Calculate normalized line-item totals (\`gross_amount\`, \`tax_amount\`, \`discount_amount\`, \`net_amount\`).
-  - Standardize lifecycle status enumerations (\`completed\`, \`refunded\`, \`disputed\`).
+  - Calculate normalized line-item totals (\`gross_amount\`, \`unit_price\`, \`quantity\`).
+  - Standardize lifecycle status enumerations (\`completed\`, \`settled\`).
+
+- **Stripe Idempotency & Clean Event Engine (\`clean_stripe_events\`)**:
+  - Deduplicate 350 webhook network retries using SHA-256 idempotency tokens across 15,200 events (yielding 14,850 unique settled charges).
+  - Standardize gross charges, interchange gateway fees, and refund flags.
 
 - **Customer Dimension Historical Tracking (\`dim_customer_360\`)**:
   - **Historical Strategy**: ${scd}.
-  - Generates integer surrogate keys (\`customer_key\`) and tracks profile, address, and tier changes over time.
+  - Generates integer surrogate keys (\`customer_key\`) and tracks profile, address, and tier changes across 4,250 customer profiles.
   - Effective interval tracking via \`valid_from\` and \`valid_to\` timestamps with a single \`is_current = TRUE\` active record per customer.
 
 ---
@@ -603,30 +645,31 @@ Raw incoming streams are parsed through schema validation, type enforcement, and
 The curated business intelligence layer arranges data into a Kimball-compliant star schema optimized for fast analytical aggregations.
 
 - **Central Daily Revenue Fact Table (\`fact_daily_revenue\`)**:
-  - **Grain**: One record per finalized customer order transaction per calendar day.
-  - **Dimensional Keys**: Foreign key references to \`dim_dates\`, \`dim_customer_360\`, and \`dim_products\`.
-  - **Additive Measures**: \`gross_volume\`, \`net_volume\`, \`tax_amount\`, and \`transaction_count\`.
+  - **Grain**: One record per finalized customer order transaction per calendar day (14,850 orders in Q3).
+  - **Dimensional Keys**: Foreign key references to \`dim_date\`, \`dim_customer_360\`, \`dim_product\`, and \`dim_payment_method\`.
+  - **Additive Measures**: \`gross_amount\` ($1,340,000.00), \`discount_amount\` ($92,000.00), \`gateway_fee\` ($50,000.00), \`refund_amount\` ($48,000.00), and \`net_revenue\` ($1,150,000.00 — $77.44 Net AOV).
 
 - **Conformed Supporting Dimensions**:
-  - **\`dim_dates\`**: Pre-computed corporate fiscal calendar supporting 4-4-5 accounting quarters, ISO weeks, and holiday flags.
-  - **\`dim_products\`**: Standardized SKU catalog hierarchy, department rollups, and category taxonomies.
+  - **\`dim_date\`**: Pre-computed corporate fiscal calendar supporting 4-4-5 accounting quarters, ISO weeks, and weekend flags.
+  - **\`dim_product\`**: Standardized SKU catalog hierarchy (Signature Essentials, Starter Bundles, Monthly Refills, Accessories), unit costs, and category taxonomies.
+  - **\`dim_payment_method\`**: Gateway settlement rails (Stripe Card, ACH/SEPA, Apple Pay, Wholesale Invoice) and basis-point interchange rate tiers.
 
 ---
 
 ## Stage 4: Virtualization & Analytical Query Delivery
-- **Zetaris Federated Endpoints (\`v_bi_executive_sales\`)**:
-  - Exposes certified ANSI SQL-92 query views for enterprise BI platforms (Tableau, PowerBI, Superset).
+- **Zetaris Federated Endpoints (\`v_bi_executive_sales\` & \`v_customer_retention_cohorts\`)**:
+  - Exposes certified ANSI SQL-92 query views for BI dashboards and natural-language analytics.
   - Sub-second execution SLAs powered by zero-copy semantic caching.
-  - Dynamic column-level masking applied to sensitive customer PII (email, address, card fingerprint).
+  - Dynamic column-level masking applied to sensitive customer PII (email, card fingerprint).
 
 ---
 
 ## Stage 5: Independent Verification & Audit Contracts
 Before pipeline promotion, an author-isolated verification agent audits output tables directly against source transactions:
 ${kpiLines}
-- **Zero Dollar Leakage**: Validates that all settled Stripe charges match revenue facts with 0.00% variance tolerance.
-- **Idempotency Assertions**: Guarantees zero duplicate transactions in cleansed marts.
-- **SCD-2 Timeline Integrity**: Verifies zero overlapping temporal ranges across customer dimension history.
+- **Zero Dollar Leakage**: Validates that all settled Stripe charges match revenue facts ($1,150,000.00) with 0.00% variance tolerance.
+- **Idempotency Assertions**: Guarantees zero duplicate transactions in cleansed marts (350 retries absorbed, 0 lost rows across 14,850 orders).
+- **SCD-2 Timeline Integrity**: Verifies zero overlapping temporal ranges across 4,242 active customer profiles.
 `;
 }
 
@@ -689,7 +732,7 @@ export const usePlanStore = create<PlanAndProtocolState>()(
       planTitle: "Retail Lakehouse Master Pipeline",
       planPrompt: null,
       planSummary:
-        "A 5-stage architectural blueprint featuring Bronze raw staging, Silver SCD Type-2 transformations, a Kimball Star Schema warehouse, Zetaris SQL virtualization, and an author-isolated Independent Audit Agent.",
+        "A 5-stage architectural blueprint uniting storefront PostgreSQL orders (14,850 orders), Stripe settlements, and CRM profiles (4,250 customers) into a Kimball Star Schema ($1.15M net revenue, $1.34M GMV, $77.44 Net AOV) with Zetaris SQL virtualization and Independent Audit verification.",
       stages: INITIAL_PLAN_STAGES,
       reasoningPhases: INITIAL_REASONING_PHASES,
       kpis: INITIAL_KPIS,
@@ -714,10 +757,12 @@ export const usePlanStore = create<PlanAndProtocolState>()(
       reports: {},
       isMockSeedData: true,
 
-      setPlanMarkdown: (markdown) => set({ planMarkdown: markdown, isMockSeedData: false }),
+      setPlanMarkdown: (markdown) =>
+        set({ planMarkdown: markdown, isMockSeedData: false }),
       isPlanning: false,
       planError: null,
-      setPlanning: (isPlanning, planError = null) => set({ isPlanning, planError }),
+      setPlanning: (isPlanning, planError = null) =>
+        set({ isPlanning, planError }),
 
       setAnswer: (questionId, optionId) =>
         set((s) => {
@@ -749,7 +794,10 @@ export const usePlanStore = create<PlanAndProtocolState>()(
               ? s.questions.map((q) => (q.id === question.id ? question : q))
               : [...(s.isMockSeedData ? [] : s.questions), question],
             selectedAnswers: defaultAnswer
-              ? { ...(s.isMockSeedData ? {} : s.selectedAnswers), [question.id]: defaultAnswer }
+              ? {
+                  ...(s.isMockSeedData ? {} : s.selectedAnswers),
+                  [question.id]: defaultAnswer,
+                }
               : s.selectedAnswers,
           };
         }),
@@ -823,7 +871,14 @@ export const usePlanStore = create<PlanAndProtocolState>()(
       commitUiopState: (patch) =>
         set((s) => {
           const next = { ...s, ...patch, isMockSeedData: false };
-          if (patch.planTitle || patch.planSummary || patch.stages || patch.kpis || patch.selectedKpiIds || patch.selectedAnswers) {
+          if (
+            patch.planTitle ||
+            patch.planSummary ||
+            patch.stages ||
+            patch.kpis ||
+            patch.selectedKpiIds ||
+            patch.selectedAnswers
+          ) {
             next.planMarkdown = generatePlanMarkdown({
               planTitle: next.planTitle,
               planSummary: next.planSummary,
@@ -876,12 +931,14 @@ export const usePlanStore = create<PlanAndProtocolState>()(
             planId: `plan_${Date.now().toString(36)}`,
             planTitle: title,
             planPrompt: prompt ?? null,
-            planSummary: "Connected to live backend. Awaiting architecture synthesis and agent tasks.",
+            planSummary:
+              "Connected to live backend. Awaiting architecture synthesis and agent tasks.",
             stages: [],
             reasoningPhases: [],
             kpis: [],
             selectedKpiIds: [],
-            compiledSql: "-- Connected to live backend. DDL will be populated by the backend agent.",
+            compiledSql:
+              "-- Connected to live backend. DDL will be populated by the backend agent.",
             planMarkdown: `# ${title}\n\n## Status\nConnected to live FastAPI backend. Submit a prompt or execute agent tasks to populate pipeline stages and questions.`,
             questions: [],
             selectedAnswers: {},

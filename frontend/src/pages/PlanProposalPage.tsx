@@ -5,11 +5,9 @@ import {
   ChevronLeft,
   ChevronDown,
   ChevronsUpDown,
-  RotateCcw,
   Workflow,
   ArrowUpRight,
   Loader2,
-  FastForward,
   X,
   Eye,
   Download,
@@ -154,23 +152,6 @@ export function PlanProposalPage() {
       });
     }
   }, [liveStep, activeQuestionIndex, questionsFinished]);
-
-  const handleRestartAnimation = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setExpandedPhases({});
-    setElapsed(0);
-    setLiveStep(0);
-    setIsSimulating(true);
-    setActiveQuestionIndex(0);
-    setQuestionsFinished(false);
-    setIsPanelOpen(false);
-  };
-
-  const handleSkipAnimation = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setLiveStep(5);
-    setIsSimulating(false);
-  };
 
   // Phase collapse logic
   const isPhaseOpen = (phase: ReasoningPhase) =>
@@ -434,36 +415,22 @@ export function PlanProposalPage() {
         </div>
 
         <nav className="flex items-center gap-1.5">
-          {isSimulating ? (
-            <button
-              type="button"
-              onClick={handleSkipAnimation}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#D66F14] hover:bg-[#D66F14]/10 transition-colors cursor-pointer"
-              title="Skip live animation"
-            >
-              <FastForward size={13} />
-              <span>Fast Forward</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleRestartAnimation}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
-              title="Replay live simulation"
-            >
-              <RotateCcw size={13} />
-              <span>Replay Live</span>
-            </button>
-          )}
-
-          {/* Connection Status Pill */}
-          <div
+          {/* Connection Status Pill (click to re-check, alt-click to toggle) */}
+          <button
+            type="button"
+            onClick={(e) => {
+              if (e.altKey) {
+                useBackendStore.getState().toggleOnlineMode();
+              } else {
+                void useBackendStore.getState().checkHealth();
+              }
+            }}
             title={
               useBackendStore((s) => s.isOnline)
-                ? "Connected to FastAPI Backend (8000)"
-                : "FastAPI Backend Offline (Running in Local Mode)"
+                ? "Connected to FastAPI Backend (8000) — click to re-check, alt-click to toggle"
+                : "FastAPI Backend Offline (Running in Local Mode) — click to re-check, alt-click to toggle"
             }
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border border-[#334139]/15 bg-white/70"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border border-[#334139]/15 bg-white/70 hover:bg-white cursor-pointer transition-colors"
           >
             <span
               className="w-1.5 h-1.5 rounded-full"
@@ -484,7 +451,7 @@ export function PlanProposalPage() {
                 <span>LOCAL</span>
               </span>
             )}
-          </div>
+          </button>
 
           <button
             type="button"

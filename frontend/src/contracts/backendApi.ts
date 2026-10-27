@@ -79,12 +79,24 @@ export const backendEdgeSchema = z.object({
   id: z.string().min(1),
   source: z.string().min(1),
   target: z.string().min(1),
+  from_column: z.string().nullable().optional(),
+  to_column: z.string().nullable().optional(),
+  source_handle: z.string().nullable().optional(),
+  target_handle: z.string().nullable().optional(),
+  relationship: z.string().nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 export type BackendEdge = z.infer<typeof backendEdgeSchema>;
 
 export const createEdgePayloadSchema = z.object({
   source_node_id: z.string().min(1),
   target_node_id: z.string().min(1),
+  from_column: z.string().optional(),
+  to_column: z.string().optional(),
+  source_handle: z.string().optional(),
+  target_handle: z.string().optional(),
+  relationship: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 export type CreateEdgePayload = z.infer<typeof createEdgePayloadSchema>;
 
@@ -199,10 +211,18 @@ export type RunStatus = z.infer<typeof runStatusSchema>;
 
 export const backendRunSchema = z.object({
   id: z.string().min(1),
+  pipeline_id: z.string().optional(),
   status: runStatusSchema,
+  run_number: z.number().optional(),
+  duration_seconds: z.number().optional(),
+  records_processed: z.number().optional(),
+  nodes_executed: z.number().optional(),
+  total_nodes: z.number().optional(),
   current_node_id: z.string().nullable().optional(),
   context: z.record(z.string(), z.unknown()).optional(),
   error_message: z.string().nullable().optional(),
+  started_at: z.string().nullable().optional(),
+  completed_at: z.string().nullable().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
   events: z.array(z.record(z.string(), z.unknown())).default([]),
@@ -326,6 +346,8 @@ export interface PipelineInsightsSnapshotResponse {
   summaryCards?: unknown[];
   insights?: unknown[];
   uiop?: unknown;
+  prompt?: string;
+  domains?: string[];
 }
 
 // ============================================================================

@@ -104,6 +104,13 @@ export function ComponentsPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <a
+            href="#loaders"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#D66F14]/15 text-[#D66F14] hover:bg-[#D66F14]/25 transition-all border border-[#D66F14]/30 cursor-pointer"
+          >
+            <Sparkles size={12} />
+            <span>Validate 4 Loaders</span>
+          </a>
           <code className="text-xs font-mono px-2.5 py-1 rounded-md bg-emerald-50 text-[#064C1C] border border-emerald-200 font-semibold">
             /components
           </code>

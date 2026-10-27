@@ -11,7 +11,12 @@ import {
 } from 'lucide-react';
 import { useBackendStore } from '../../../services/session/backendSession';
 import { useWorkspaceStore } from '../../workspace/store/workspaceStore';
+import { usePipelineStore } from '../../workspace/store/pipelineStore';
 import { useHistoryStore } from '../store/historyStore';
+import {
+  MOCK_PIPELINES_LIST,
+  getDemoGraphForPipeline,
+} from '../../../services/mock/mockBackendData';
 import { cn } from '../../../utils/cn';
 
 interface ProjectSwitcherListProps {
@@ -33,29 +38,10 @@ export function ProjectSwitcherList({ onProjectSwitched }: ProjectSwitcherListPr
   const setProjectName = useWorkspaceStore((s) => s.setProjectName);
   const fetchHistory = useHistoryStore((s) => s.fetchHistory);
 
-  // Combine live backend pipelines or provide offline sample projects
+  // Combine live backend pipelines or provide canonical offline sample projects
   const projects = isOnline && pipelinesList.length > 0
     ? pipelinesList
-    : [
-        {
-          id: 'pipe-retail-01',
-          name: currentProjectName || 'Retail Lakehouse Master Pipeline',
-          status: 'ACTIVE' as const,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: 'pipe-fintech-02',
-          name: 'Real-Time Fraud & Ledger Pipeline',
-          status: 'DRAFT' as const,
-          updated_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-        },
-        {
-          id: 'pipe-marketing-03',
-          name: 'Customer Lifetime Value & Cohort Decay Mart',
-          status: 'ACTIVE' as const,
-          updated_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-        },
-      ];
+    : MOCK_PIPELINES_LIST;
 
   const filtered = projects.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()),
@@ -67,6 +53,9 @@ export function ProjectSwitcherList({ onProjectSwitched }: ProjectSwitcherListPr
       if (isOnline) {
         await loadPipeline(pipelineId);
       } else {
+        const graph = getDemoGraphForPipeline(pipelineId);
+        usePipelineStore.getState().hydrateGraph(graph.nodes, graph.edges);
+        useBackendStore.setState({ activePipelineId: pipelineId });
         setProjectName(name);
       }
       await fetchHistory(pipelineId);

@@ -27,6 +27,7 @@ import {
   type AuraLoaderSize,
   type AuraLoaderVariant,
 } from "../../components/ui";
+import { cn } from "../../utils/cn";
 export { InsightsTokensSection } from "./InsightsTokensSection";
 
 /** Brand tokens (single source of truth for this page). */
@@ -975,31 +976,40 @@ const LOADER_VARIANTS_META: {
   bestFor: string;
 }[] = [
   {
-    id: "orbital-synapse",
-    badge: "Variant I",
-    title: "Orbital Insight Synapse",
+    id: "aura-pulse-glow",
+    badge: "Variant I · Signature",
+    title: "Aura Halo Pulse (Platform Transition)",
     concept:
-      "Radial progress trail visualizing autonomous synthesis across multiple business domains to generate curated, high-impact KPI dashboards.",
+      "Signature brand logo animation with dual breathing concentric halo rings (Cinnamon & Black Forest) and conic progress sweep. Specifically engineered to mask unmounting latency and eliminate screen flashes between route changes.",
     bestFor:
-      "Executive KPI synthesis, automated dashboard proposal, and trend discovery.",
+      "Platform route changes, workspace boot, initial project load, and full-screen view transitions.",
+  },
+  {
+    id: "orbital-synapse",
+    badge: "Variant II · Agent Swarm",
+    title: "Orbital Agent Synapse",
+    concept:
+      "Central brand logo hub flanked by counter-rotating dashed orbital trails and 3 satellite Agent micro-nodes (Planner, Builder, Auditor) executing live architectural telemetry.",
+    bestFor:
+      "Multi-agent orchestration, architectural prompt decomposition, and UIOP batch generation.",
   },
   {
     id: "star-schema-weaver",
-    badge: "Variant II",
-    title: "Multi-Stream Metric Weaver",
+    badge: "Variant III · Data Pipeline",
+    title: "Star Schema Lineage Weaver",
     concept:
-      "Node telemetry streams correlating revenue, marketing, and retention data flows into a unified analytical summary.",
+      "Live Kimball dimensional model with 4 conformed dimension satellites streaming animated dashed particles into a central diamond Fact Hub featuring the brand logo.",
     bestFor:
-      "Cohort reconciliation, multi-channel performance analysis, and retention metrics.",
+      "Pipeline compilation, DAG layout generation, warehouse loading, and data lineage visualization.",
   },
   {
     id: "ledger-reconciler",
-    badge: "Variant III",
-    title: "Executive Ledger Reconciler",
+    badge: "Variant IV · Audit & Verification",
+    title: "Quantum Ledger Reconciler",
     concept:
-      "Verification telemetry locking transaction records against high-level financial KPIs to guarantee zero reporting discrepancy.",
+      "Audit containment chamber featuring a holographic laser scanning beam sweeping across the brand logo, 5-bar parity frequency soundwaves, and zero-variance verification readout.",
     bestFor:
-      "Financial variance checks, executive KPI validation, and reporting confidence gates.",
+      "Financial reconciliation checks, independent audit contracts, and cryptographic ledger verification.",
   },
 ];
 
@@ -1010,6 +1020,7 @@ export function LoadersSection() {
   );
   const [progressVal, setProgressVal] = useState<number>(68);
   const [surface, setSurface] = useState<"light" | "dark">("light");
+  const [testingVariant, setTestingVariant] = useState<AuraLoaderVariant | null>(null);
 
   const isDark = surface === "dark";
 
@@ -1017,19 +1028,19 @@ export function LoadersSection() {
     <Section
       id="loaders"
       eyebrow="07 · Custom Loaders"
-      title="Three creative Agent-First loader variants (semantic <progress>)"
+      title="Four creative Agent-First loader variants with logo animation (semantic <progress>)"
     >
       {/* Interactive Controls Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
         <div className="space-y-0.5">
           <div className="text-xs font-bold" style={{ color: C.evergreen }}>
-            Interactive Loader Playground
+            Interactive Loader Playground & Screen Transition Simulator
           </div>
           <p className="text-[11px] text-slate-500">
             Built on native semantic{" "}
             <code className="font-mono text-[#064C1C]">&lt;progress&gt;</code>{" "}
             elements with CSS <code className="font-mono">@property</code> conic
-            gradients and reduced-motion support.
+            gradients, brand logo animations, and reduced-motion support.
           </p>
         </div>
 
@@ -1123,19 +1134,19 @@ export function LoadersSection() {
         </div>
       </div>
 
-      {/* 3 Creative Variant Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {/* 4 Creative Variant Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {LOADER_VARIANTS_META.map((item) => (
           <div
             key={item.id}
-            className="rounded-2xl border border-slate-200 bg-white overflow-hidden flex flex-col shadow-xs"
+            className="rounded-2xl border border-slate-200 bg-white overflow-hidden flex flex-col shadow-xs hover:shadow-md transition-shadow"
           >
             {/* Stage Preview Canvas */}
             <div
               style={{
                 backgroundColor: isDark ? C.evergreen : C.porcelain,
               }}
-              className="min-h-[240px] p-6 flex items-center justify-center border-b border-slate-200 transition-colors"
+              className="min-h-[220px] p-5 flex items-center justify-center border-b border-slate-200 transition-colors relative"
             >
               <AuraLoader
                 variant={item.id}
@@ -1146,7 +1157,7 @@ export function LoadersSection() {
             </div>
 
             {/* Variant Spec & Rationale */}
-            <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+            <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span
@@ -1154,33 +1165,81 @@ export function LoadersSection() {
                       backgroundColor: `${C.cinnamon}18`,
                       color: C.cinnamon,
                     }}
-                    className="font-sans text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full"
+                    className="font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
                   >
                     {item.badge}
                   </span>
-                  <code className="font-mono text-[11px] text-slate-400">
-                    variant=&quot;{item.id}&quot;
+                  <code className="font-mono text-[10px] text-slate-400">
+                    &quot;{item.id}&quot;
                   </code>
                 </div>
                 <h3
-                  className="text-sm font-bold"
+                  className="text-xs font-bold tracking-tight"
                   style={{ color: C.evergreen }}
                 >
                   {item.title}
                 </h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
+                <p className="text-[11px] text-slate-600 leading-relaxed">
                   {item.concept}
                 </p>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-500">
-                <span className="font-bold text-[#064C1C]">Best for: </span>
-                {item.bestFor}
+              <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                <div className="text-[10px] text-slate-500">
+                  <span className="font-bold text-[#064C1C]">Best for: </span>
+                  {item.bestFor}
+                </div>
+
+                {/* Interactive Simulation Trigger */}
+                <button
+                  type="button"
+                  onClick={() => setTestingVariant(item.id)}
+                  style={{
+                    backgroundColor: item.id === "aura-pulse-glow" ? C.blackForest : "#f1f5f9",
+                    color: item.id === "aura-pulse-glow" ? C.porcelain : C.evergreen,
+                  }}
+                  className="w-full py-1.5 px-3 rounded-lg text-[11px] font-bold transition-all hover:opacity-90 flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200"
+                >
+                  <Sparkles size={12} className={item.id === "aura-pulse-glow" ? "text-[#D66F14]" : "text-slate-500"} />
+                  <span>Simulate Screen Transition</span>
+                </button>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Fullscreen Transition Overlay Simulator */}
+      {testingVariant && (
+        <aside
+          aria-label="Live Screen Transition Demo"
+          className={cn(
+            "fixed inset-0 z-50 flex flex-col items-center justify-center p-6 animate-fadeIn transition-all backdrop-blur-md",
+            isDark ? "bg-[#1E2D24]/94 text-[#FDFFFC]" : "bg-[#FDFFFC]/95 text-[#1E2D24]"
+          )}
+        >
+          <div className="scale-110 flex flex-col items-center gap-4">
+            <AuraLoader
+              variant={testingVariant}
+              size="lg"
+              value={mode === "determinate" ? progressVal : undefined}
+              onDark={isDark}
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setTestingVariant(null)}
+            style={{
+              backgroundColor: C.blackForest,
+              color: C.porcelain,
+            }}
+            className="mt-8 px-5 py-2 rounded-full text-xs font-bold shadow-lg hover:opacity-95 transition-all cursor-pointer font-sans"
+          >
+            Dismiss Screen Transition Preview
+          </button>
+        </aside>
+      )}
     </Section>
   );
 }

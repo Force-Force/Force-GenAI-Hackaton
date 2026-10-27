@@ -4,6 +4,7 @@ import { cn } from '../../utils/cn';
 import logoUrl from '../../assets/logo.png';
 
 export type AuraLoaderVariant =
+  | 'aura-pulse-glow'
   | 'orbital-synapse'
   | 'star-schema-weaver'
   | 'ledger-reconciler';
@@ -11,7 +12,7 @@ export type AuraLoaderVariant =
 export type AuraLoaderSize = 'sm' | 'md' | 'lg';
 
 export interface AuraLoaderProps {
-  /** Which of the 3 creative AuraBI loader architectures to render. */
+  /** Which of the 4 creative AuraBI loader architectures to render. */
   variant?: AuraLoaderVariant;
   /** Size scale ('sm' | 'md' | 'lg'). */
   size?: AuraLoaderSize;
@@ -30,6 +31,11 @@ export interface AuraLoaderProps {
 }
 
 const TELEMETRY_PHRASES: Record<AuraLoaderVariant, string[]> = {
+  'aura-pulse-glow': [
+    'hydrating lakehouse environment…',
+    'synchronizing workspace session…',
+    'rendering certified UIOP components…',
+  ],
   'orbital-synapse': [
     'planner-agent :: decomposing architectural prompt…',
     'builder-agent :: synthesizing UIOP v1.0 batch…',
@@ -41,7 +47,7 @@ const TELEMETRY_PHRASES: Record<AuraLoaderVariant, string[]> = {
     'compiling ANSI SQL-92 star schema DDL…',
   ],
   'ledger-reconciler': [
-    'comparing raw_stripe_ledger vs fact_revenue…',
+    'comparing raw_stripe_events vs fact_revenue…',
     'verifying idempotent charge parity (Δ 0.00%)…',
     'sealing cryptographic audit contract…',
   ],
@@ -59,26 +65,26 @@ const SIZE_CONFIG: Record<
   }
 > = {
   sm: {
-    ringPx: 44,
-    outerPx: 72,
+    ringPx: 52,
+    outerPx: 84,
     thicknessPx: 3,
-    iconSize: 14,
+    iconSize: 22,
     titleCls: 'text-xs',
     subCls: 'text-[10px]',
   },
   md: {
-    ringPx: 68,
-    outerPx: 108,
+    ringPx: 76,
+    outerPx: 124,
     thicknessPx: 4,
-    iconSize: 18,
+    iconSize: 32,
     titleCls: 'text-sm',
     subCls: 'text-[11px]',
   },
   lg: {
-    ringPx: 92,
-    outerPx: 144,
+    ringPx: 104,
+    outerPx: 168,
     thicknessPx: 5,
-    iconSize: 24,
+    iconSize: 44,
     titleCls: 'text-base',
     subCls: 'text-xs',
   },
@@ -167,7 +173,7 @@ function SemanticProgressRing({
 }
 
 export function AuraLoader({
-  variant = 'orbital-synapse',
+  variant = 'aura-pulse-glow',
   size = 'md',
   value,
   label,
@@ -206,9 +212,78 @@ export function AuraLoader({
       )}
     >
       {/* ===================================================================
-          VARIANT 1: ORBITAL AGENT SYNAPSE
+          VARIANT 1: AURA HALO PULSE (SIGNATURE PLATFORM TRANSITION LOADER)
+          Breathing radial halo rings in Black Forest & Cinnamon with a centered
+          pulsing AuraBI logo and smooth conic progress sweep.
+         =================================================================== */}
+      {variant === 'aura-pulse-glow' && (
+        <div
+          style={{ width: cfg.outerPx, height: cfg.outerPx }}
+          className="relative flex items-center justify-center"
+        >
+          {/* Outer Breathing Radial Halo Ring 1 */}
+          <div
+            className="absolute inset-0 rounded-full border border-[#D66F14]/25 aura-halo-expand-1 pointer-events-none"
+            style={{
+              background: onDark
+                ? 'radial-gradient(circle, rgba(214,111,20,0.18) 0%, rgba(214,111,20,0.02) 65%, transparent 100%)'
+                : 'radial-gradient(circle, rgba(214,111,20,0.12) 0%, rgba(214,111,20,0.02) 65%, transparent 100%)',
+            }}
+          />
+
+          {/* Inner Counter-Breathing Halo Ring 2 */}
+          <div
+            className="absolute inset-2.5 rounded-full border border-[#064C1C]/30 aura-halo-expand-2 pointer-events-none"
+            style={{
+              background: onDark
+                ? 'radial-gradient(circle, rgba(6,76,28,0.25) 0%, transparent 70%)'
+                : 'radial-gradient(circle, rgba(6,76,28,0.15) 0%, transparent 70%)',
+            }}
+          />
+
+          {/* Primary Semantic <progress> Conic Ring */}
+          <SemanticProgressRing
+            value={clampedValue}
+            sizePx={cfg.ringPx}
+            thicknessPx={cfg.thicknessPx}
+            primaryColor={onDark ? '#D66F14' : '#064C1C'}
+            trackColor={ringTrack}
+            ariaLabel={label ?? 'AuraBI Platform Transition Progress'}
+          />
+
+          {/* Center Elevated Brand Hub with Logo */}
+          <div
+            style={{
+              width: cfg.ringPx * 0.64,
+              height: cfg.ringPx * 0.64,
+              backgroundColor: onDark ? '#1E2D24' : '#FDFFFC',
+              borderColor: onDark ? 'rgba(253,255,252,0.2)' : 'rgba(30,45,36,0.12)',
+            }}
+            className="absolute rounded-full flex flex-col items-center justify-center shadow-lg border p-1.5 overflow-hidden transition-colors"
+          >
+            {isDeterminate ? (
+              <span
+                style={{ color: onDark ? '#FDFFFC' : '#1E2D24' }}
+                className="font-mono text-[11px] font-bold tracking-tight"
+              >
+                {clampedValue}%
+              </span>
+            ) : (
+              <img
+                src={logoUrl}
+                alt="AuraBI Platform Logo"
+                style={{ width: cfg.iconSize, height: cfg.iconSize }}
+                className="object-contain select-none aura-logo-pulse"
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          VARIANT 2: ORBITAL AGENT SYNAPSE
           Multi-agent orbital ring with counter-rotating Cinnamon & Black Forest
-          semantic `<progress>` trails + 3 satellite agent nodes.
+          semantic `<progress>` trails + 3 satellite agent nodes + Logo Core.
          =================================================================== */}
       {variant === 'orbital-synapse' && (
         <div
@@ -254,7 +329,7 @@ export function AuraLoader({
             ariaLabel={label ?? 'AuraBI Agent Orchestration Progress'}
           />
 
-          {/* Center AI Core Hub */}
+          {/* Center AI Core Hub with Brand Logo */}
           <div
             style={{
               width: cfg.ringPx * 0.58,
@@ -271,9 +346,9 @@ export function AuraLoader({
             ) : (
               <img
                 src={logoUrl}
-                alt="AuraBI"
-                style={{ width: cfg.iconSize, height: cfg.iconSize }}
-                className="object-contain select-none"
+                alt="AuraBI Core"
+                style={{ width: cfg.iconSize - 2, height: cfg.iconSize - 2 }}
+                className="object-contain select-none aura-logo-pulse"
               />
             )}
           </div>
@@ -281,10 +356,9 @@ export function AuraLoader({
       )}
 
       {/* ===================================================================
-          VARIANT 2: KIMBALL STAR-SCHEMA WEAVER
+          VARIANT 3: KIMBALL STAR-SCHEMA WEAVER
           A live miniature Star Schema where 4 satellite Dimension nodes stream
-          animated foreign-key packets into a central Fact hub wrapped in a
-          semantic `<progress>` ring.
+          animated foreign-key packets into a central Fact hub holding the logo.
          =================================================================== */}
       {variant === 'star-schema-weaver' && (
         <div
@@ -404,15 +478,15 @@ export function AuraLoader({
             ariaLabel={label ?? 'Star Schema Compilation Progress'}
           />
 
-          {/* Central Fact Table Hexagon/Diamond Hub */}
+          {/* Central Fact Table Diamond Hub featuring AuraBI Logo */}
           <div
             style={{
-              width: cfg.ringPx * 0.52,
-              height: cfg.ringPx * 0.52,
+              width: cfg.ringPx * 0.54,
+              height: cfg.ringPx * 0.54,
               backgroundColor: '#064C1C',
               color: '#FDFFFC',
             }}
-            className="absolute rounded-xl rotate-45 flex items-center justify-center shadow-md border border-white/20"
+            className="absolute rounded-xl rotate-45 flex items-center justify-center shadow-md border border-white/20 overflow-hidden"
           >
             <div className="-rotate-45 flex flex-col items-center justify-center">
               {isDeterminate ? (
@@ -420,7 +494,12 @@ export function AuraLoader({
                   {clampedValue}%
                 </span>
               ) : (
-                <Database size={cfg.iconSize - 2} />
+                <img
+                  src={logoUrl}
+                  alt="Fact Hub"
+                  style={{ width: cfg.iconSize - 6, height: cfg.iconSize - 6 }}
+                  className="object-contain select-none"
+                />
               )}
             </div>
           </div>
@@ -428,10 +507,9 @@ export function AuraLoader({
       )}
 
       {/* ===================================================================
-          VARIANT 3: QUANTUM LEDGER RECONCILER
-          Inspired by the Independent Audit Agent: 5 synchronized ledger vs.
-          mart equalizer bars that lock into 0.00% variance parity alongside
-          a semantic `<progress>` verification ring.
+          VARIANT 4: QUANTUM LEDGER RECONCILER
+          Audit Capsule with Holographic Laser Scanning over the Brand Logo,
+          5 synchronized frequency wave bars and zero-variance verification.
          =================================================================== */}
       {variant === 'ledger-reconciler' && (
         <div
@@ -452,7 +530,7 @@ export function AuraLoader({
                 : 'px-6 py-4.5',
           )}
         >
-          {/* Left: Semantic <progress> Ring with Audit Shield */}
+          {/* Left: Semantic <progress> Ring with Laser-Scanned Brand Logo */}
           <div className="relative flex items-center justify-center shrink-0">
             <SemanticProgressRing
               value={clampedValue}
@@ -462,16 +540,34 @@ export function AuraLoader({
               trackColor={ringTrack}
               ariaLabel={label ?? 'KPI Ledger Audit Progress'}
             />
+            
+            {/* Center Logo Hub with Laser Scanning Sweep */}
             <div
-              style={{ color: onDark ? '#FDFFFC' : '#064C1C' }}
-              className="absolute flex items-center justify-center"
+              style={{
+                width: cfg.ringPx * 0.5,
+                height: cfg.ringPx * 0.5,
+                backgroundColor: onDark ? '#1E2D24' : '#FDFFFC',
+              }}
+              className="absolute rounded-full flex items-center justify-center overflow-hidden border border-[#064C1C]/20 shadow-xs"
             >
               {isDeterminate ? (
-                <span className="font-mono text-[10px] font-bold">
+                <span
+                  style={{ color: onDark ? '#FDFFFC' : '#064C1C' }}
+                  className="font-mono text-[10px] font-bold"
+                >
                   {clampedValue}%
                 </span>
               ) : (
-                <Scale size={cfg.iconSize - 2} className="text-[#D66F14]" />
+                <>
+                  <img
+                    src={logoUrl}
+                    alt="Audited Logo"
+                    style={{ width: cfg.iconSize - 6, height: cfg.iconSize - 6 }}
+                    className="object-contain select-none"
+                  />
+                  {/* Holographic scanning laser line */}
+                  <span className="absolute left-0 right-0 h-0.5 bg-[#D66F14] shadow-[0_0_8px_#D66F14] aura-laser-scan pointer-events-none" />
+                </>
               )}
             </div>
           </div>
@@ -521,7 +617,7 @@ export function AuraLoader({
       )}
 
       {/* Typography Caption & Live Telemetry Subtitle */}
-      <div className="space-y-0.5 max-w-[260px]">
+      <div className="space-y-0.5 max-w-[280px]">
         <div
           style={{ color: textPrimary }}
           className={cn(
@@ -532,11 +628,13 @@ export function AuraLoader({
           <Sparkles size={12} className="text-[#D66F14] shrink-0" />
           <span>
             {label ??
-              (variant === 'orbital-synapse'
-                ? 'Synthesizing Agent Architecture'
-                : variant === 'star-schema-weaver'
-                  ? 'Weaving Dimensional Star Schema'
-                  : 'Reconciling Ledger & Mart KPIs')}
+              (variant === 'aura-pulse-glow'
+                ? 'Initializing Platform Environment'
+                : variant === 'orbital-synapse'
+                  ? 'Synthesizing Agent Architecture'
+                  : variant === 'star-schema-weaver'
+                    ? 'Weaving Dimensional Star Schema'
+                    : 'Reconciling Ledger & Mart KPIs')}
           </span>
         </div>
 
@@ -551,5 +649,4 @@ export function AuraLoader({
   );
 }
 
-export { Workflow };
-
+export { Workflow, Database, Scale, ShieldCheck };

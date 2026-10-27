@@ -1,4 +1,4 @@
-import { Sparkles, FileText, Wifi, WifiOff, Play, History } from "lucide-react";
+import { Sparkles, Wifi, WifiOff, Play, History } from "lucide-react";
 import { Badge } from "../components/ui";
 import { useWorkspaceStore } from "../features/workspace/store/workspaceStore";
 import { useBackendStore } from "../services/session/backendSession";
@@ -74,11 +74,17 @@ export function TopNav() {
         {/* Backend Connectivity Status */}
         <button
           type="button"
-          onClick={() => void checkHealth()}
+          onClick={(e) => {
+            if (e.altKey) {
+              useBackendStore.getState().toggleOnlineMode();
+            } else {
+              void checkHealth();
+            }
+          }}
           title={
             isOnline
-              ? `Backend connected (${wsStatus}) — click to re-check`
-              : "Backend offline — click to retry connection"
+              ? `Backend connected (${wsStatus}) — click to re-check, alt-click to toggle`
+              : "Backend offline — click to retry connection, alt-click to toggle"
           }
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors cursor-pointer select-none bg-white/70"
           style={{
@@ -131,27 +137,20 @@ export function TopNav() {
           </span>
         </button>
 
-        {isOnline && activePipelineId && (
-          <button
-            type="button"
-            onClick={() => void startPipelineRun()}
-            aria-label="Run Pipeline on Backend"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#064C1C] text-[#FDFFFC] hover:bg-[#1E2D24] transition-colors cursor-pointer"
-          >
-            <Play size={12} />
-            <span>
-              {activeRun?.status === "RUNNING" ? "Running…" : "Run Pipeline"}
-            </span>
-          </button>
-        )}
         <button
           type="button"
-          onClick={() => navigateTo("/plan")}
-          aria-label="View AI Architecture Proposal"
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
+          onClick={() => void startPipelineRun()}
+          aria-label="Run Pipeline on Backend"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#064C1C] text-[#FDFFFC] hover:bg-[#1E2D24] transition-colors cursor-pointer"
         >
-          <FileText size={13} />
-          <span className="hidden sm:inline">AI Proposal</span>
+          <Play size={12} />
+          <span>
+            {activeRun?.status === "RUNNING"
+              ? "Running…"
+              : activeRun?.status === "AWAITING_APPROVAL"
+                ? "Awaiting Approval"
+                : "Run Pipeline"}
+          </span>
         </button>
         <button
           type="button"

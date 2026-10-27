@@ -8,11 +8,8 @@ import {
 } from "react";
 import {
   ArrowUp,
-  Workflow,
   X,
   FileText,
-  Mic,
-  Square,
   Database,
   Globe,
   Boxes,
@@ -49,12 +46,11 @@ interface AttachedResource {
 }
 
 const TYPICAL_PROMPTS = [
-  "Build an ETL pipeline for daily web sales...",
-  "Connect PostgreSQL source and Snowflake mart...",
-  "Add a customer loyalty dimension table with SCD type 2...",
-  "Audit warehouse schema constraints and primary keys...",
-  "Transform raw clickstream events into a star schema...",
-  "Suggest an aggregation pipeline for monthly active users...",
+  "Analyze our Q3 storefront orders ($1.34M GMV), Stripe payouts ($1.15M net), and customer repeat rates...",
+  "Reconcile our PostgreSQL web orders with Stripe settlement fees and refunds...",
+  "Show where revenue leaks between gross checkout ($90.24 AOV) and net deposits ($77.44 AOV)...",
+  "Compare repeat retention between Wholesale B2B accounts, subscribers, and one-time buyers...",
+  "Add a product category margin breakdown and flag any unusual daily sales spikes...",
 ];
 
 export function AgentEntryPage() {
@@ -135,115 +131,6 @@ export function AgentEntryPage() {
   const sendMessage = useChatStore((s) => s.sendMessage);
   const isGenerating = useChatStore((s) => s.isGenerating);
   const addNode = usePipelineStore((s) => s.addNode);
-
-  const [isListening, setIsListening] = useState(false);
-  const [voiceDuration, setVoiceDuration] = useState(0);
-  const [interimTranscript, setInterimTranscript] = useState("");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.abort();
-        } catch {
-          // ignore cleanup errors
-        }
-      }
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
-
-  const startVoiceInput = () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRecognition =
-      typeof window !== "undefined"
-        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (window as any).SpeechRecognition ||
-          (window as any).webkitSpeechRecognition
-        : null;
-
-    setIsListening(true);
-    setVoiceDuration(0);
-    setInterimTranscript("");
-
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setVoiceDuration((prev) => prev + 1);
-    }, 1000);
-
-    if (SpeechRecognition) {
-      try {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = "en-US";
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        recognition.onresult = (event: any) => {
-          let finalTranscript = "";
-          let currentInterim = "";
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-              finalTranscript += transcript;
-            } else {
-              currentInterim += transcript;
-            }
-          }
-          if (finalTranscript) {
-            setPrompt((prev) =>
-              prev
-                ? `${prev.trim()} ${finalTranscript.trim()}`
-                : finalTranscript.trim(),
-            );
-          }
-          setInterimTranscript(currentInterim);
-        };
-
-        recognition.onerror = () => {
-          stopVoiceInput();
-        };
-
-        recognition.onend = () => {
-          setIsListening(false);
-          if (timerRef.current) clearInterval(timerRef.current);
-        };
-
-        recognition.start();
-        recognitionRef.current = recognition;
-      } catch {
-        // Fallback for browsers with restricted speech recognition
-      }
-    }
-  };
-
-  const stopVoiceInput = () => {
-    setIsListening(false);
-    setInterimTranscript("");
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {
-        // ignore
-      }
-      recognitionRef.current = null;
-    }
-  };
-
-  const toggleListening = () => {
-    if (isListening) {
-      stopVoiceInput();
-    } else {
-      startVoiceInput();
-    }
-  };
 
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -420,16 +307,24 @@ export function AgentEntryPage() {
       chat.appendMessage({
         id: `user_${Date.now()}`,
         sender: "user",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
         text: messageContent,
       });
       usePlanStore.getState().setPlanning(true);
       navigateTo("/plan");
       try {
-        const res = await pipelineApi.generatePlan(currentPipelineId, messageContent);
+        const res = await pipelineApi.generatePlan(
+          currentPipelineId,
+          messageContent,
+        );
         const envelope = uiopEnvelopeSchema.safeParse(res.uiop);
         if (!envelope.success) {
-          throw new Error(`Plan rejected by the UIOP contract: ${envelope.error.issues[0]?.message}`);
+          throw new Error(
+            `Plan rejected by the UIOP contract: ${envelope.error.issues[0]?.message}`,
+          );
         }
         const report = executeUiop(envelope.data, { allowRebase: true });
         if (!report.ok) {
@@ -439,14 +334,20 @@ export function AgentEntryPage() {
         chat.appendMessage({
           id: `assistant_${Date.now()}`,
           sender: "assistant",
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
           text: res.reply,
         });
         usePlanStore.getState().setPlanning(false);
       } catch (err) {
         usePlanStore
           .getState()
-          .setPlanning(false, err instanceof Error ? err.message : "The planner agent failed.");
+          .setPlanning(
+            false,
+            err instanceof Error ? err.message : "The planner agent failed.",
+          );
       }
       return;
     }
@@ -503,14 +404,22 @@ export function AgentEntryPage() {
 
         {/* Minimal Actions blended into background */}
         <nav className="flex items-center gap-2">
-          {/* Live Backend Connection Indicator */}
-          <div
+          {/* Live Backend Connection Indicator (click to re-check, alt-click to toggle) */}
+          <button
+            type="button"
+            onClick={(e) => {
+              if (e.altKey) {
+                useBackendStore.getState().toggleOnlineMode();
+              } else {
+                void useBackendStore.getState().checkHealth();
+              }
+            }}
             title={
               useBackendStore((s) => s.isOnline)
-                ? "Connected to FastAPI Backend (8000)"
-                : "FastAPI Backend Offline (Running in Local Mode)"
+                ? "Connected to FastAPI Backend (8000) — click to re-check, alt-click to toggle"
+                : "FastAPI Backend Offline (Running in Local Mode) — click to re-check, alt-click to toggle"
             }
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border border-[#334139]/15 bg-white/70"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border border-[#334139]/15 bg-white/70 hover:bg-white cursor-pointer transition-colors"
           >
             <span
               className="w-1.5 h-1.5 rounded-full"
@@ -531,25 +440,16 @@ export function AgentEntryPage() {
                 <span>LOCAL</span>
               </span>
             )}
-          </div>
+          </button>
 
           <button
             type="button"
-            onClick={() => useHistoryStore.getState().openHistory('projects')}
+            onClick={() => useHistoryStore.getState().openHistory("projects")}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
             aria-label="View Project History"
           >
             <History size={13} />
             <span>History</span>
-          </button>
-
-          <button
-            onClick={() => navigateTo("/workspace")}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
-            aria-label="Open Workspace Canvas"
-          >
-            <Workflow size={13} />
-            <span>Workspace</span>
           </button>
         </nav>
       </header>
@@ -657,46 +557,6 @@ export function AgentEntryPage() {
             )}
           </div>
 
-          {/* Live Voice Equalizer / Listening Banner */}
-          {isListening && (
-            <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#D66F14]/10 border border-[#D66F14]/25 animate-fadeIn">
-              <div className="flex items-center gap-3">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D66F14] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D66F14]" />
-                </span>
-
-                {/* Animated Sound Wave Bars */}
-                <div className="flex items-center gap-0.5 h-5 px-1">
-                  <div className="w-1 bg-[#D66F14] rounded-full animate-soundwave-1" />
-                  <div className="w-1 bg-[#D66F14] rounded-full animate-soundwave-2" />
-                  <div className="w-1 bg-[#D66F14] rounded-full animate-soundwave-3" />
-                  <div className="w-1 bg-[#D66F14] rounded-full animate-soundwave-4" />
-                  <div className="w-1 bg-[#D66F14] rounded-full animate-soundwave-5" />
-                </div>
-
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-[#334139]">
-                    Listening for voice prompt...
-                  </span>
-                  <span className="text-[11px] text-[#334139]/80 font-mono">
-                    {interimTranscript
-                      ? `"${interimTranscript}"`
-                      : `0:${voiceDuration.toString().padStart(2, "0")} • Speak clearly into your microphone`}
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={stopVoiceInput}
-                className="px-3 py-1 rounded-full text-xs font-bold bg-[#D66F14] text-[#FDFFFC] hover:opacity-90 transition-opacity cursor-pointer shadow-2xs"
-              >
-                Done
-              </button>
-            </div>
-          )}
-
           {/* Action Row inside the rectangle */}
           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
             {/* Left side: Attached resources counter if any */}
@@ -709,34 +569,8 @@ export function AgentEntryPage() {
               )}
             </div>
 
-            {/* Right side: Mic voice support & Send button */}
+            {/* Right side: Send button */}
             <div className="flex items-center gap-2">
-              {/* Mic Icon for Voice Support */}
-              <button
-                type="button"
-                onClick={toggleListening}
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-2xs",
-                  isListening
-                    ? "bg-[#D66F14] text-[#FDFFFC] ring-4 ring-[#D66F14]/25 animate-pulse"
-                    : "bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#064C1C] border border-[#334139]/15",
-                )}
-                title={
-                  isListening
-                    ? "Stop recording voice"
-                    : "Start voice prompt (dictate)"
-                }
-                aria-label={
-                  isListening ? "Stop recording voice" : "Start voice recording"
-                }
-              >
-                {isListening ? (
-                  <Square size={12} className="fill-current" />
-                ) : (
-                  <Mic size={15} />
-                )}
-              </button>
-
               {/* Send CTA Button */}
               <button
                 type="submit"

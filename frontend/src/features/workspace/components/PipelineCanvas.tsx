@@ -34,7 +34,13 @@ export function PipelineCanvas() {
   );
 
   const displayedEdges = useMemo<PipelineEdge[]>(
-    () => edges.map((e) => ({ ...e, type: 'flow' })),
+    () =>
+      edges.map((e) => ({
+        ...e,
+        type: 'flow',
+        sourceHandle: undefined,
+        targetHandle: undefined,
+      })),
     [edges],
   );
 

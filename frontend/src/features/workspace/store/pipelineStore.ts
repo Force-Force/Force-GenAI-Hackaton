@@ -158,7 +158,7 @@ export const usePipelineStore = create<PipelineState>()(
       addNode: (node) => {
         set((s) => ({
           isMockSeedData: false,
-          nodes: [...(s.isMockSeedData ? [] : s.nodes), node],
+          nodes: [...s.nodes, node],
           selectedNodeId: node.id,
         }));
 
@@ -409,7 +409,7 @@ FROM staging;`,
         ),
     }),
     {
-      name: "aura-bi.pipeline.v2",
+      name: "aura-bi.pipeline.v3",
       storage: createJSONStorage(() => persistStateStorage),
       partialize: (s) => ({
         nodes: s.nodes,
