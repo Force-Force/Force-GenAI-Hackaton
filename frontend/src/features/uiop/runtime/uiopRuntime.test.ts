@@ -166,6 +166,94 @@ describe("UIOP Runtime (UI Operations Protocol v1.0)", () => {
     expect(updatedContainer.data.children.nodes[0].id).toBe("dim-region");
   });
 
+  it("adds, connects, and updates edges between tables inside a warehouse container", () => {
+    const warehouseContainer: DatamartNode = {
+      id: "wh-1",
+      type: "datamart",
+      position: { x: 600, y: 80 },
+      data: {
+        category: "datamart",
+        containerKind: "warehouse",
+        label: "Enterprise Star Schema",
+        description: "Central warehouse container",
+        expanded: true,
+        children: {
+          nodes: [
+            {
+              id: "fact_daily_revenue",
+              type: "resource",
+              position: { x: 300, y: 150 },
+              data: {
+                category: "resource",
+                kind: "warehouse",
+                label: "fact_daily_revenue",
+                description: "Sales fact",
+                warehouseRole: "fact",
+                columns: [
+                  { name: "revenue_sk", type: "INT", isPrimaryKey: true, isForeignKey: false },
+                  { name: "promo_sk", type: "INT", isPrimaryKey: false, isForeignKey: false },
+                ],
+              },
+            },
+          ],
+          edges: [],
+        },
+      },
+    };
+    usePipelineStore.setState({ nodes: [warehouseContainer], edges: [] });
+
+    const res = executeUiop({
+      protocol: "uiop",
+      version: "1.0",
+      messageId: "msg-container-edge",
+      workspaceId: "workspace_01",
+      baseRevision: 1,
+      source: { agentId: "builder-agent", executionId: "exec-edge" },
+      operations: [
+        {
+          op: "node.add",
+          params: {
+            id: "dim_promotion",
+            type: "resource",
+            position: { x: 50, y: 50 },
+            data: {
+              label: "dim_promotion",
+              description: "Promotions",
+              warehouseRole: "dimension",
+              columns: [
+                { name: "promo_sk", type: "INT", isPrimaryKey: true, isForeignKey: false },
+              ],
+            },
+          },
+        },
+        {
+          op: "edge.add",
+          params: {
+            id: "e_promo_to_fact",
+            source: "dim_promotion",
+            target: "fact_daily_revenue",
+            type: "foreign_key",
+            data: {
+              fromColumn: "promo_sk",
+              toColumn: "promo_sk",
+              relationship: "foreign_key",
+            },
+          },
+        },
+      ],
+    });
+
+    expect(res.ok).toBe(true);
+    expect(res.appliedCount).toBe(2);
+
+    const updatedWh = usePipelineStore
+      .getState()
+      .nodes.find((n) => n.id === "wh-1") as DatamartNode;
+    expect(updatedWh.data.children.nodes).toHaveLength(2);
+    expect(updatedWh.data.children.edges).toHaveLength(1);
+    expect(updatedWh.data.children.edges[0].id).toBe("e_promo_to_fact");
+  });
+
   it("enforces all-or-nothing batch rollback when a later operation fails semantic validation", () => {
     const initialNodesCount = usePipelineStore.getState().nodes.length;
 

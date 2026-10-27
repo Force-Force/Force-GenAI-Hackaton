@@ -163,12 +163,59 @@ export function toXYFlowNode(
   return resNode;
 }
 
+export function findNodeWithContainer(
+  nodes: PipelineNode[],
+  id: string,
+): { node: PipelineNode; container?: DatamartNode } | undefined {
+  for (const n of nodes) {
+    if (n.id === id) return { node: n };
+    if (isDatamartNode(n)) {
+      const child = n.data.children.nodes.find((c) => c.id === id);
+      if (child) return { node: child, container: n };
+    }
+  }
+  return undefined;
+}
+
+export function findEdgeWithContainer(
+  nodes: PipelineNode[],
+  edges: PipelineEdge[],
+  id: string,
+): { edge: PipelineEdge; container?: DatamartNode } | undefined {
+  const top = edges.find((e) => e.id === id);
+  if (top) return { edge: top };
+  for (const n of nodes) {
+    if (isDatamartNode(n)) {
+      const childEdge = n.data.children.edges.find((e) => e.id === id);
+      if (childEdge) return { edge: childEdge, container: n };
+    }
+  }
+  return undefined;
+}
+
+export function getAllEdgesInGraph(
+  nodes: PipelineNode[],
+  edges: PipelineEdge[],
+): PipelineEdge[] {
+  const all = [...edges];
+  for (const n of nodes) {
+    if (isDatamartNode(n)) {
+      all.push(...n.data.children.edges);
+    }
+  }
+  return all;
+}
+
 function nodeExistsInGraph(nodes: PipelineNode[], id: string): boolean {
-  return nodes.some(
-    (n) =>
-      n.id === id ||
-      (isDatamartNode(n) && n.data.children.nodes.some((c) => c.id === id)),
-  );
+  return Boolean(findNodeWithContainer(nodes, id));
+}
+
+function edgeExistsInGraph(
+  nodes: PipelineNode[],
+  edges: PipelineEdge[],
+  id: string,
+): boolean {
+  return Boolean(findEdgeWithContainer(nodes, edges, id));
 }
 
 /**
@@ -344,11 +391,13 @@ export function executeUiop(
     nodes: sim.nodes,
     edges: sim.edges,
     selectedNodeId: sim.focusNodeId ?? pipeStore.selectedNodeId,
+    isMockSeedData: false,
   });
 
   useInsightStore.setState({
     summaryCards: sim.summaryCards,
     insights: sim.insights,
+    isMockSeedData: false,
   });
 
   if (sim.focusNodeId) {
@@ -598,14 +647,8 @@ function simNodeRemove(
   operationIndex: number,
   summary: string[],
 ): UiopValidationError | null {
-  const existsTop = sim.nodes.some((n) => n.id === params.id);
-  const existsNested = sim.nodes.some(
-    (n) =>
-      isDatamartNode(n) &&
-      n.data.children.nodes.some((c) => c.id === params.id),
-  );
-
-  if (!existsTop && !existsNested) {
+  const nodeInfo = findNodeWithContainer(sim.nodes, params.id);
+  if (!nodeInfo) {
     return {
       code: "ENTITY_NOT_FOUND",
       message: `Cannot remove node "${params.id}": node does not exist.`,
@@ -614,7 +657,8 @@ function simNodeRemove(
     };
   }
 
-  const incidentEdges = sim.edges.filter(
+  const allEdges = getAllEdgesInGraph(sim.nodes, sim.edges);
+  const incidentEdges = allEdges.filter(
     (e) => e.source === params.id || e.target === params.id,
   );
   if (!params.cascadeEdges && incidentEdges.length > 0) {
@@ -626,22 +670,18 @@ function simNodeRemove(
     };
   }
 
-  if (existsTop) {
+  if (nodeInfo.container) {
+    nodeInfo.container.data.children.nodes = nodeInfo.container.data.children.nodes.filter(
+      (c) => c.id !== params.id,
+    );
+    nodeInfo.container.data.children.edges = nodeInfo.container.data.children.edges.filter(
+      (e) => e.source !== params.id && e.target !== params.id,
+    );
+  } else {
     sim.nodes = sim.nodes.filter((n) => n.id !== params.id);
     sim.edges = sim.edges.filter(
       (e) => e.source !== params.id && e.target !== params.id,
     );
-  } else {
-    for (const n of sim.nodes) {
-      if (isDatamartNode(n)) {
-        n.data.children.nodes = n.data.children.nodes.filter(
-          (c) => c.id !== params.id,
-        );
-        n.data.children.edges = n.data.children.edges.filter(
-          (e) => e.source !== params.id && e.target !== params.id,
-        );
-      }
-    }
   }
 
   summary.push(`Removed node "${params.id}".`);
@@ -663,10 +703,10 @@ function simEdgeAdd(
     };
   }
 
-  const sourceNode = sim.nodes.find((n) => n.id === params.source);
-  const targetNode = sim.nodes.find((n) => n.id === params.target);
+  const sourceInfo = findNodeWithContainer(sim.nodes, params.source);
+  const targetInfo = findNodeWithContainer(sim.nodes, params.target);
 
-  if (!sourceNode || !targetNode) {
+  if (!sourceInfo || !targetInfo) {
     return {
       code: "ENTITY_NOT_FOUND",
       message: `Cannot create edge "${params.source}" -> "${params.target}": both source and target nodes must exist.`,
@@ -675,8 +715,11 @@ function simEdgeAdd(
     };
   }
 
+  const sourceNode = sourceInfo.node;
+  const targetNode = targetInfo.node;
+
   const edgeId = params.id ?? genId("edge");
-  if (sim.edges.some((e) => e.id === edgeId)) {
+  if (edgeExistsInGraph(sim.nodes, sim.edges, edgeId)) {
     return {
       code: "DUPLICATE_ENTITY_ID",
       message: `Edge ID "${edgeId}" already exists.`,
@@ -685,8 +728,20 @@ function simEdgeAdd(
     };
   }
 
+  // Check if edge is internal to the same container
+  const sameContainer =
+    sourceInfo.container &&
+    targetInfo.container &&
+    sourceInfo.container.id === targetInfo.container.id
+      ? sourceInfo.container
+      : null;
+
+  const targetEdgeList = sameContainer
+    ? sameContainer.data.children.edges
+    : sim.edges;
+
   // Avoid duplicate parallel edges between the same endpoints/columns
-  const alreadyConnected = sim.edges.some(
+  const alreadyConnected = targetEdgeList.some(
     (e) =>
       e.source === params.source &&
       e.target === params.target &&
@@ -727,10 +782,16 @@ function simEdgeAdd(
     );
   }
 
-  sim.edges.push(edge);
-  summary.push(
-    `Connected "${sourceNode.data.label}" → "${targetNode.data.label}".`,
-  );
+  targetEdgeList.push(edge);
+  if (sameContainer) {
+    summary.push(
+      `Connected "${sourceNode.data.label}" → "${targetNode.data.label}" inside container "${sameContainer.data.label}".`,
+    );
+  } else {
+    summary.push(
+      `Connected "${sourceNode.data.label}" → "${targetNode.data.label}".`,
+    );
+  }
   return null;
 }
 
@@ -740,8 +801,8 @@ function simEdgeUpdate(
   operationIndex: number,
   summary: string[],
 ): UiopValidationError | null {
-  const edge = sim.edges.find((e) => e.id === params.id);
-  if (!edge) {
+  const edgeInfo = findEdgeWithContainer(sim.nodes, sim.edges, params.id);
+  if (!edgeInfo) {
     return {
       code: "ENTITY_NOT_FOUND",
       message: `Cannot update edge "${params.id}": edge does not exist.`,
@@ -749,7 +810,7 @@ function simEdgeUpdate(
       op: "edge.update",
     };
   }
-  edge.data = { ...edge.data, ...params.data };
+  edgeInfo.edge.data = { ...edgeInfo.edge.data, ...params.data };
   summary.push(`Updated edge "${params.id}".`);
   return null;
 }
@@ -760,7 +821,8 @@ function simEdgeRemove(
   operationIndex: number,
   summary: string[],
 ): UiopValidationError | null {
-  if (!sim.edges.some((e) => e.id === params.id)) {
+  const edgeInfo = findEdgeWithContainer(sim.nodes, sim.edges, params.id);
+  if (!edgeInfo) {
     return {
       code: "ENTITY_NOT_FOUND",
       message: `Cannot remove edge "${params.id}": edge does not exist.`,
@@ -768,7 +830,13 @@ function simEdgeRemove(
       op: "edge.remove",
     };
   }
-  sim.edges = sim.edges.filter((e) => e.id !== params.id);
+  if (edgeInfo.container) {
+    edgeInfo.container.data.children.edges = edgeInfo.container.data.children.edges.filter(
+      (e) => e.id !== params.id,
+    );
+  } else {
+    sim.edges = sim.edges.filter((e) => e.id !== params.id);
+  }
   summary.push(`Removed edge "${params.id}".`);
   return null;
 }
@@ -780,9 +848,9 @@ function simLayoutUpdate(
 ): UiopValidationError | null {
   if (params.positions && Object.keys(params.positions).length > 0) {
     for (const [nodeId, pos] of Object.entries(params.positions)) {
-      const node = sim.nodes.find((n) => n.id === nodeId);
-      if (node) {
-        node.position = { ...pos };
+      const nodeInfo = findNodeWithContainer(sim.nodes, nodeId);
+      if (nodeInfo) {
+        nodeInfo.node.position = { ...pos };
       }
     }
     summary.push(
@@ -791,8 +859,8 @@ function simLayoutUpdate(
     return null;
   }
 
-  sim.nodes = layoutGraph(sim.nodes, sim.edges);
-  summary.push(`Applied Dagre (${params.direction}) auto-layout to canvas.`);
+  sim.nodes = layoutGraph(sim.nodes, sim.edges, params.direction);
+  summary.push(`Applied Dagre (${params.direction ?? "LR"}) auto-layout to canvas.`);
   return null;
 }
 
