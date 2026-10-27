@@ -5,11 +5,9 @@ import {
   ChevronLeft,
   ChevronDown,
   ChevronsUpDown,
-  RotateCcw,
   Workflow,
   ArrowUpRight,
   Loader2,
-  FastForward,
   X,
   Eye,
   Download,
@@ -154,23 +152,6 @@ export function PlanProposalPage() {
       });
     }
   }, [liveStep, activeQuestionIndex, questionsFinished]);
-
-  const handleRestartAnimation = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setExpandedPhases({});
-    setElapsed(0);
-    setLiveStep(0);
-    setIsSimulating(true);
-    setActiveQuestionIndex(0);
-    setQuestionsFinished(false);
-    setIsPanelOpen(false);
-  };
-
-  const handleSkipAnimation = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setLiveStep(5);
-    setIsSimulating(false);
-  };
 
   // Phase collapse logic
   const isPhaseOpen = (phase: ReasoningPhase) =>
@@ -434,28 +415,6 @@ export function PlanProposalPage() {
         </div>
 
         <nav className="flex items-center gap-1.5">
-          {isSimulating ? (
-            <button
-              type="button"
-              onClick={handleSkipAnimation}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#D66F14] hover:bg-[#D66F14]/10 transition-colors cursor-pointer"
-              title="Skip live animation"
-            >
-              <FastForward size={13} />
-              <span>Fast Forward</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleRestartAnimation}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
-              title="Replay live simulation"
-            >
-              <RotateCcw size={13} />
-              <span>Replay Live</span>
-            </button>
-          )}
-
           {/* Connection Status Pill */}
           <div
             title={

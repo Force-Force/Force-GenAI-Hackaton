@@ -1,4 +1,4 @@
-import { Sparkles, FileText, Wifi, WifiOff, Play, History } from "lucide-react";
+import { Sparkles, Wifi, WifiOff, Play, History } from "lucide-react";
 import { Badge } from "../components/ui";
 import { useWorkspaceStore } from "../features/workspace/store/workspaceStore";
 import { useBackendStore } from "../services/session/backendSession";
@@ -145,15 +145,6 @@ export function TopNav() {
                 ? "Awaiting Approval"
                 : "Run Pipeline"}
           </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => navigateTo("/plan")}
-          aria-label="View AI Architecture Proposal"
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-transparent text-[#334139] border border-[#334139]/20 hover:bg-[#334139]/5 transition-colors cursor-pointer"
-        >
-          <FileText size={13} />
-          <span className="hidden sm:inline">AI Proposal</span>
         </button>
         <button
           type="button"

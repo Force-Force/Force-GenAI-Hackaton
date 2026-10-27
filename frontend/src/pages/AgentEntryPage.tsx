@@ -8,7 +8,6 @@ import {
 } from "react";
 import {
   ArrowUp,
-  Workflow,
   X,
   FileText,
   Database,
@@ -443,15 +442,6 @@ export function AgentEntryPage() {
           >
             <History size={13} />
             <span>History</span>
-          </button>
-
-          <button
-            onClick={() => navigateTo("/workspace")}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
-            aria-label="Open Workspace Canvas"
-          >
-            <Workflow size={13} />
-            <span>Workspace</span>
           </button>
         </nav>
       </header>

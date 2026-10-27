@@ -22,15 +22,15 @@ export function ProcessingNode({
   const isCurrent = activeRun?.current_node_id === id;
   const isPausedGate =
     isCurrent &&
-    (activeRun?.status === "PAUSED" ||
-      activeRun?.status === "AWAITING_APPROVAL");
+    (activeRun?.status === "AWAITING_APPROVAL" ||
+      activeRun?.status === "AWAITING_USER_INPUT");
   const isRunning = isCurrent && activeRun?.status === "RUNNING";
+  const completedList = Array.isArray(activeRun?.context?.completed_nodes)
+    ? (activeRun?.context?.completed_nodes as string[])
+    : [];
   const isCompleted =
     !isCurrent &&
-    Boolean(
-      activeRun?.status === "COMPLETED" ||
-      activeRun?.context?.completed_nodes?.includes(id),
-    );
+    Boolean(activeRun?.status === "COMPLETED" || completedList.includes(id));
 
   return (
     <div

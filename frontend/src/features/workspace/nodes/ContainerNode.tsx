@@ -75,12 +75,12 @@ export function ContainerNode({
 
   const isCurrent = activeRun?.current_node_id === id;
   const isRunning = isCurrent && activeRun?.status === "RUNNING";
+  const completedList = Array.isArray(activeRun?.context?.completed_nodes)
+    ? (activeRun?.context?.completed_nodes as string[])
+    : [];
   const isCompleted =
     !isCurrent &&
-    Boolean(
-      activeRun?.status === "COMPLETED" ||
-      activeRun?.context?.completed_nodes?.includes(id),
-    );
+    Boolean(activeRun?.status === "COMPLETED" || completedList.includes(id));
 
   const onActivate = () => {
     selectNode(id);
