@@ -319,3 +319,84 @@ progress.aura-progress-ring[value="100"] {
 .recharts-wrapper text {
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------------------------------------------------------------------------
+ * Platform Transition & Brand Loader Keyframes
+ * ------------------------------------------------------------------------- */
+@keyframes auraLogoPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 10px rgba(214, 111, 20, 0.35));
+  }
+  50% {
+    transform: scale(1.06);
+    filter: drop-shadow(0 0 22px rgba(6, 76, 28, 0.55));
+  }
+}
+
+.aura-logo-pulse {
+  animation: auraLogoPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes auraHaloExpand {
+  0% {
+    transform: scale(0.88);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.16);
+    opacity: 0.25;
+  }
+  100% {
+    transform: scale(0.88);
+    opacity: 0.8;
+  }
+}
+
+.aura-halo-expand-1 {
+  animation: auraHaloExpand 3s ease-in-out infinite;
+}
+
+.aura-halo-expand-2 {
+  animation: auraHaloExpand 2.2s ease-in-out infinite reverse;
+}
+
+@keyframes laserScan {
+  0% {
+    top: 5%;
+    opacity: 0.2;
+  }
+  50% {
+    top: 92%;
+    opacity: 0.9;
+  }
+  100% {
+    top: 5%;
+    opacity: 0.2;
+  }
+}
+
+.aura-laser-scan {
+  animation: laserScan 1.9s ease-in-out infinite;
+}
+
+/* Modern View Transitions API for seamless, flash-free page transitions */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aura-logo-pulse,
+  .aura-halo-expand-1,
+  .aura-halo-expand-2,
+  .aura-laser-scan {
+    animation: none;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+

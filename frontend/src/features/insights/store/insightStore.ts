@@ -16,10 +16,10 @@ import { genId } from '../../../utils/graph';
 import type { AgentQueryResponse } from '../../../contracts/backendApi';
 
 export const INITIAL_SUMMARY_CARDS: InsightSummaryCard[] = [
-  { id: 'sum_1', label: 'Net revenue', value: '$1.15M', delta: '+9.1%', trend: 'up', sourceTable: 'fact_daily_revenue' },
-  { id: 'sum_2', label: 'Enterprise retention', value: '118%', delta: '+4.5%', trend: 'up', sourceTable: 'dim_customer_360' },
-  { id: 'sum_3', label: 'Orders processed', value: '420K', delta: '99.85% delivered', trend: 'neutral', sourceTable: 'transform_orders_clean' },
-  { id: 'sum_4', label: 'Outliers', value: '1', delta: 'Oct 18', trend: 'down', sourceTable: 'quarantine_velocity_alerts' },
+  { id: 'sum_1', label: 'Net revenue', value: '$4.83M', delta: '+9.3%', trend: 'up', sourceTable: 'fact_daily_revenue' },
+  { id: 'sum_2', label: 'Gross volume (GMV)', value: '$5.41M', delta: '+12.4%', trend: 'up', sourceTable: 'v_bi_executive_sales' },
+  { id: 'sum_3', label: 'Enterprise retention', value: '118.2%', delta: '+4.5%', trend: 'up', sourceTable: 'v_customer_retention_cohorts' },
+  { id: 'sum_4', label: 'Audit integrity', value: '100% Reconciled', delta: '0.00% Variance', trend: 'neutral', sourceTable: 'audit_kpi_reconciliation_ledger' },
 ];
 
 /**

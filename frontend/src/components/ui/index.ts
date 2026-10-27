@@ -11,3 +11,7 @@ export {
   type AuraLoaderVariant,
   type AuraLoaderSize,
 } from './AuraLoader';
+export {
+  PlatformTransitionLoader,
+  type PlatformTransitionLoaderProps,
+} from './PlatformTransitionLoader';

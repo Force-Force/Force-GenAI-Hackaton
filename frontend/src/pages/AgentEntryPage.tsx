@@ -11,8 +11,6 @@ import {
   Workflow,
   X,
   FileText,
-  Mic,
-  Square,
   Database,
   Globe,
   Boxes,
@@ -135,115 +133,6 @@ export function AgentEntryPage() {
   const sendMessage = useChatStore((s) => s.sendMessage);
   const isGenerating = useChatStore((s) => s.isGenerating);
   const addNode = usePipelineStore((s) => s.addNode);
-
-  const [isListening, setIsListening] = useState(false);
-  const [voiceDuration, setVoiceDuration] = useState(0);
-  const [interimTranscript, setInterimTranscript] = useState("");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.abort();
-        } catch {
-          // ignore cleanup errors
-        }
-      }
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
-
-  const startVoiceInput = () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRecognition =
-      typeof window !== "undefined"
-        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (window as any).SpeechRecognition ||
-          (window as any).webkitSpeechRecognition
-        : null;
-
-    setIsListening(true);
-    setVoiceDuration(0);
-    setInterimTranscript("");
-
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setVoiceDuration((prev) => prev + 1);
-    }, 1000);
-
-    if (SpeechRecognition) {
-      try {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = "en-US";
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        recognition.onresult = (event: any) => {
-          let finalTranscript = "";
-          let currentInterim = "";
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-              finalTranscript += transcript;
-            } else {
-              currentInterim += transcript;
-            }
-          }
-          if (finalTranscript) {
-            setPrompt((prev) =>
-              prev
-                ? `${prev.trim()} ${finalTranscript.trim()}`
-                : finalTranscript.trim(),
-            );
-          }
-          setInterimTranscript(currentInterim);
-        };
-
-        recognition.onerror = () => {
-          stopVoiceInput();
-        };
-
-        recognition.onend = () => {
-          setIsListening(false);
-          if (timerRef.current) clearInterval(timerRef.current);
-        };
-
-        recognition.start();
-        recognitionRef.current = recognition;
-      } catch {
-        // Fallback for browsers with restricted speech recognition
-      }
-    }
-  };
-
-  const stopVoiceInput = () => {
-    setIsListening(false);
-    setInterimTranscript("");
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {
-        // ignore
-      }
-      recognitionRef.current = null;
-    }
-  };
-
-  const toggleListening = () => {
-    if (isListening) {
-      stopVoiceInput();
-    } else {
-      startVoiceInput();
-    }
-  };
 
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -657,46 +546,6 @@ export function AgentEntryPage() {
             )}
           </div>
 
-          {/* Live Voice Equalizer / Listening Banner */}
-          {isListening && (
-            <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#D66F14]/10 border border-[#D66F14]/25 animate-fadeIn">
-              <div className="flex items-center gap-3">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D66F14] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D66F14]" />
-                </span>
-
-                {/* Animated Sound Wave Bars */}
-                <div className="flex items-center gap-0.5 h-5 px-1">
-                  <div className="w-1 bg-[#D66F14] rounded-full animate-soundwave-1" />
-                  <div className="w-1 bg-[#D66F14] rounded-full animate-soundwave-2" />
-                  <div className="w-1 bg-[#D66F14] rounded-full animate-soundwave-3" />
-                  <div className="w-1 bg-[#D66F14] rounded-full animate-soundwave-4" />
-                  <div className="w-1 bg-[#D66F14] rounded-full animate-soundwave-5" />
-                </div>
-
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-[#334139]">
-                    Listening for voice prompt...
-                  </span>
-                  <span className="text-[11px] text-[#334139]/80 font-mono">
-                    {interimTranscript
-                      ? `"${interimTranscript}"`
-                      : `0:${voiceDuration.toString().padStart(2, "0")} • Speak clearly into your microphone`}
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={stopVoiceInput}
-                className="px-3 py-1 rounded-full text-xs font-bold bg-[#D66F14] text-[#FDFFFC] hover:opacity-90 transition-opacity cursor-pointer shadow-2xs"
-              >
-                Done
-              </button>
-            </div>
-          )}
-
           {/* Action Row inside the rectangle */}
           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
             {/* Left side: Attached resources counter if any */}
@@ -709,34 +558,8 @@ export function AgentEntryPage() {
               )}
             </div>
 
-            {/* Right side: Mic voice support & Send button */}
+            {/* Right side: Send button */}
             <div className="flex items-center gap-2">
-              {/* Mic Icon for Voice Support */}
-              <button
-                type="button"
-                onClick={toggleListening}
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-2xs",
-                  isListening
-                    ? "bg-[#D66F14] text-[#FDFFFC] ring-4 ring-[#D66F14]/25 animate-pulse"
-                    : "bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#064C1C] border border-[#334139]/15",
-                )}
-                title={
-                  isListening
-                    ? "Stop recording voice"
-                    : "Start voice prompt (dictate)"
-                }
-                aria-label={
-                  isListening ? "Stop recording voice" : "Start voice recording"
-                }
-              >
-                {isListening ? (
-                  <Square size={12} className="fill-current" />
-                ) : (
-                  <Mic size={15} />
-                )}
-              </button>
-
               {/* Send CTA Button */}
               <button
                 type="submit"

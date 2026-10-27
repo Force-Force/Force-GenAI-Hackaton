@@ -6,9 +6,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import {
-  Mic,
   ArrowUpRight,
-  Square,
   Database,
   Code2,
   Boxes,
@@ -174,15 +172,9 @@ export function WorkspacePromptBar({
   onSend,
 }: WorkspacePromptBarProps = {}) {
   const [prompt, setPrompt] = useState("");
-  const [isListening, setIsListening] = useState(false);
-  const [voiceDuration, setVoiceDuration] = useState(0);
-  const [interimTranscript, setInterimTranscript] = useState("");
   const [detachedNodeId, setDetachedNodeId] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const sendMessage = useChatStore((s) => s.sendMessage);
   const isGenerating = useChatStore((s) => s.isGenerating);
@@ -216,100 +208,6 @@ export function WorkspacePromptBar({
     textarea.style.height = `${Math.min(Math.max(scrollHeight, 24), 200)}px`;
   }, [prompt]);
 
-  useEffect(() => {
-    return () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.abort();
-        } catch {
-          // cleanup
-        }
-      }
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
-
-  const startVoiceInput = () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRecognition =
-      typeof window !== "undefined"
-        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (window as any).SpeechRecognition ||
-          (window as any).webkitSpeechRecognition
-        : null;
-
-    if (!SpeechRecognition) {
-      alert("Voice dictation is not supported by your current browser.");
-      return;
-    }
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = "en-US";
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      recognition.onresult = (event: any) => {
-        let finalStr = "";
-        let interimStr = "";
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalStr += event.results[i][0].transcript;
-          } else {
-            interimStr += event.results[i][0].transcript;
-          }
-        }
-        if (finalStr) {
-          setPrompt((prev) => (prev ? `${prev} ${finalStr}` : finalStr));
-        }
-        setInterimTranscript(interimStr);
-      };
-
-      recognition.onerror = () => {
-        stopVoiceInput();
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-        if (timerRef.current) clearInterval(timerRef.current);
-      };
-
-      recognition.start();
-      recognitionRef.current = recognition;
-      setIsListening(true);
-      setVoiceDuration(0);
-      setInterimTranscript("");
-
-      timerRef.current = setInterval(() => {
-        setVoiceDuration((d) => d + 1);
-      }, 1000);
-    } catch {
-      setIsListening(false);
-    }
-  };
-
-  const stopVoiceInput = () => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {
-        // cleanup
-      }
-    }
-    if (timerRef.current) clearInterval(timerRef.current);
-    setIsListening(false);
-    setInterimTranscript("");
-  };
-
-  const toggleListening = () => {
-    if (isListening) {
-      stopVoiceInput();
-    } else {
-      startVoiceInput();
-    }
-  };
-
   const handleChipClick = (chipPrompt: string) => {
     if (isDeactivated) return;
     setPrompt(chipPrompt);
@@ -320,8 +218,6 @@ export function WorkspacePromptBar({
     if (e) e.preventDefault();
     const trimmed = prompt.trim();
     if (!trimmed || isDeactivated) return;
-
-    if (isListening) stopVoiceInput();
 
     // Prepend node context tag if a node is attached and not already mentioned
     const finalPrompt =
@@ -370,38 +266,8 @@ export function WorkspacePromptBar({
       )}
     >
       <div className="flex flex-col items-center gap-2 pointer-events-auto w-full max-w-2xl mx-auto">
-        {/* Voice Equalizer Banner while recording */}
-        {isListening && (
-          <div className="flex items-center justify-between gap-3 px-4 py-2 rounded-full bg-[#FDFFFC] border border-[#D66F14]/40 shadow-md animate-fadeIn text-xs text-[#334139]">
-            <div className="flex items-center gap-2.5">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D66F14] opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#D66F14]" />
-              </span>
-              <div className="flex items-center gap-0.5 h-4 px-0.5">
-                <div className="w-0.5 bg-[#D66F14] rounded-full animate-soundwave-1" />
-                <div className="w-0.5 bg-[#D66F14] rounded-full animate-soundwave-2" />
-                <div className="w-0.5 bg-[#D66F14] rounded-full animate-soundwave-3" />
-                <div className="w-0.5 bg-[#D66F14] rounded-full animate-soundwave-4" />
-              </div>
-              <span className="font-semibold truncate max-w-[280px]">
-                {interimTranscript
-                  ? `"${interimTranscript}"`
-                  : `Listening... 0:${voiceDuration.toString().padStart(2, "0")}`}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={stopVoiceInput}
-              className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#D66F14] text-[#FDFFFC] cursor-pointer"
-            >
-              Done
-            </button>
-          </div>
-        )}
-
         {/* Quick Prompt Suggestion Chips */}
-        {!isListening && !isDeactivated && chipsToDisplay.length > 0 && (
+        {!isDeactivated && chipsToDisplay.length > 0 && (
           <div className="flex flex-wrap items-center justify-center gap-2 px-2">
             {chipsToDisplay.map((chip) => {
               return (
@@ -419,7 +285,7 @@ export function WorkspacePromptBar({
           </div>
         )}
 
-        {/* Prompt Input Bar: Optional Selected Node Context Pill + Voice on LEFT, Multiline Text in CENTER, Slanted Arrow on RIGHT */}
+        {/* Prompt Input Bar: Optional Selected Node Context Pill, Multiline Text in CENTER, Slanted Arrow on RIGHT */}
         <form
           onSubmit={handleSubmit}
           style={{ backgroundColor: "#FDFFFC" }}
@@ -456,37 +322,6 @@ export function WorkspacePromptBar({
           )}
 
           <div className="w-full flex items-end gap-2">
-            {/* Voice Icon on the LEFT */}
-            <button
-              type="button"
-              onClick={toggleListening}
-              disabled={isDeactivated}
-              className={cn(
-                "w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0 mb-0.5",
-                isDeactivated
-                  ? "opacity-40 cursor-not-allowed bg-slate-100 text-[#334139]/40 border border-[#334139]/10"
-                  : isListening
-                    ? "bg-[#D66F14] text-[#FDFFFC] ring-4 ring-[#D66F14]/25 animate-pulse cursor-pointer"
-                    : "bg-slate-100 hover:bg-slate-200 text-[#334139] hover:text-[#064C1C] border border-[#334139]/15 cursor-pointer",
-              )}
-              title={
-                isDeactivated
-                  ? "Voice input paused while agent responds"
-                  : isListening
-                    ? "Stop recording voice"
-                    : "Start voice prompt"
-              }
-              aria-label={
-                isListening ? "Stop recording voice" : "Start voice input"
-              }
-            >
-              {isListening ? (
-                <Square size={12} className="fill-current" />
-              ) : (
-                <Mic size={16} />
-              )}
-            </button>
-
             {/* Central Multiline Auto-Growing Textarea (No Scrollbar) */}
             <textarea
               ref={textareaRef}

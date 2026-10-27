@@ -87,7 +87,17 @@ const WELCOME: ChatMessage = {
   id: "welcome",
   sender: "assistant",
   timestamp: now(),
-  text: "### Welcome to AuraBI Workspace\n\nI am your AI Data Architect powered by the **UI Operations Protocol (UIOP v1.0)**. Ask me to design pipelines, add tables, connect lineage, update plans, or propose clarifying questions.",
+  text: `### Welcome to AuraBI Workspace
+
+I am your **AI Data Architect** powered by the **UI Operations Protocol (UIOP v1.0)**.
+
+The active workspace is initialized with the certified **Retail & Financial Lakehouse** scenario:
+- **Ingestion (Bronze)**: \`src_postgres_web_orders\`, \`src_stripe_events\`, and PostgreSQL CRM database container (\`db_crm\`).
+- **Cleansing & SCD-2 (Silver)**: Idempotent SHA-256 deduplication (\`clean_stripe_events\`), order validation (\`stg_clean_orders\`), and SCD Type-2 customer enrichment (\`enrich_customer_scd\`).
+- **Curated Mart (Gold)**: Kimball Star Schema centered on \`fact_daily_revenue\` (**$4,829,140.50** Net Recognized Revenue, **$5,412,800.00** GMV).
+- **Independent Audit**: Author-isolated seal (\`AGT-AUDIT-4091\`) verifying 100% row conservation across 1,248,500 records with zero dollar leakage.
+
+You can ask me to modify the architecture, compile DDL, propose clarifying questions, or manipulate canvas nodes via UIOP.`,
   uiop: null,
 };
 
