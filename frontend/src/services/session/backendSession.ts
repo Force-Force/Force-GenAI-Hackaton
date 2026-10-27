@@ -51,6 +51,7 @@ interface BackendSessionState {
   isLoading: boolean;
 
   checkHealth: () => Promise<boolean>;
+  toggleOnlineMode: (force?: boolean) => void;
   refreshPipelines: () => Promise<PipelineListItem[]>;
   setActivePipelineId: (id: string | null) => void;
   loadPipeline: (pipelineId: string) => Promise<BackendPipeline | null>;
@@ -144,6 +145,22 @@ export const useBackendStore = create<BackendSessionState>()(
           set({ isOnline: false, health: null });
           scheduleHealthRetry();
           return false;
+        }
+      },
+
+      toggleOnlineMode: (force?: boolean) => {
+        const next = force !== undefined ? force : !get().isOnline;
+        set({
+          isOnline: next,
+          health: next
+            ? { status: "ok", model: "nemotron-70b", llm_configured: true }
+            : null,
+        });
+        if (next) {
+          usePipelineStore.getState().clearMockGraphForLiveBackend();
+          usePlanStore.getState().clearMockPlanForLiveBackend();
+          useInsightStore.getState().clearMockDataForLiveBackend();
+          useHistoryStore.getState().clearMockHistoryForLiveBackend();
         }
       },
 

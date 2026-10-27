@@ -74,11 +74,17 @@ export function TopNav() {
         {/* Backend Connectivity Status */}
         <button
           type="button"
-          onClick={() => void checkHealth()}
+          onClick={(e) => {
+            if (e.altKey) {
+              useBackendStore.getState().toggleOnlineMode();
+            } else {
+              void checkHealth();
+            }
+          }}
           title={
             isOnline
-              ? `Backend connected (${wsStatus}) — click to re-check`
-              : "Backend offline — click to retry connection"
+              ? `Backend connected (${wsStatus}) — click to re-check, alt-click to toggle`
+              : "Backend offline — click to retry connection, alt-click to toggle"
           }
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors cursor-pointer select-none bg-white/70"
           style={{
