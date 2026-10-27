@@ -76,7 +76,8 @@ export function AiThoughtPanel() {
   const edges = usePipelineStore((s) => s.edges);
   const selectedNodeId = usePipelineStore((s) => s.selectedNodeId);
 
-  const isOnline = useBackendStore((s) => s.isOnline);
+  const activeRun = useBackendStore((s) => s.activeRun);
+  const resumePipelineRun = useBackendStore((s) => s.resumePipelineRun);
   const pendingApprovals = useBackendStore((s) => s.pendingApprovals);
   const decideApproval = useBackendStore((s) => s.decideApproval);
   const agentTasks = useBackendStore((s) => s.agentTasks);
@@ -549,6 +550,11 @@ export function AiThoughtPanel() {
             {groupOpen && (
               <div className="space-y-1">
                 {staticBlocks.map((b) => renderTelemetryBlock(b, false))}
+                {agentTasks.length > 0 && (
+                  <div className="pt-1">
+                    <AgentTaskList tasks={agentTasks} />
+                  </div>
+                )}
               </div>
             )}
 
@@ -560,43 +566,149 @@ export function AiThoughtPanel() {
             )}
           </div>
 
-          {/* Guardian Pending Approvals & Live Agent Tasks when connected to backend */}
-          {isOnline && pendingApprovals.length > 0 && (
-            <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-3 space-y-2">
-              <div className="text-xs font-bold text-amber-900 flex items-center justify-between">
-                <span>Guardian Approval Required ({pendingApprovals.length})</span>
-              </div>
-              {pendingApprovals.map((app) => (
-                <div
-                  key={app.id}
-                  className="bg-white rounded-lg border border-amber-200 p-2.5 space-y-2 text-xs"
-                >
-                  <div className="font-semibold text-[#1E2D24]">
-                    {app.operation_type || "Governance Gate"} — {app.risk_level || "HIGH RISK"}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void decideApproval(app.id, true, "Approved via Workspace")}
-                      className="px-2.5 py-1 rounded bg-[#064C1C] text-white font-semibold text-[11px] hover:bg-[#1E2D24] cursor-pointer"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void decideApproval(app.id, false, "Rejected via Workspace")}
-                      className="px-2.5 py-1 rounded bg-rose-600 text-white font-semibold text-[11px] hover:bg-rose-700 cursor-pointer"
-                    >
-                      Reject
-                    </button>
-                  </div>
+          {/* Live Pipeline Run Telemetry */}
+          {activeRun && (
+            <div className="rounded-xl border border-[#064C1C]/25 bg-[#064C1C]/[0.03] p-3 space-y-2.5 font-sans">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  {activeRun.status === "RUNNING" ? (
+                    <Loader2
+                      size={13}
+                      className="animate-spin text-[#064C1C]"
+                    />
+                  ) : (
+                    <Check
+                      size={13}
+                      strokeWidth={3}
+                      className="text-[#064C1C]"
+                    />
+                  )}
+                  <span className="text-xs font-bold text-[#1E2D24]">
+                    Pipeline Run #{activeRun.run_number ?? 42}
+                  </span>
                 </div>
-              ))}
+                <span
+                  className={cn(
+                    "px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase",
+                    activeRun.status === "COMPLETED"
+                      ? "bg-[#064C1C]/15 text-[#064C1C]"
+                      : activeRun.status === "AWAITING_APPROVAL"
+                        ? "bg-amber-100 text-amber-800"
+                        : activeRun.status === "FAILED"
+                          ? "bg-rose-100 text-rose-700"
+                          : "bg-sky-100 text-sky-800",
+                  )}
+                >
+                  {activeRun.status}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 text-[11px] text-[#334139]/75 font-mono">
+                <span>
+                  Nodes: {activeRun.nodes_executed ?? 0}/
+                  {activeRun.total_nodes ?? nodes.length}
+                </span>
+                <span>·</span>
+                <span>
+                  Rows: {(activeRun.records_processed ?? 0).toLocaleString()}
+                </span>
+              </div>
+
+              {activeRun.events && activeRun.events.length > 0 && (
+                <div className="space-y-1 max-h-36 overflow-y-auto rounded-lg bg-white border border-[#334139]/10 p-2">
+                  {activeRun.events.map((ev, idx) => (
+                    <div
+                      key={idx}
+                      className="text-[11px] text-[#334139]/85 leading-snug flex items-start gap-1.5"
+                    >
+                      <span className="font-mono text-[10px] text-[#064C1C] font-semibold shrink-0">
+                        [{String(ev.phase || "EXEC")}]
+                      </span>
+                      <span className="break-words">
+                        {String(
+                          ev.message || ev.message_md || "Step completed",
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeRun.status === "AWAITING_APPROVAL" && (
+                <button
+                  type="button"
+                  onClick={() => void resumePipelineRun(activeRun.id)}
+                  className="w-full py-1.5 px-3 rounded-lg bg-[#064C1C] text-white text-xs font-semibold hover:bg-[#1E2D24] transition-colors cursor-pointer"
+                >
+                  Approve & Resume Pipeline Execution
+                </button>
+              )}
             </div>
           )}
 
-          {isOnline && agentTasks.length > 0 && (
-            <AgentTaskList tasks={agentTasks} />
+          {/* Guardian Pending Approvals */}
+          {pendingApprovals.length > 0 && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-3 space-y-2">
+              <div className="text-xs font-bold text-amber-900 flex items-center justify-between">
+                <span>
+                  Guardian Approval Required ({pendingApprovals.length})
+                </span>
+              </div>
+              {pendingApprovals.map((app) => {
+                const preview = (app.masked_preview ?? {}) as Record<
+                  string,
+                  unknown
+                >;
+                const impactSummary =
+                  typeof preview.impact_summary === "string"
+                    ? preview.impact_summary
+                    : null;
+                return (
+                  <div
+                    key={app.id}
+                    className="bg-white rounded-lg border border-amber-200 p-2.5 space-y-2 text-xs"
+                  >
+                    <div className="font-semibold text-[#1E2D24]">
+                      {app.operation_type || "Governance Gate"} —{" "}
+                      {app.risk_level || "HIGH"} RISK
+                    </div>
+                    {impactSummary && (
+                      <p className="text-[11px] text-[#334139]/80 leading-relaxed">
+                        {impactSummary}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void decideApproval(
+                            app.id,
+                            true,
+                            "Approved via Workspace",
+                          )
+                        }
+                        className="px-2.5 py-1 rounded bg-[#064C1C] text-white font-semibold text-[11px] hover:bg-[#1E2D24] cursor-pointer"
+                      >
+                        Approve Gate
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void decideApproval(
+                            app.id,
+                            false,
+                            "Rejected via Workspace",
+                          )
+                        }
+                        className="px-2.5 py-1 rounded bg-rose-600 text-white font-semibold text-[11px] hover:bg-rose-700 cursor-pointer"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
 
           {/* 2. Unified Conversation Feed */}

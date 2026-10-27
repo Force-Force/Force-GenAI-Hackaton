@@ -125,6 +125,38 @@ export function summarizeUiopOperation(op: UiopOperation): {
         title: `Remove question: ${op.params.id}`,
         detail: "Dismiss clarifying question",
       };
+    case "insight.add":
+      return {
+        badge: "insight.add",
+        title: `Add Insight: ${op.params.title}`,
+        detail: `Domain: ${op.params.domain} (${op.params.chart.type})`,
+      };
+    case "insight.update":
+      return {
+        badge: "insight.update",
+        title: `Update Insight: ${op.params.id}`,
+        detail: op.params.title ?? "Updated insight configuration",
+      };
+    case "insight.remove":
+      return {
+        badge: "insight.remove",
+        title: `Remove Insight: ${op.params.id}`,
+        detail: "Remove analytical insight card",
+      };
+    case "insight.clear":
+      return {
+        badge: "insight.clear",
+        title: "Clear Insights",
+        detail: op.params.domain
+          ? `Domain: ${op.params.domain}`
+          : "Clear all domains",
+      };
+    case "insight.set_summary":
+      return {
+        badge: "insight.set_summary",
+        title: "Update Executive Summary Cards",
+        detail: `${op.params.cards.length} summary card(s)`,
+      };
   }
 }
 

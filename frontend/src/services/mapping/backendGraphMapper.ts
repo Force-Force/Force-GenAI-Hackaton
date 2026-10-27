@@ -161,13 +161,22 @@ export function toFrontendNode(bn: BackendNode): PipelineNode {
  * Maps a backend edge to a frontend PipelineEdge.
  */
 export function toFrontendEdge(be: BackendEdge): PipelineEdge {
+  const rel =
+    be.relationship === 'foreign_key' || be.relationship === 'transform'
+      ? be.relationship
+      : 'data_flow';
   return {
     id: be.id,
     source: be.source,
     target: be.target,
+    sourceHandle: be.source_handle ?? undefined,
+    targetHandle: be.target_handle ?? undefined,
     type: 'relationship',
     data: {
-      relationship: 'data_flow',
+      relationship: rel,
+      fromColumn: be.from_column ?? undefined,
+      toColumn: be.to_column ?? undefined,
+      metadata: be.metadata ?? undefined,
     },
   };
 }
@@ -240,10 +249,15 @@ export function toBackendNodeUpdatePayload(
 /**
  * Maps a frontend connection/edge creation to CreateEdgePayload.
  */
-export function toBackendEdgePayload(sourceNodeId: string, targetNodeId: string): CreateEdgePayload {
+export function toBackendEdgePayload(
+  sourceNodeId: string,
+  targetNodeId: string,
+  extra?: Partial<Omit<CreateEdgePayload, 'source_node_id' | 'target_node_id'>>,
+): CreateEdgePayload {
   return {
     source_node_id: sourceNodeId,
     target_node_id: targetNodeId,
+    ...extra,
   };
 }
 

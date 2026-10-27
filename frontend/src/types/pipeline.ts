@@ -104,7 +104,8 @@ export type PipelineNode = ResourceNode | ProcessingNode | DatamartNode;
 export interface PipelineEdgeData extends Record<string, unknown> {
   fromColumn?: string;
   toColumn?: string;
-  relationship?: 'foreign_key' | 'data_flow';
+  relationship?: 'foreign_key' | 'data_flow' | 'transform';
+  metadata?: Record<string, unknown>;
 }
 
 export type PipelineEdge = Edge<PipelineEdgeData>;

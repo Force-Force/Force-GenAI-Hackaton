@@ -31,7 +31,7 @@ describe("chatStore", () => {
     expect(useChatStore.getState().isGenerating).toBe(false);
   });
 
-  it("records the question but never invents an answer when the backend is unreachable", async () => {
+  it("synthesizes a realistic UIOP response and applies it when the backend is offline", async () => {
     useBackendStore.setState({ isOnline: false, checkHealth: async () => false });
 
     await useChatStore.getState().sendMessage("Add a new dimension table");
@@ -41,8 +41,8 @@ describe("chatStore", () => {
     expect(msgs[0].sender).toBe("user");
     expect(msgs[0].text).toBe("Add a new dimension table");
     expect(msgs[1].sender).toBe("assistant");
-    expect(msgs[1].text).toContain("Backend unreachable");
-    expect(msgs[1].uiop).toBeFalsy();
+    expect(msgs[1].uiop).toBeTruthy();
+    expect(usePipelineStore.getState().nodes.length).toBeGreaterThan(0);
   });
 
   it("applies a UIOP batch when applyUiop is called", () => {

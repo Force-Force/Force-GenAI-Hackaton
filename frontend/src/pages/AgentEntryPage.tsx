@@ -47,12 +47,11 @@ interface AttachedResource {
 }
 
 const TYPICAL_PROMPTS = [
-  "Build an ETL pipeline for daily web sales...",
-  "Connect PostgreSQL source and Snowflake mart...",
-  "Add a customer loyalty dimension table with SCD type 2...",
-  "Audit warehouse schema constraints and primary keys...",
-  "Transform raw clickstream events into a star schema...",
-  "Suggest an aggregation pipeline for monthly active users...",
+  "Analyze our Q3 storefront orders ($1.34M GMV), Stripe payouts ($1.15M net), and customer repeat rates...",
+  "Reconcile our PostgreSQL web orders with Stripe settlement fees and refunds...",
+  "Show where revenue leaks between gross checkout ($90.24 AOV) and net deposits ($77.44 AOV)...",
+  "Compare repeat retention between Wholesale B2B accounts, subscribers, and one-time buyers...",
+  "Add a product category margin breakdown and flag any unusual daily sales spikes...",
 ];
 
 export function AgentEntryPage() {
@@ -309,16 +308,24 @@ export function AgentEntryPage() {
       chat.appendMessage({
         id: `user_${Date.now()}`,
         sender: "user",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
         text: messageContent,
       });
       usePlanStore.getState().setPlanning(true);
       navigateTo("/plan");
       try {
-        const res = await pipelineApi.generatePlan(currentPipelineId, messageContent);
+        const res = await pipelineApi.generatePlan(
+          currentPipelineId,
+          messageContent,
+        );
         const envelope = uiopEnvelopeSchema.safeParse(res.uiop);
         if (!envelope.success) {
-          throw new Error(`Plan rejected by the UIOP contract: ${envelope.error.issues[0]?.message}`);
+          throw new Error(
+            `Plan rejected by the UIOP contract: ${envelope.error.issues[0]?.message}`,
+          );
         }
         const report = executeUiop(envelope.data, { allowRebase: true });
         if (!report.ok) {
@@ -328,14 +335,20 @@ export function AgentEntryPage() {
         chat.appendMessage({
           id: `assistant_${Date.now()}`,
           sender: "assistant",
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
           text: res.reply,
         });
         usePlanStore.getState().setPlanning(false);
       } catch (err) {
         usePlanStore
           .getState()
-          .setPlanning(false, err instanceof Error ? err.message : "The planner agent failed.");
+          .setPlanning(
+            false,
+            err instanceof Error ? err.message : "The planner agent failed.",
+          );
       }
       return;
     }
@@ -424,7 +437,7 @@ export function AgentEntryPage() {
 
           <button
             type="button"
-            onClick={() => useHistoryStore.getState().openHistory('projects')}
+            onClick={() => useHistoryStore.getState().openHistory("projects")}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#334139] hover:text-[#064C1C] hover:bg-[#334139]/5 transition-colors cursor-pointer"
             aria-label="View Project History"
           >

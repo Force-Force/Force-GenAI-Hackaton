@@ -1,33 +1,35 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import type { AiInsightModel, DynamicGraphType } from '../types';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import type { AiInsightModel, DynamicGraphType } from "../types";
 import {
   uiopChartPayloadSchema,
   uiopEnvelopeSchema,
   type InsightAddParams,
   type InsightSummaryCard,
   type UiopChartPayload,
-} from '../../../contracts/uiop';
-import { AI_PROPOSED_INSIGHTS } from '../data/mockInsightData';
-import { persistStateStorage } from '../../../store/persistStorage';
-import { etlAndAgentApi } from '../../../services/api/etlAndAgentApi';
-import { executeUiop } from '../../uiop/runtime/uiopRuntime';
-import { genId } from '../../../utils/graph';
-import type { AgentQueryResponse } from '../../../contracts/backendApi';
+} from "../../../contracts/uiop";
+import {
+  AI_PROPOSED_INSIGHTS,
+  INITIAL_SUMMARY_CARDS,
+} from "../data/mockInsightData";
+import { persistStateStorage } from "../../../store/persistStorage";
+import { etlAndAgentApi } from "../../../services/api/etlAndAgentApi";
+import { executeUiop } from "../../uiop/runtime/uiopRuntime";
+import { genId } from "../../../utils/graph";
+import type { AgentQueryResponse } from "../../../contracts/backendApi";
+import {
+  MOCK_INSIGHTS_SNAPSHOT_RESPONSE,
+  synthesizeMockNightshiftQuery,
+} from "../../../services/mock/mockBackendData";
 
-export const INITIAL_SUMMARY_CARDS: InsightSummaryCard[] = [
-  { id: 'sum_1', label: 'Net revenue', value: '$4.83M', delta: '+9.3%', trend: 'up', sourceTable: 'fact_daily_revenue' },
-  { id: 'sum_2', label: 'Gross volume (GMV)', value: '$5.41M', delta: '+12.4%', trend: 'up', sourceTable: 'v_bi_executive_sales' },
-  { id: 'sum_3', label: 'Enterprise retention', value: '118.2%', delta: '+4.5%', trend: 'up', sourceTable: 'v_customer_retention_cohorts' },
-  { id: 'sum_4', label: 'Audit integrity', value: '100% Reconciled', delta: '0.00% Variance', trend: 'neutral', sourceTable: 'audit_kpi_reconciliation_ledger' },
-];
+export { INITIAL_SUMMARY_CARDS };
 
 /**
  * Converts a UIOP insight.add chart payload into an AiInsightModel.
  */
 export function chartPayloadToModel(params: InsightAddParams): AiInsightModel {
   const chart = params.chart;
-  let selectedGraphType: DynamicGraphType = 'bar';
+  let selectedGraphType: DynamicGraphType = "bar";
   let waterfallData = undefined;
   let cohortData = undefined;
   let stateFlowData = undefined;
@@ -38,36 +40,36 @@ export function chartPayloadToModel(params: InsightAddParams): AiInsightModel {
   let tableData = undefined;
 
   switch (chart.type) {
-    case 'pie':
-      selectedGraphType = 'pie';
+    case "pie":
+      selectedGraphType = "pie";
       pieData = chart.data;
       break;
-    case 'bar':
-      selectedGraphType = 'bar';
+    case "bar":
+      selectedGraphType = "bar";
       barData = chart.data;
       break;
-    case 'line':
-      selectedGraphType = 'line';
+    case "line":
+      selectedGraphType = "line";
       lineData = chart.data;
       break;
-    case 'kpi-table':
-      selectedGraphType = 'kpi-table';
+    case "kpi-table":
+      selectedGraphType = "kpi-table";
       tableData = chart.data;
       break;
-    case 'waterfall-decomposition':
-      selectedGraphType = 'waterfall-decomposition';
+    case "waterfall-decomposition":
+      selectedGraphType = "waterfall-decomposition";
       waterfallData = chart.data;
       break;
-    case 'cohort-decay-curve':
-      selectedGraphType = 'cohort-decay-curve';
+    case "cohort-decay-curve":
+      selectedGraphType = "cohort-decay-curve";
       cohortData = chart.data;
       break;
-    case 'state-flow-funnel':
-      selectedGraphType = 'state-flow-funnel';
+    case "state-flow-funnel":
+      selectedGraphType = "state-flow-funnel";
       stateFlowData = chart.data;
       break;
-    case 'anomaly-ribbon':
-      selectedGraphType = 'anomaly-ribbon';
+    case "anomaly-ribbon":
+      selectedGraphType = "anomaly-ribbon";
       anomalyData = chart.data;
       break;
   }
@@ -86,9 +88,11 @@ export function chartPayloadToModel(params: InsightAddParams): AiInsightModel {
     availableGraphOptions: [
       {
         type: selectedGraphType,
-        label: params.categoryLabel || 'Recommended View',
+        label: params.categoryLabel || "Recommended View",
         isAiRecommended: true,
-        reasoning: params.aiReasoning || 'Selected as the optimal visualization for this dataset.',
+        reasoning:
+          params.aiReasoning ||
+          "Selected as the optimal visualization for this dataset.",
       },
     ],
     headlineMetrics: params.headlineMetrics,
@@ -127,46 +131,51 @@ function buildChartFromBackendResponse(
     ...(Array.isArray(res.evidence) ? res.evidence : []),
   ].filter(
     (item): item is Record<string, unknown> =>
-      typeof item === 'object' && item !== null && !Array.isArray(item),
+      typeof item === "object" && item !== null && !Array.isArray(item),
   );
 
   const lowerQ = question.toLowerCase();
   const wantsPie =
-    lowerQ.includes('pie') ||
-    lowerQ.includes('share') ||
-    lowerQ.includes('distribution') ||
-    lowerQ.includes('breakdown');
+    lowerQ.includes("pie") ||
+    lowerQ.includes("share") ||
+    lowerQ.includes("distribution") ||
+    lowerQ.includes("breakdown");
   const wantsLine =
-    lowerQ.includes('line') ||
-    lowerQ.includes('trend') ||
-    lowerQ.includes('over time') ||
-    lowerQ.includes('monthly') ||
-    lowerQ.includes('daily');
+    lowerQ.includes("line") ||
+    lowerQ.includes("trend") ||
+    lowerQ.includes("over time") ||
+    lowerQ.includes("monthly") ||
+    lowerQ.includes("daily");
 
   if (rawItems.length > 0) {
     // Extract label/category and numeric value from each backend record
     const numericPairs = rawItems
       .map((row, idx) => {
         const entries = Object.entries(row);
-        const labelEntry = entries.find(([, v]) => typeof v === 'string');
-        const numEntry = entries.find(
-          ([k, v]) =>
-            typeof v === 'number' &&
-            !k.toLowerCase().includes('pct') &&
-            !k.toLowerCase().includes('share'),
-        ) ?? entries.find(([, v]) => typeof v === 'number');
+        const labelEntry = entries.find(([, v]) => typeof v === "string");
+        const numEntry =
+          entries.find(
+            ([k, v]) =>
+              typeof v === "number" &&
+              !k.toLowerCase().includes("pct") &&
+              !k.toLowerCase().includes("share"),
+          ) ?? entries.find(([, v]) => typeof v === "number");
         const shareEntry = entries.find(
           ([k, v]) =>
-            typeof v === 'number' &&
-            (k.toLowerCase().includes('pct') || k.toLowerCase().includes('share')),
+            typeof v === "number" &&
+            (k.toLowerCase().includes("pct") ||
+              k.toLowerCase().includes("share")),
         );
         const formattedEntry = entries.find(
-          ([k, v]) => typeof v === 'string' && k.toLowerCase().includes('format'),
+          ([k, v]) =>
+            typeof v === "string" && k.toLowerCase().includes("format"),
         );
 
         if (!numEntry) return null;
         const val = Number(numEntry[1]);
-        const lbl = labelEntry ? String(labelEntry[1]) : `${numEntry[0]} #${idx + 1}`;
+        const lbl = labelEntry
+          ? String(labelEntry[1])
+          : `${numEntry[0]} #${idx + 1}`;
         return {
           label: lbl,
           value: val,
@@ -178,9 +187,10 @@ function buildChartFromBackendResponse(
 
     if (numericPairs.length > 0) {
       if (wantsPie && numericPairs.length <= 7) {
-        const total = numericPairs.reduce((acc, p) => acc + Math.abs(p.value), 0) || 1;
+        const total =
+          numericPairs.reduce((acc, p) => acc + Math.abs(p.value), 0) || 1;
         return {
-          type: 'pie',
+          type: "pie",
           data: numericPairs.map((p) => ({
             label: p.label,
             value: p.value,
@@ -195,7 +205,7 @@ function buildChartFromBackendResponse(
 
       if (wantsLine) {
         return {
-          type: 'line',
+          type: "line",
           data: numericPairs.map((p) => ({
             x: p.label,
             y: p.value,
@@ -205,7 +215,7 @@ function buildChartFromBackendResponse(
       }
 
       return {
-        type: 'bar',
+        type: "bar",
         data: numericPairs.map((p) => ({
           category: p.label,
           value: p.value,
@@ -220,7 +230,7 @@ function buildChartFromBackendResponse(
     ).slice(0, 8);
     if (columns.length > 0) {
       return {
-        type: 'kpi-table',
+        type: "kpi-table",
         data: {
           columns,
           rows: rawItems.map((r) => {
@@ -228,10 +238,10 @@ function buildChartFromBackendResponse(
             for (const col of columns) {
               const v = r[col];
               cleanRow[col] =
-                typeof v === 'number' || typeof v === 'string'
+                typeof v === "number" || typeof v === "string"
                   ? v
                   : v === null || v === undefined
-                    ? '—'
+                    ? "—"
                     : JSON.stringify(v);
             }
             return cleanRow;
@@ -243,17 +253,26 @@ function buildChartFromBackendResponse(
 
   // 3. No tabular/calculation arrays returned -> emit a real telemetry KPI table from the response metadata
   return {
-    type: 'kpi-table',
+    type: "kpi-table",
     data: {
-      columns: ['Field', 'Value'],
+      columns: ["Field", "Value"],
       rows: [
-        { Field: 'Request ID', Value: res.request_id },
-        { Field: 'Status', Value: res.status },
-        { Field: 'Intent', Value: res.intent || 'informational' },
-        { Field: 'Risk Level', Value: res.risk_level || 'low' },
-        { Field: 'Guardian Approval', Value: res.approval_required ? 'Required' : 'Not Required' },
-        { Field: 'Sources Queried', Value: res.sources.length > 0 ? res.sources.join(', ') : 'None' },
-        { Field: 'Views Used', Value: res.views_used.length > 0 ? res.views_used.join(', ') : 'None' },
+        { Field: "Request ID", Value: res.request_id },
+        { Field: "Status", Value: res.status },
+        { Field: "Intent", Value: res.intent || "informational" },
+        { Field: "Risk Level", Value: res.risk_level || "low" },
+        {
+          Field: "Guardian Approval",
+          Value: res.approval_required ? "Required" : "Not Required",
+        },
+        {
+          Field: "Sources Queried",
+          Value: res.sources.length > 0 ? res.sources.join(", ") : "None",
+        },
+        {
+          Field: "Views Used",
+          Value: res.views_used.length > 0 ? res.views_used.join(", ") : "None",
+        },
       ],
     },
   };
@@ -276,7 +295,9 @@ interface InsightState {
   clearMockDataForLiveBackend: () => void;
   fetchLiveInsights: (pipelineId?: string | null) => Promise<void>;
 
-  queryNightshiftAgent: (question: string) => Promise<AgentQueryResponse | null>;
+  queryNightshiftAgent: (
+    question: string,
+  ) => Promise<AgentQueryResponse | null>;
 }
 
 export const useInsightStore = create<InsightState>()(
@@ -289,17 +310,25 @@ export const useInsightStore = create<InsightState>()(
       activeTrace: null,
       lastQueryResponse: null,
 
-      setSummaryCards: (cards) => set({ summaryCards: cards, isMockSeedData: false }),
+      setSummaryCards: (cards) =>
+        set({ summaryCards: cards, isMockSeedData: false }),
 
       addInsight: (insight) =>
         set((s) => ({
           isMockSeedData: false,
-          insights: [insight, ...(s.isMockSeedData ? [] : s.insights).filter((i) => i.id !== insight.id)],
+          insights: [
+            insight,
+            ...(s.isMockSeedData ? [] : s.insights).filter(
+              (i) => i.id !== insight.id,
+            ),
+          ],
         })),
 
       updateInsight: (id, patch) =>
         set((s) => ({
-          insights: s.insights.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+          insights: s.insights.map((item) =>
+            item.id === id ? { ...item, ...patch } : item,
+          ),
         })),
 
       removeInsight: (id) =>
@@ -334,8 +363,18 @@ export const useInsightStore = create<InsightState>()(
       },
 
       fetchLiveInsights: async (pipelineId) => {
-        get().clearMockDataForLiveBackend();
-        if (!pipelineId) return;
+        if (!pipelineId) {
+          if (get().insights.length === 0) {
+            set({
+              summaryCards:
+                MOCK_INSIGHTS_SNAPSHOT_RESPONSE.summaryCards as InsightSummaryCard[],
+              insights:
+                MOCK_INSIGHTS_SNAPSHOT_RESPONSE.insights as AiInsightModel[],
+              isMockSeedData: true,
+            });
+          }
+          return;
+        }
 
         set({ isLoading: true });
         try {
@@ -345,12 +384,14 @@ export const useInsightStore = create<InsightState>()(
             if (snap.uiop) {
               const parsed = uiopEnvelopeSchema.safeParse(snap.uiop);
               if (parsed.success) {
+                get().clearMockDataForLiveBackend();
                 executeUiop(parsed.data, { allowRebase: true });
                 set({ isMockSeedData: false, isLoading: false });
                 return;
               }
             }
             if (Array.isArray(snap.insights) && snap.insights.length > 0) {
+              get().clearMockDataForLiveBackend();
               set({
                 insights: snap.insights as AiInsightModel[],
                 summaryCards: Array.isArray(snap.summaryCards)
@@ -368,17 +409,22 @@ export const useInsightStore = create<InsightState>()(
           // 2. Check last stored ETL result on pipeline (FRONTEND_INTEGRATION.md Section 8)
           try {
             const etlRes = await etlAndAgentApi.getEtlResults(pipelineId);
-            if (etlRes && Array.isArray(etlRes.rows) && etlRes.rows.length > 0) {
+            if (
+              etlRes &&
+              Array.isArray(etlRes.rows) &&
+              etlRes.rows.length > 0
+            ) {
+              get().clearMockDataForLiveBackend();
               const cols = Object.keys(etlRes.rows[0]);
               const cleanRows = etlRes.rows.map((r) => {
                 const rowObj: Record<string, string | number> = {};
                 for (const c of cols) {
                   const v = r[c];
                   rowObj[c] =
-                    typeof v === 'number' || typeof v === 'string'
+                    typeof v === "number" || typeof v === "string"
                       ? v
                       : v === null || v === undefined
-                        ? '—'
+                        ? "—"
                         : JSON.stringify(v);
                 }
                 return rowObj;
@@ -386,45 +432,51 @@ export const useInsightStore = create<InsightState>()(
 
               executeUiop(
                 {
-                  protocol: 'uiop',
-                  version: '1.0',
-                  messageId: genId('msg_etl_res'),
+                  protocol: "uiop",
+                  version: "1.0",
+                  messageId: genId("msg_etl_res"),
                   workspaceId: pipelineId,
                   baseRevision: 1,
-                  source: { agentId: 'etl-engine', executionId: genId('exec_etl') },
+                  source: {
+                    agentId: "etl-engine",
+                    executionId: genId("exec_etl"),
+                  },
                   operations: [
                     {
-                      op: 'insight.add',
+                      op: "insight.add",
                       params: {
                         id: `ins_etl_${pipelineId}`,
-                        domain: 'operations',
-                        categoryLabel: 'Live ETL Output',
-                        title: etlRes.instruction || 'Pipeline ETL Execution Result',
+                        domain: "operations",
+                        categoryLabel: "Live ETL Output",
+                        title:
+                          etlRes.instruction || "Pipeline ETL Execution Result",
                         summary:
                           etlRes.summary_md ||
                           `Returned ${etlRes.row_count ?? etlRes.rows.length} rows from live pipeline execution.`,
                         aiReasoning:
-                          'Rendered directly from the authoritative pipeline ETL execution results.',
+                          "Rendered directly from the authoritative pipeline ETL execution results.",
                         aiConfidenceScore: 100,
                         chart: {
-                          type: 'kpi-table',
+                          type: "kpi-table",
                           data: {
                             columns: cols,
                             rows: cleanRows,
                           },
                         },
                         provenance: {
-                          sourceTables: ['pipeline_etl_output'],
-                          executedSql: etlRes.sql || '',
+                          sourceTables: ["pipeline_etl_output"],
+                          executedSql: etlRes.sql || "",
                           rowCount: etlRes.row_count ?? etlRes.rows.length,
                           executedAt: etlRes.executed_at,
                         },
                         headlineMetrics: [
                           {
-                            label: 'Row Count',
-                            value: String(etlRes.row_count ?? etlRes.rows.length),
-                            delta: 'Live Result',
-                            trend: 'neutral',
+                            label: "Row Count",
+                            value: String(
+                              etlRes.row_count ?? etlRes.rows.length,
+                            ),
+                            delta: "Live Result",
+                            trend: "neutral",
                           },
                         ],
                         actionableInsights: [],
@@ -435,9 +487,21 @@ export const useInsightStore = create<InsightState>()(
                 { allowRebase: true },
               );
               set({ isMockSeedData: false });
+              return;
             }
           } catch {
             // 404 when pipeline has no ETL result yet
+          }
+
+          // 3. Offline / demo fallback: ensure canonical mock insights remain hydrated
+          if (get().insights.length === 0) {
+            set({
+              summaryCards:
+                MOCK_INSIGHTS_SNAPSHOT_RESPONSE.summaryCards as InsightSummaryCard[],
+              insights:
+                MOCK_INSIGHTS_SNAPSHOT_RESPONSE.insights as AiInsightModel[],
+              isMockSeedData: true,
+            });
           }
         } finally {
           set({ isLoading: false });
@@ -446,12 +510,22 @@ export const useInsightStore = create<InsightState>()(
 
       queryNightshiftAgent: async (question: string) => {
         set({ isLoading: true });
-        const requestId = genId('req_ns');
+        const requestId = genId("req_ns");
+
+        let res: AgentQueryResponse;
+        let isLiveResponse = false;
+        try {
+          res = await etlAndAgentApi.queryAnalysisAgent(question, requestId);
+          isLiveResponse = true;
+        } catch {
+          // Offline / demo fallback: synthesize realistic Nightshift query response
+          res = synthesizeMockNightshiftQuery(question, requestId);
+        }
 
         try {
-          const res = await etlAndAgentApi.queryAnalysisAgent(question, requestId);
-          // Live backend responded -> purge any initial mock seed data first
-          get().clearMockDataForLiveBackend();
+          if (isLiveResponse) {
+            get().clearMockDataForLiveBackend();
+          }
           set({ lastQueryResponse: res, activeTrace: res.trace ?? null });
 
           // If backend returned a direct UIOP envelope, execute it atomically
@@ -459,61 +533,85 @@ export const useInsightStore = create<InsightState>()(
             const parsedEnvelope = uiopEnvelopeSchema.safeParse(res.uiop);
             if (parsedEnvelope.success) {
               executeUiop(parsedEnvelope.data, { allowRebase: true });
-              set({ isLoading: false, isMockSeedData: false });
+              set({ isLoading: false, isMockSeedData: !isLiveResponse });
               return res;
             }
           }
 
           const chart = buildChartFromBackendResponse(question, res);
           const lowerQ = question.toLowerCase();
-          const domain: 'sales' | 'customers' | 'operations' | 'anomalies' =
-            lowerQ.includes('customer') || lowerQ.includes('cohort') || lowerQ.includes('retention')
-              ? 'customers'
-              : lowerQ.includes('anomal') || lowerQ.includes('outlier') || lowerQ.includes('fraud')
-                ? 'anomalies'
-                : lowerQ.includes('operat') || lowerQ.includes('funnel') || lowerQ.includes('etl')
-                  ? 'operations'
-                  : 'sales';
+          const domain: "sales" | "customers" | "operations" | "anomalies" =
+            lowerQ.includes("customer") ||
+            lowerQ.includes("cohort") ||
+            lowerQ.includes("retention")
+              ? "customers"
+              : lowerQ.includes("anomal") ||
+                  lowerQ.includes("outlier") ||
+                  lowerQ.includes("fraud")
+                ? "anomalies"
+                : lowerQ.includes("operat") ||
+                    lowerQ.includes("funnel") ||
+                    lowerQ.includes("etl")
+                  ? "operations"
+                  : "sales";
 
-          const newInsightId = `ins_${res.request_id || genId('ns')}`;
+          const newInsightId = `ins_${res.request_id || genId("ns")}`;
           executeUiop(
             {
-              protocol: 'uiop',
-              version: '1.0',
-              messageId: genId('msg_ns'),
-              workspaceId: 'workspace_01',
+              protocol: "uiop",
+              version: "1.0",
+              messageId: genId("msg_ns"),
+              workspaceId: "workspace_01",
               baseRevision: 1,
-              source: { agentId: 'nightshift-agent', executionId: res.request_id || requestId },
+              source: {
+                agentId: "nightshift-agent",
+                executionId: res.request_id || requestId,
+              },
               operations: [
                 {
-                  op: 'insight.add',
+                  op: "insight.add",
                   params: {
                     id: newInsightId,
                     domain,
-                    categoryLabel: res.provider ? `${res.provider.toUpperCase()} Analysis` : 'AI Analysis',
-                    title: question.length > 56 ? `${question.slice(0, 56)}…` : question,
-                    summary: res.response || 'Agent analysis query completed.',
-                    aiReasoning: `Agent evaluated intent="${res.intent}", risk="${res.risk_level ?? 'low'}" and selected ${chart.type.toUpperCase()} visualization from live query output.`,
+                    categoryLabel: res.provider
+                      ? `${res.provider.toUpperCase()} Analysis`
+                      : "AI Analysis",
+                    title:
+                      question.length > 56
+                        ? `${question.slice(0, 56)}…`
+                        : question,
+                    summary: res.response || "Agent analysis query completed.",
+                    aiReasoning: `Agent evaluated intent="${res.intent}", risk="${res.risk_level ?? "low"}" and selected ${chart.type.toUpperCase()} visualization from live query output.`,
                     aiConfidenceScore: 98.9,
                     chart,
                     provenance: {
-                      sourceTables: res.sources && res.sources.length > 0 ? res.sources : res.views_used || [],
-                      executedSql: res.sql || '',
-                      rowCount: Array.isArray(res.calculations) ? res.calculations.length : undefined,
+                      sourceTables:
+                        res.sources && res.sources.length > 0
+                          ? res.sources
+                          : res.views_used || [],
+                      executedSql: res.sql || "",
+                      rowCount: Array.isArray(res.calculations)
+                        ? res.calculations.length
+                        : undefined,
                       executedAt: new Date().toISOString(),
                     },
                     headlineMetrics: [
                       {
-                        label: 'Model',
-                        value: res.model || res.provider || 'Nightshift',
-                        delta: res.latency_ms !== undefined ? `${res.latency_ms}ms` : 'Live',
-                        trend: 'neutral',
+                        label: "Model",
+                        value: res.model || res.provider || "Nightshift",
+                        delta:
+                          res.latency_ms !== undefined
+                            ? `${res.latency_ms}ms`
+                            : "Live",
+                        trend: "neutral",
                       },
                       {
-                        label: 'Risk Level',
-                        value: (res.risk_level || 'LOW').toUpperCase(),
-                        delta: res.approval_required ? 'Approval Required' : 'Verified',
-                        trend: res.approval_required ? 'down' : 'up',
+                        label: "Risk Level",
+                        value: (res.risk_level || "LOW").toUpperCase(),
+                        delta: res.approval_required
+                          ? "Approval Required"
+                          : "Verified",
+                        trend: res.approval_required ? "down" : "up",
                       },
                     ],
                     actionableInsights:
@@ -527,7 +625,7 @@ export const useInsightStore = create<InsightState>()(
             { allowRebase: true },
           );
 
-          set({ isLoading: false, isMockSeedData: false });
+          set({ isLoading: false, isMockSeedData: !isLiveResponse });
           return res;
         } catch {
           set({ isLoading: false });
@@ -536,7 +634,7 @@ export const useInsightStore = create<InsightState>()(
       },
     }),
     {
-      name: 'aura-bi.insight-store.v1',
+      name: "aura-bi.insight-store.v1",
       storage: createJSONStorage(() => persistStateStorage),
       partialize: (s) => ({
         summaryCards: s.summaryCards,
@@ -546,4 +644,3 @@ export const useInsightStore = create<InsightState>()(
     },
   ),
 );
-

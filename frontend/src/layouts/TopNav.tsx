@@ -131,19 +131,21 @@ export function TopNav() {
           </span>
         </button>
 
-        {isOnline && activePipelineId && (
-          <button
-            type="button"
-            onClick={() => void startPipelineRun()}
-            aria-label="Run Pipeline on Backend"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#064C1C] text-[#FDFFFC] hover:bg-[#1E2D24] transition-colors cursor-pointer"
-          >
-            <Play size={12} />
-            <span>
-              {activeRun?.status === "RUNNING" ? "Running…" : "Run Pipeline"}
-            </span>
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => void startPipelineRun()}
+          aria-label="Run Pipeline on Backend"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#064C1C] text-[#FDFFFC] hover:bg-[#1E2D24] transition-colors cursor-pointer"
+        >
+          <Play size={12} />
+          <span>
+            {activeRun?.status === "RUNNING"
+              ? "Running…"
+              : activeRun?.status === "AWAITING_APPROVAL"
+                ? "Awaiting Approval"
+                : "Run Pipeline"}
+          </span>
+        </button>
         <button
           type="button"
           onClick={() => navigateTo("/plan")}

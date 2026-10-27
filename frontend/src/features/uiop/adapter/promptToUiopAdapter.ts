@@ -65,7 +65,55 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
       )
     : null;
 
-  // 0. Insights & Dynamic Chart Visualization Intent
+  // 0. Explain / Audit / Lineage Inspection Intent
+  if (
+    lower.includes("explain") ||
+    lower.includes("describe") ||
+    lower.includes("what does") ||
+    (lower.includes("audit") && !lower.includes("add")) ||
+    (lower.includes("lineage") && !lower.includes("connect"))
+  ) {
+    if (contextNode) {
+      const cat = contextNode.data.category;
+      const colSummary =
+        cat === "resource" && contextNode.data.columns.length > 0
+          ? `\n\n**Schema Attributes (${contextNode.data.columns.length} columns):**\n` +
+            contextNode.data.columns
+              .slice(0, 6)
+              .map(
+                (c) =>
+                  `- \`${c.name}\` (${c.type})${c.isPrimaryKey ? " — **PK**" : ""}${c.isForeignKey ? ` — **FK → ${c.fkRefTable || "dimension"}**` : ""}`,
+              )
+              .join("\n")
+          : "";
+      const codeSummary =
+        cat === "processing"
+          ? `\n\n**Active Transformation (${contextNode.data.language.toUpperCase()}):**\n\`\`\`${contextNode.data.language}\n${contextNode.data.code}\n\`\`\``
+          : "";
+      return {
+        replyMarkdown:
+          `### Architectural Analysis: \`${contextNode.data.label}\`\n\n` +
+          `${contextNode.data.description || "Core pipeline entity participating in the Kimball Star Schema lineage."}` +
+          colSummary +
+          codeSummary +
+          `\n\n- **Verification Status**: Zero-variance reconciliation active (` +
+          `100% row conservation verified by Independent Audit Agent \`AGT-AUDIT-4091\`).`,
+        envelope: null,
+      };
+    }
+
+    return {
+      replyMarkdown:
+        `### End-to-End Pipeline Lineage & Metric Architecture\n\n` +
+        `1. **Bronze Ingestion**: Streams storefront & B2B orders from \`src_postgres_web_orders\` (14,850 orders), payment webhooks from \`src_stripe_events\` (15,200 events), and customer accounts from \`db_crm\` (4,250 profiles).\n` +
+        `2. **Silver Cleansing & SCD-2**: Deduplicates 350 Stripe network retries via SHA-256 idempotency keys (\`clean_stripe_events\`), validates order totals (\`stg_clean_orders\`), and tracks point-in-time loyalty tiers (\`enrich_customer_scd\`).\n` +
+        `3. **Gold Kimball Star Schema**: Joins surrogate keys into \`fact_daily_revenue\` (**$1,340,000.00** Gross GMV → **-$92.0K** promos, **-$50.0K** Stripe fees, **-$48.0K** refunds = **$1,150,000.00** Net Recognized Revenue · **$77.44** Net AOV · **0.00%** variance).\n` +
+        `4. **Zetaris Virtualization**: Publishes zero-copy federated views (\`v_bi_executive_sales\`, \`v_customer_retention_cohorts\`) for sub-second executive BI.`,
+      envelope: null,
+    };
+  }
+
+  // 0b. Insights & Dynamic Chart Visualization Intent
   if (
     lower.includes("chart") ||
     lower.includes("graph") ||
@@ -75,16 +123,28 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
     lower.includes("insight") ||
     lower.includes("visual")
   ) {
-    const isPie = lower.includes("pie") || lower.includes("share") || lower.includes("mix");
-    const isLine = lower.includes("line") || lower.includes("trend") || lower.includes("monthly");
+    const isPie =
+      lower.includes("pie") || lower.includes("share") || lower.includes("mix");
+    const isLine =
+      lower.includes("line") ||
+      lower.includes("trend") ||
+      lower.includes("monthly");
     const insightId = genId("ins_uiop");
 
     const op: UiopOperation = {
       op: "insight.add",
       params: {
         id: insightId,
-        domain: lower.includes("customer") ? "customers" : lower.includes("anomal") ? "anomalies" : "sales",
-        categoryLabel: isPie ? "Part-to-Whole Share" : isLine ? "Time-Series Trend" : "Categorical Breakdown",
+        domain: lower.includes("customer")
+          ? "customers"
+          : lower.includes("anomal")
+            ? "anomalies"
+            : "sales",
+        categoryLabel: isPie
+          ? "Part-to-Whole Share"
+          : isLine
+            ? "Time-Series Trend"
+            : "Categorical Breakdown",
         title: cleanBody.length > 52 ? `${cleanBody.slice(0, 52)}…` : cleanBody,
         summary: `Synthesized ${isPie ? "Pie/Donut" : isLine ? "Trend Line" : "Categorical Bar"} visualization from warehouse tables.`,
         aiReasoning: isPie
@@ -97,10 +157,30 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
           ? {
               type: "pie",
               data: [
-                { label: "Stripe Credit Card", value: 738300, sharePct: 64.2, formatted: "$738.3K" },
-                { label: "SEPA Direct Debit", value: 250700, sharePct: 21.8, formatted: "$250.7K" },
-                { label: "Apple Pay / Wallet", value: 109250, sharePct: 9.5, formatted: "$109.3K" },
-                { label: "Wire Transfer", value: 51750, sharePct: 4.5, formatted: "$51.8K" },
+                {
+                  label: "Stripe Credit Card",
+                  value: 738300,
+                  sharePct: 64.2,
+                  formatted: "$738.3K",
+                },
+                {
+                  label: "SEPA Direct Debit",
+                  value: 250700,
+                  sharePct: 21.8,
+                  formatted: "$250.7K",
+                },
+                {
+                  label: "Apple Pay / Wallet",
+                  value: 109250,
+                  sharePct: 9.5,
+                  formatted: "$109.3K",
+                },
+                {
+                  label: "Wire Transfer",
+                  value: 51750,
+                  sharePct: 4.5,
+                  formatted: "$51.8K",
+                },
               ],
             }
           : isLine
@@ -118,17 +198,27 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
                 data: [
                   { category: "Enterprise", value: 680000, formatted: "$680K" },
                   { category: "Mid-Market", value: 320000, formatted: "$320K" },
-                  { category: "SMB Self-Serve", value: 150000, formatted: "$150K" },
+                  {
+                    category: "SMB Self-Serve",
+                    value: 150000,
+                    formatted: "$150K",
+                  },
                 ],
               },
         provenance: {
           sourceTables: ["fact_daily_revenue", "dim_customer_360"],
-          executedSql: "SELECT segment, SUM(net_volume) AS value FROM fact_daily_revenue GROUP BY 1 ORDER BY 2 DESC;",
+          executedSql:
+            "SELECT segment, SUM(net_volume) AS value FROM fact_daily_revenue GROUP BY 1 ORDER BY 2 DESC;",
           rowCount: isPie ? 4 : isLine ? 4 : 3,
           executedAt: new Date().toISOString(),
         },
         headlineMetrics: [
-          { label: "Total Analyzed", value: "$1.15M", delta: "0.00% variance", trend: "up" },
+          {
+            label: "Total Analyzed",
+            value: "$1.15M",
+            delta: "0.00% variance",
+            trend: "up",
+          },
         ],
         actionableInsights: [
           "Expand SQL Provenance on the card to inspect the underlying aggregation query.",
