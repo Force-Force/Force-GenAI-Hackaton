@@ -55,23 +55,52 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
   const lower = prompt.toLowerCase();
   const nodes = usePipelineStore.getState().nodes;
 
-  // Extract optional leading `@node_label` context
-  const tagMatch = prompt.match(/^@([^\s]+)\s+([\s\S]*)$/);
-  const targetLabel = tagMatch ? tagMatch[1] : null;
-  const cleanBody = tagMatch ? tagMatch[2].trim() : prompt.trim();
-  const contextNode = targetLabel
-    ? nodes.find(
-        (n) => n.data.label.toLowerCase() === targetLabel.toLowerCase(),
-      )
-    : null;
+  // Extract optional leading `@node_label` context (supports labels with spaces)
+  let contextNode = null as (typeof nodes)[number] | null;
+  let cleanBody = prompt.trim();
+  if (cleanBody.startsWith("@")) {
+    const withoutAt = cleanBody.slice(1);
+    const sortedByLabelLen = [...nodes].sort(
+      (a, b) => b.data.label.length - a.data.label.length,
+    );
+    const matchedNode = sortedByLabelLen.find((n) =>
+      withoutAt.toLowerCase().startsWith(n.data.label.toLowerCase()),
+    );
+    if (matchedNode) {
+      contextNode = matchedNode;
+      cleanBody = withoutAt.slice(matchedNode.data.label.length).trim();
+    } else {
+      const tagMatch = prompt.match(/^@([^\s]+)\s+([\s\S]*)$/);
+      if (tagMatch) {
+        const targetLabel = tagMatch[1];
+        cleanBody = tagMatch[2].trim();
+        contextNode =
+          nodes.find(
+            (n) => n.data.label.toLowerCase() === targetLabel.toLowerCase(),
+          ) ?? null;
+      }
+    }
+  }
 
-  // 0. Explain / Audit / Lineage Inspection Intent
+  // 0. Explain / Audit / Lineage / High-Level Analysis Intent
+  const isAddOrCreateIntent =
+    lower.includes("add ") ||
+    lower.includes("create ") ||
+    lower.includes("new ") ||
+    lower.includes("insert ");
+
   if (
     lower.includes("explain") ||
     lower.includes("describe") ||
     lower.includes("what does") ||
-    (lower.includes("audit") && !lower.includes("add")) ||
-    (lower.includes("lineage") && !lower.includes("connect"))
+    lower.includes("review") ||
+    (lower.includes("audit") && !isAddOrCreateIntent) ||
+    (lower.includes("lineage") && !lower.includes("connect")) ||
+    ((lower.includes("analyze") ||
+      lower.includes("reconcile") ||
+      lower.includes("where revenue leaks") ||
+      lower.includes("compare")) &&
+      !isAddOrCreateIntent)
   ) {
     if (contextNode) {
       const cat = contextNode.data.category;
@@ -90,17 +119,37 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
         cat === "processing"
           ? `\n\n**Active Transformation (${contextNode.data.language.toUpperCase()}):**\n\`\`\`${contextNode.data.language}\n${contextNode.data.code}\n\`\`\``
           : "";
+      const containerSummary =
+        cat === "datamart" && contextNode.data.children.nodes.length > 0
+          ? `\n\n**Contained Tables (${contextNode.data.children.nodes.length}):**\n` +
+            contextNode.data.children.nodes
+              .map(
+                (child) =>
+                  `- \`${child.data.label}\`: ${child.data.description || "Conformed warehouse table"}`,
+              )
+              .join("\n")
+          : "";
       return {
         replyMarkdown:
           `### Architectural Analysis: \`${contextNode.data.label}\`\n\n` +
           `${contextNode.data.description || "Core pipeline entity participating in the Kimball Star Schema lineage."}` +
           colSummary +
           codeSummary +
+          containerSummary +
           `\n\n- **Verification Status**: Zero-variance reconciliation active (` +
           `100% row conservation verified by Independent Audit Agent \`AGT-AUDIT-4091\`).`,
         envelope: null,
       };
     }
+
+    const planOps: UiopOperation[] = [
+      {
+        op: "plan.update",
+        params: {
+          prompt: cleanBody,
+        },
+      },
+    ];
 
     return {
       replyMarkdown:
@@ -109,7 +158,7 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
         `2. **Silver Cleansing & SCD-2**: Deduplicates 350 Stripe network retries via SHA-256 idempotency keys (\`clean_stripe_events\`), validates order totals (\`stg_clean_orders\`), and tracks point-in-time loyalty tiers (\`enrich_customer_scd\`).\n` +
         `3. **Gold Kimball Star Schema**: Joins surrogate keys into \`fact_daily_revenue\` (**$1,340,000.00** Gross GMV → **-$92.0K** promos, **-$50.0K** Stripe fees, **-$48.0K** refunds = **$1,150,000.00** Net Recognized Revenue · **$77.44** Net AOV · **0.00%** variance).\n` +
         `4. **Zetaris Virtualization**: Publishes zero-copy federated views (\`v_bi_executive_sales\`, \`v_customer_retention_cohorts\`) for sub-second executive BI.`,
-      envelope: null,
+      envelope: createUiopEnvelope(planOps, "master-architect-agent"),
     };
   }
 
@@ -509,6 +558,26 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
       });
     }
 
+    const targetSink =
+      nodes.find((n) => n.id === "proc_fct_sales") ??
+      nodes.find((n) => n.id === "dw_core");
+    if (targetSink && targetSink.id !== sourceToLink?.id) {
+      ops.push({
+        op: "edge.add",
+        params: {
+          source: procId,
+          target: targetSink.id,
+          type: "data_flow",
+          data: { relationship: "data_flow" },
+        },
+      });
+    }
+
+    ops.push({
+      op: "layout.update",
+      params: { direction: "LR" },
+    });
+
     return {
       replyMarkdown: `### Data Transformation Stage Proposed\n\nI have structured a data transformation stage (**${label}**)${sourceToLink ? ` connected from **${sourceToLink.data.label}**` : ""} to cleanse and prepare your transactional records. Expand the thought process above to inspect the technical operations and apply this update to your canvas.`,
       envelope: createUiopEnvelope(ops, "data-engineer-agent"),
@@ -538,7 +607,7 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
       params: {
         id: tableId,
         type: "resource",
-        position: { x: 240, y: 260 },
+        position: { x: 40, y: 660 },
         data: {
           label,
           kind: isSource ? "source" : "table",
@@ -573,6 +642,23 @@ export function synthesizeUiopFromPrompt(prompt: string): SynthesizedAgentTurn {
       },
     },
   ];
+
+  if (isSource) {
+    const downstreamTarget =
+      nodes.find((n) => n.id === "proc_stg_orders") ??
+      nodes.find((n) => n.data.category === "processing");
+    if (downstreamTarget) {
+      ops.push({
+        op: "edge.add",
+        params: {
+          source: tableId,
+          target: downstreamTarget.id,
+          type: "data_flow",
+          data: { relationship: "data_flow" },
+        },
+      });
+    }
+  }
 
   return {
     replyMarkdown: `### Entity Definition Proposed\n\nI have generated the data definition for **${label}** with verified primary keys and attributes. Expand the thought process above to inspect the operations and apply it to your workspace.`,
